@@ -23,9 +23,19 @@ export function DashboardPage() {
       <PageHeader title="Dashboard" subtitle="Aktueller Status und heutige Übersicht" />
       <div className="grid">
         <SummaryCard title="Aktueller Status" value={<StatusBadge status={status} />} hint={currentStatus.data?.last_event_timestamp ? `Letzte Buchung: ${formatDateTime(currentStatus.data.last_event_timestamp)}` : 'Noch keine Buchung'} />
-        <SummaryCard title="Soll heute" value={formatMinutes(dailyAccount.data?.target_minutes ?? 0)} />
-        <SummaryCard title="Ist heute" value={formatMinutes(dailyAccount.data?.actual_minutes ?? 0)} />
-        <SummaryCard title="Balance" value={formatMinutes(dailyAccount.data?.balance_minutes ?? 0)} hint={<StatusBadge status={dailyAccount.data?.status ?? 'empty'} />} />
+        <SummaryCard title="Soll heute" value={<span className="time-value">{formatMinutes(dailyAccount.data?.target_minutes ?? 0)}</span>} />
+        <SummaryCard title="Ist heute" value={<span className="time-value">{formatMinutes(dailyAccount.data?.actual_minutes ?? 0)}</span>} />
+        <SummaryCard
+          title="Saldo heute"
+          value={
+            <span
+              className={`time-value ${(dailyAccount.data?.balance_minutes ?? 0) > 0 ? 'balance-positive' : (dailyAccount.data?.balance_minutes ?? 0) < 0 ? 'balance-negative' : 'balance-neutral'}`}
+            >
+              {formatMinutes(dailyAccount.data?.balance_minutes ?? 0)}
+            </span>
+          }
+          hint={<StatusBadge status={dailyAccount.data?.status ?? 'empty'} />}
+        />
       </div>
 
       <QuickStampCard status={status} lastEventTimestamp={lastEvent?.timestamp ?? currentStatus.data?.last_event_timestamp} />

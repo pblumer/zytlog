@@ -16,7 +16,7 @@ import {
   useUpdateTimeStampMutation,
 } from '../hooks/useZytlogApi';
 import type { TimeStampEvent } from '../types/api';
-import { formatDateTime, formatMinutes, isoDate } from '../utils/date';
+import { formatDate, formatMinutes, isoDate } from '../utils/date';
 import { getSuggestedNextStampType } from '../utils/timeStampSuggestions';
 
 type EditDraft = {
@@ -33,6 +33,10 @@ function toInputDateTimeValue(value: string) {
 function toIsoOrNull(value: string) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function formatTime(value: string) {
+  return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 export function DayPage() {
@@ -56,6 +60,17 @@ export function DayPage() {
   const deleteMutation = useDeleteTimeStampMutation();
   const manualMutation = useManualTimeStampMutation();
   const exporter = useReportExport();
+  const dayStatus = dailyAccount.data?.status;
+  const isInvalidDay = dayStatus === 'invalid';
+
+  const statusContent =
+    dayStatus === 'complete'
+      ? { tone: 'success', text: 'OK – gültige Zeiterfassung' }
+      : dayStatus === 'incomplete'
+        ? { tone: 'warning', text: 'Unvollständig – es fehlt ein Gegenstempel' }
+        : dayStatus === 'invalid'
+          ? { tone: 'danger', text: 'Ungültige Sequenz' }
+          : { tone: 'neutral', text: 'Keine Daten' };
 
   const startEdit = (event: TimeStampEvent) => {
     setEditingRowId(event.id);
@@ -140,7 +155,7 @@ export function DayPage() {
               />
             );
           }
-          return formatDateTime(row.timestamp);
+          return <span className="time-value">{formatTime(row.timestamp)}</span>;
         },
         sortValue: (row) => row.timestamp,
         searchableText: (row) => row.timestamp,
@@ -160,7 +175,12 @@ export function DayPage() {
               />
             );
           }
-          return row.comment ?? '—';
+          if (!row.comment) return <span className="comment-placeholder">—</span>;
+          return (
+            <span className="comment-text" title={row.comment}>
+              {row.comment}
+            </span>
+          );
         },
         searchableText: (row) => row.comment ?? '',
       },
@@ -191,7 +211,7 @@ export function DayPage() {
 
           return (
             <div className="actions">
-              <button type="button" className="btn outline" onClick={() => startEdit(row)} disabled={deletingRowId === row.id}>
+              <button type="button" className="btn secondary" onClick={() => startEdit(row)} disabled={deletingRowId === row.id}>
                 Bearbeiten
               </button>
               <button
@@ -298,14 +318,36 @@ export function DayPage() {
 
       {dailyAccount.data ? (
         <div className="grid">
-          <SummaryCard title="Status" value={<TableStatusBadge status={dailyAccount.data.status} />} />
-          <SummaryCard title="Target" value={formatMinutes(dailyAccount.data.target_minutes)} />
-          <SummaryCard title="Actual" value={formatMinutes(dailyAccount.data.actual_minutes)} />
-          <SummaryCard title="Balance" value={formatMinutes(dailyAccount.data.balance_minutes)} />
+          <SummaryCard
+            title="Status"
+            value={<span className={`status ${statusContent.tone}`}>{statusContent.text}</span>}
+            hint={
+              isInvalidDay ? (
+                <span>
+                  Die Reihenfolge der Zeitstempel ist nicht korrekt.
+                  <br />
+                  Du kannst Einträge bearbeiten oder löschen, um den Tag zu korrigieren.
+                </span>
+              ) : undefined
+            }
+          />
+          <SummaryCard title="Soll" value={<span className="time-value">{formatMinutes(dailyAccount.data.target_minutes)}</span>} />
+          <SummaryCard title="Ist" value={<span className="time-value">{formatMinutes(dailyAccount.data.actual_minutes)}</span>} />
+          <SummaryCard
+            title="Saldo"
+            value={
+              <span
+                className={`time-value ${dailyAccount.data.balance_minutes > 0 ? 'balance-positive' : dailyAccount.data.balance_minutes < 0 ? 'balance-negative' : 'balance-neutral'}`}
+              >
+                {formatMinutes(dailyAccount.data.balance_minutes)}
+              </span>
+            }
+          />
         </div>
       ) : null}
 
-      <DataSection title="Zeitereignisliste">
+      <DataSection title={`Zeitereignisliste${isInvalidDay ? ' ⚠️' : ''}`}>
+        <p className="meta">Datum: {formatDate(date)}</p>
         {showManualForm ? (
           <div className="inline-form">
             <p className="meta">Validierung erfolgt pro Kalendertag. Unvollständige Tage sind erlaubt.</p>
@@ -319,8 +361,8 @@ export function DayPage() {
                   setManualDirty(true);
                 }}
               >
-                <option value="clock_in">Kommen (CLOCK_IN)</option>
-                <option value="clock_out">Gehen (CLOCK_OUT)</option>
+                <option value="clock_in">Kommen</option>
+                <option value="clock_out">Gehen</option>
               </select>
             </div>
             <div className="inline-form-row">
@@ -367,15 +409,17 @@ export function DayPage() {
         {manualMutation.error ? <p className="inline-error">{String(manualMutation.error.message)}</p> : null}
 
         {!events.data?.length ? (
-          <EmptyState title="Keine Einträge für diesen Tag" description="Zeitereignisse werden hier angezeigt." />
+          <EmptyState title="Keine Zeitstempel vorhanden" description="Erfasse deinen ersten Zeitstempel über 'Kommen'" />
         ) : (
-          <DataGrid
-            columns={columns}
-            data={events.data}
-            searchPlaceholder="Zeitereignisse durchsuchen…"
-            initialPageSize={20}
-            getRowClassName={(row) => (row.id === editingRowId || row.id === deletingRowId ? 'is-editing' : undefined)}
-          />
+          <div className={isInvalidDay ? 'day-events day-events-invalid' : 'day-events'}>
+            <DataGrid
+              columns={columns}
+              data={events.data}
+              searchPlaceholder="Zeitereignisse durchsuchen…"
+              initialPageSize={20}
+              getRowClassName={(row) => (row.id === editingRowId || row.id === deletingRowId ? 'is-editing' : undefined)}
+            />
+          </div>
         )}
       </DataSection>
     </>
