@@ -1,5 +1,12 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
+type AccessTokenProvider = () => Promise<string | null> | string | null;
+let accessTokenProvider: AccessTokenProvider | null = null;
+
+export function setAccessTokenProvider(provider: AccessTokenProvider | null) {
+  accessTokenProvider = provider;
+}
+
 export class ApiError extends Error {
   status: number;
   details?: unknown;
@@ -31,8 +38,17 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     ...(options.headers ?? {}),
   };
 
-  if (options.token) {
-    headers.Authorization = `Bearer ${options.token}`;
+  let resolvedToken = options.token ?? null;
+  if (accessTokenProvider) {
+    try {
+      resolvedToken = (await accessTokenProvider()) ?? resolvedToken;
+    } catch {
+      // Keep the current token fallback when refresh attempts fail.
+    }
+  }
+
+  if (resolvedToken) {
+    headers.Authorization = `Bearer ${resolvedToken}`;
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {

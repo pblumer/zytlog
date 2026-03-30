@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import Keycloak from 'keycloak-js';
 import { useQuery } from '@tanstack/react-query';
 
-import { apiGet, ApiError } from '../api/client';
+import { apiGet, ApiError, setAccessTokenProvider } from '../api/client';
 import type { Me } from '../types/api';
 
 type AuthState = {
@@ -26,17 +26,82 @@ const KEYCLOAK_REALM = import.meta.env.VITE_KEYCLOAK_REALM;
 const KEYCLOAK_CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID;
 
 const keycloakEnabled = Boolean(KEYCLOAK_URL && KEYCLOAK_REALM && KEYCLOAK_CLIENT_ID);
+const TOKEN_REFRESH_INTERVAL_MS = 25_000;
+const TOKEN_MIN_VALIDITY_SECONDS = 60;
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [token, setToken] = useState<string | null>(() => getStoredToken() ?? import.meta.env.VITE_DEV_BEARER_TOKEN ?? null);
   const [authBootstrapped, setAuthBootstrapped] = useState(!keycloakEnabled);
+  const [isRefreshingToken, setIsRefreshingToken] = useState(false);
   const keycloakRef = useRef<Keycloak | null>(null);
+  const refreshPromiseRef = useRef<Promise<string | null> | null>(null);
+  const tokenRef = useRef(token);
 
   const setAccessToken = useCallback((value: string | null) => {
     if (value) localStorage.setItem(STORAGE_KEY, value);
     else localStorage.removeItem(STORAGE_KEY);
     setToken(value);
   }, []);
+
+  useEffect(() => {
+    tokenRef.current = token;
+  }, [token]);
+
+  const refreshAccessToken = useCallback(
+    async (minValidity: number) => {
+      const keycloak = keycloakRef.current;
+      if (!keycloakEnabled || !keycloak) {
+        return tokenRef.current ?? getStoredToken();
+      }
+
+      if (refreshPromiseRef.current) {
+        return refreshPromiseRef.current;
+      }
+
+      const currentToken = keycloak.token ?? tokenRef.current ?? getStoredToken();
+      const exp = keycloak.tokenParsed?.exp;
+      const now = Math.floor(Date.now() / 1000);
+      const needsRefresh = !exp || exp - now <= minValidity;
+
+      if (!needsRefresh) {
+        if (keycloak.token && keycloak.token !== tokenRef.current) {
+          setAccessToken(keycloak.token);
+        }
+        return currentToken;
+      }
+
+      setIsRefreshingToken(true);
+      const refreshPromise = keycloak
+        .updateToken(minValidity)
+        .then(() => {
+          const nextToken = keycloak.token ?? null;
+          setAccessToken(nextToken);
+          return nextToken;
+        })
+        .catch(() => {
+          if (!keycloak.authenticated) {
+            setAccessToken(null);
+            return null;
+          }
+          return currentToken ?? null;
+        })
+        .finally(() => {
+          refreshPromiseRef.current = null;
+          setIsRefreshingToken(false);
+        });
+
+      refreshPromiseRef.current = refreshPromise;
+      return refreshPromise;
+    },
+    [setAccessToken],
+  );
+
+  const getValidAccessToken = useCallback(async () => {
+    if (!keycloakEnabled) {
+      return tokenRef.current ?? getStoredToken();
+    }
+    return refreshAccessToken(TOKEN_MIN_VALIDITY_SECONDS);
+  }, [refreshAccessToken]);
 
   useEffect(() => {
     if (!keycloakEnabled) return;
@@ -58,7 +123,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         responseMode: 'query',
         checkLoginIframe: false,
       })
-      .then((authenticated) => {
+      .then((authenticated: boolean) => {
         if (cancelled) return;
 
         if (!authenticated) {
@@ -86,14 +151,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         };
 
         keycloak.onTokenExpired = () => {
-          keycloak
-            .updateToken(30)
-            .then(() => {
-              setAccessToken(keycloak.token ?? null);
-            })
-            .catch(() => {
-              void keycloak.login();
-            });
+          void refreshAccessToken(TOKEN_MIN_VALIDITY_SECONDS);
         };
 
         setAuthBootstrapped(true);
@@ -107,7 +165,24 @@ export function AuthProvider({ children }: PropsWithChildren) {
     return () => {
       cancelled = true;
     };
-  }, [setAccessToken]);
+  }, [refreshAccessToken, setAccessToken]);
+
+  useEffect(() => {
+    if (!keycloakEnabled || !authBootstrapped || !keycloakRef.current?.authenticated) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      void refreshAccessToken(TOKEN_MIN_VALIDITY_SECONDS);
+    }, TOKEN_REFRESH_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [authBootstrapped, refreshAccessToken]);
+
+  useEffect(() => {
+    setAccessTokenProvider(getValidAccessToken);
+    return () => setAccessTokenProvider(null);
+  }, [getValidAccessToken]);
 
   const effectiveToken = token ?? getStoredToken();
 
@@ -126,13 +201,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     window.location.assign('/');
   };
 
-  const unauthorized = meQuery.error instanceof ApiError && meQuery.error.status === 401;
+  const unauthorized = !isRefreshingToken && meQuery.error instanceof ApiError && meQuery.error.status === 401;
 
   const value = useMemo<AuthState>(
     () => ({
       user: meQuery.data ?? null,
       token: effectiveToken,
-      isLoading: !authBootstrapped || meQuery.isLoading,
+      isLoading: !authBootstrapped || meQuery.isLoading || isRefreshingToken,
       isAuthenticated: Boolean(meQuery.data),
       isAdmin: meQuery.data?.role === 'admin',
       login,
@@ -144,7 +219,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       },
       unauthorized,
     }),
-    [authBootstrapped, meQuery.data, meQuery.isLoading, effectiveToken, unauthorized, setAccessToken],
+    [authBootstrapped, meQuery.data, meQuery.isLoading, effectiveToken, isRefreshingToken, unauthorized, setAccessToken],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
