@@ -50,6 +50,10 @@ Notes:
 - `GET /api/v1/reports/my/week?year=&week=`: authenticated employee week overview with daily rows and totals
 - `GET /api/v1/reports/my/month?year=&month=`: authenticated employee month overview with daily rows and totals
 - `GET /api/v1/reports/my/year?year=`: authenticated employee year overview with month rows and annual totals
+- `GET /api/v1/exports/my/day?date=` and `GET /api/v1/exports/my/day/pdf?date=`: export day report as CSV/PDF
+- `GET /api/v1/exports/my/week?year=&week=` and `GET /api/v1/exports/my/week/pdf?year=&week=`: export week overview as CSV/PDF
+- `GET /api/v1/exports/my/month?year=&month=` and `GET /api/v1/exports/my/month/pdf?year=&month=`: export month overview as CSV/PDF
+- `GET /api/v1/exports/my/year?year=` and `GET /api/v1/exports/my/year/pdf?year=`: export year overview as CSV/PDF
 - `PATCH /api/v1/time-stamps/{time_stamp_id}`: correction endpoint for `timestamp` and `comment`
   - tenant admin can correct any event in their tenant
   - employees/team leads can only correct their own events

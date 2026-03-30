@@ -4,7 +4,9 @@ import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader, SummaryC
 import type { DataGridColumn } from '../components/DataGrid';
 import { DataGrid } from '../components/DataGrid';
 import { InlineEditActions } from '../components/InlineEditActions';
+import { ReportExportActions } from '../components/ReportExportActions';
 import { TableStatusBadge } from '../components/TableStatusBadge';
+import { useReportExport } from '../hooks/useReportExport';
 import { useDailyAccount, useTimeStamps, useUpdateTimeStampMutation } from '../hooks/useZytlogApi';
 import type { TimeStampEvent } from '../types/api';
 import { formatDateTime, formatMinutes, isoDate } from '../utils/date';
@@ -34,6 +36,7 @@ export function DayPage() {
   const dailyAccount = useDailyAccount(date);
   const events = useTimeStamps(date, date);
   const updateMutation = useUpdateTimeStampMutation();
+  const exporter = useReportExport();
 
   const startEdit = (event: TimeStampEvent) => {
     setEditingRowId(event.id);
@@ -164,9 +167,22 @@ export function DayPage() {
       <PageHeader
         title="Day"
         subtitle="Inspect one day in detail"
-        actions={<input type="date" value={date} onChange={(event) => setDate(event.target.value)} />}
+        actions={
+          <>
+            <input
+              type="date"
+              value={date}
+              onChange={(event) => {
+                setDate(event.target.value);
+                exporter.clearError();
+              }}
+            />
+            <ReportExportActions disabled={exporter.isExporting} onExport={(format) => void exporter.exportDay(date, format)} />
+          </>
+        }
       />
 
+      {exporter.error ? <ErrorState message={exporter.error} /> : null}
       {dailyAccount.isLoading || events.isLoading ? <LoadingBlock /> : null}
       {dailyAccount.error || events.error ? <ErrorState message="Could not load selected day." /> : null}
 

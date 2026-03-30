@@ -3,8 +3,10 @@ import { useMemo, useState } from 'react';
 import { DataSection, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
 import type { DataGridColumn } from '../components/DataGrid';
 import { DataGrid } from '../components/DataGrid';
+import { ReportExportActions } from '../components/ReportExportActions';
 import { TableStatusBadge } from '../components/TableStatusBadge';
 import { TotalsBar } from '../components/TotalsBar';
+import { useReportExport } from '../hooks/useReportExport';
 import { useWeekReport } from '../hooks/useZytlogApi';
 import type { DailyOverviewRow } from '../types/api';
 import { formatMinutes, getIsoWeek } from '../utils/date';
@@ -15,6 +17,7 @@ export function WeekPage() {
   const [year, setYear] = useState(nowWeek.year);
   const [week, setWeek] = useState(nowWeek.week);
   const query = useWeekReport(year, week);
+  const exporter = useReportExport();
 
   const columns = useMemo<DataGridColumn<DailyOverviewRow>[]>(
     () => [
@@ -43,9 +46,11 @@ export function WeekPage() {
           <>
             <input type="number" value={year} onChange={(event) => setYear(Number(event.target.value))} min={1970} max={2100} />
             <input type="number" value={week} onChange={(event) => setWeek(Number(event.target.value))} min={1} max={53} />
+            <ReportExportActions disabled={exporter.isExporting} onExport={(format) => void exporter.exportWeek(year, week, format)} />
           </>
         }
       />
+      {exporter.error ? <ErrorState message={exporter.error} /> : null}
       {query.isLoading ? <LoadingBlock /> : null}
       {query.error ? <ErrorState message="Could not load weekly report." /> : null}
       {query.data ? (
