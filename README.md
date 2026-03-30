@@ -249,3 +249,21 @@ The structure intentionally leaves clean seams for:
 - **Audit logs** (cross-cutting append-only model and middleware hooks)
 
 Because tenant scoping is modeled directly in core entities, later features can inherit isolation constraints consistently.
+
+## Backend quickstart (foundation)
+
+```bash
+cd backend
+python -m venv .venv && source .venv/bin/activate
+pip install -e .
+cd ..
+alembic -c backend/alembic.ini upgrade head
+uvicorn backend.main:app --reload
+```
+
+Key API routes:
+- `GET /health`
+- `GET /api/v1/health`
+- `GET /api/v1/me`
+- `GET|POST /api/v1/employees`
+- `GET|POST /api/v1/working-time-models`

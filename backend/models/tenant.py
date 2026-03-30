@@ -1,7 +1,8 @@
-from sqlalchemy import String
+from sqlalchemy import Enum, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.db.base import Base, TimestampMixin
+from backend.models.enums import TenantType
 
 
 class Tenant(TimestampMixin, Base):
@@ -10,7 +11,9 @@ class Tenant(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     slug: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
-    is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
+    active: Mapped[bool] = mapped_column(default=True, nullable=False)
+    type: Mapped[TenantType] = mapped_column(Enum(TenantType), default=TenantType.COMPANY, nullable=False)
+    timezone: Mapped[str] = mapped_column(String(64), default="UTC", nullable=False)
 
     users: Mapped[list["User"]] = relationship(back_populates="tenant")
     employees: Mapped[list["Employee"]] = relationship(back_populates="tenant")
