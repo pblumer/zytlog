@@ -19,6 +19,13 @@ class DailyAccountStatus(str, enum.Enum):
     INVALID = "invalid"
 
 
+class CalendarDayStatus(str, enum.Enum):
+    NO_DATA = "no_data"
+    COMPLETE = "complete"
+    INCOMPLETE = "incomplete"
+    INVALID = "invalid"
+
+
 class TimeStampEventRead(TimestampedSchema):
     id: int
     tenant_id: int
@@ -31,6 +38,12 @@ class TimeStampEventRead(TimestampedSchema):
 
 class TimeStampEventUpdate(BaseSchema):
     timestamp: datetime | None = None
+    comment: str | None = Field(default=None, max_length=300)
+
+
+class ManualTimeStampCreate(BaseSchema):
+    timestamp: datetime
+    type: TimeStampEventType
     comment: str | None = Field(default=None, max_length=300)
 
 
@@ -89,6 +102,21 @@ class MonthlyOverviewRead(BaseSchema):
     range_end: date
     days: list[DailyOverviewRow]
     totals: OverviewTotals
+
+
+class CalendarMonthDayRead(BaseSchema):
+    date: date
+    status: CalendarDayStatus
+    target_minutes: int
+    actual_minutes: int
+    balance_minutes: int
+    event_count: int = Field(ge=0)
+
+
+class CalendarMonthRead(BaseSchema):
+    year: int
+    month: int
+    days: list[CalendarMonthDayRead]
 
 
 class MonthlySummaryRow(BaseSchema):

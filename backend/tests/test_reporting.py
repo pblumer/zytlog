@@ -277,3 +277,36 @@ def test_exports_require_authentication(client: TestClient) -> None:
     response = client.get("/api/v1/exports/my/year?year=2026")
 
     assert response.status_code == 401
+
+
+def test_calendar_month_valid_response(client: TestClient) -> None:
+    response = client.get("/api/v1/calendar/my/month?year=2026&month=3", headers=_auth_headers())
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["year"] == 2026
+    assert payload["month"] == 3
+    assert len(payload["days"]) == 31
+
+
+def test_calendar_month_mixed_statuses(client: TestClient) -> None:
+    response = client.get("/api/v1/calendar/my/month?year=2026&month=4", headers=_auth_headers())
+
+    assert response.status_code == 200
+    statuses = {day["status"] for day in response.json()["days"]}
+    assert "complete" in statuses
+    assert "incomplete" in statuses
+    assert "invalid" in statuses
+    assert "no_data" in statuses
+
+
+def test_calendar_month_invalid_month(client: TestClient) -> None:
+    response = client.get("/api/v1/calendar/my/month?year=2026&month=13", headers=_auth_headers())
+
+    assert response.status_code == 422
+
+
+def test_calendar_month_auth_required(client: TestClient) -> None:
+    response = client.get("/api/v1/calendar/my/month?year=2026&month=3")
+
+    assert response.status_code == 401

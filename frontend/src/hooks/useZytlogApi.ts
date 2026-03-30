@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   clockIn,
   clockOut,
+  createManualTimeStamp,
+  getCalendarMonth,
   getCurrentStatus,
   getDailyAccount,
   getEmployees,
@@ -63,6 +65,14 @@ export function useYearReport(year: number) {
   });
 }
 
+export function useDashboardCalendarMonth(year: number, month: number) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['dashboard-calendar', year, month],
+    queryFn: () => getCalendarMonth(year, month, token),
+  });
+}
+
 export function useEmployees(enabled: boolean) {
   const { token } = useAuth();
   return useQuery({
@@ -95,6 +105,7 @@ export function useClockMutation(type: 'in' | 'out') {
         queryClient.invalidateQueries({ queryKey: ['week-report'] }),
         queryClient.invalidateQueries({ queryKey: ['month-report'] }),
         queryClient.invalidateQueries({ queryKey: ['year-report'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-calendar'] }),
       ]);
     },
   });
@@ -115,6 +126,28 @@ export function useUpdateTimeStampMutation() {
         queryClient.invalidateQueries({ queryKey: ['week-report'] }),
         queryClient.invalidateQueries({ queryKey: ['month-report'] }),
         queryClient.invalidateQueries({ queryKey: ['year-report'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-calendar'] }),
+      ]);
+    },
+  });
+}
+
+export function useManualTimeStampMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+
+  return useMutation({
+    mutationFn: ({ timestamp, type, comment }: { timestamp: string; type: 'clock_in' | 'clock_out'; comment: string | null }) =>
+      createManualTimeStamp({ timestamp, type, comment }, token),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['current-status'] }),
+        queryClient.invalidateQueries({ queryKey: ['time-stamps'] }),
+        queryClient.invalidateQueries({ queryKey: ['daily-account'] }),
+        queryClient.invalidateQueries({ queryKey: ['week-report'] }),
+        queryClient.invalidateQueries({ queryKey: ['month-report'] }),
+        queryClient.invalidateQueries({ queryKey: ['year-report'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-calendar'] }),
       ]);
     },
   });

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
 import type { DataGridColumn } from '../components/DataGrid';
@@ -7,7 +8,7 @@ import { InlineEditActions } from '../components/InlineEditActions';
 import { ReportExportActions } from '../components/ReportExportActions';
 import { TableStatusBadge } from '../components/TableStatusBadge';
 import { useReportExport } from '../hooks/useReportExport';
-import { useDailyAccount, useTimeStamps, useUpdateTimeStampMutation } from '../hooks/useZytlogApi';
+import { useDailyAccount, useManualTimeStampMutation, useTimeStamps, useUpdateTimeStampMutation } from '../hooks/useZytlogApi';
 import type { TimeStampEvent } from '../types/api';
 import { formatDateTime, formatMinutes, isoDate } from '../utils/date';
 
@@ -28,7 +29,13 @@ function toIsoOrNull(value: string) {
 }
 
 export function DayPage() {
-  const [date, setDate] = useState(isoDate(new Date()));
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [date, setDate] = useState(searchParams.get('date') ?? isoDate(new Date()));
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [manualType, setManualType] = useState<'clock_in' | 'clock_out'>('clock_in');
+  const [manualTimestamp, setManualTimestamp] = useState(`${searchParams.get('date') ?? isoDate(new Date())}T08:00`);
+  const [manualComment, setManualComment] = useState('');
+  const [manualError, setManualError] = useState<string | null>(null);
   const [editingRowId, setEditingRowId] = useState<number | null>(null);
   const [draft, setDraft] = useState<EditDraft | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
@@ -36,6 +43,7 @@ export function DayPage() {
   const dailyAccount = useDailyAccount(date);
   const events = useTimeStamps(date, date);
   const updateMutation = useUpdateTimeStampMutation();
+  const manualMutation = useManualTimeStampMutation();
   const exporter = useReportExport();
 
   const startEdit = (event: TimeStampEvent) => {
@@ -162,6 +170,35 @@ export function DayPage() {
     [draft, editingRowId, updateMutation.isPending],
   );
 
+  const resetManualForm = () => {
+    setShowManualForm(false);
+    setManualType('clock_in');
+    setManualTimestamp(`${date}T08:00`);
+    setManualComment('');
+    setManualError(null);
+  };
+
+  const submitManualForm = async () => {
+    const parsed = toIsoOrNull(manualTimestamp);
+    if (!parsed) {
+      setManualError('Zeitpunkt ist erforderlich.');
+      return;
+    }
+
+    setManualError(null);
+    try {
+      await manualMutation.mutateAsync({
+        type: manualType,
+        timestamp: parsed,
+        comment: manualComment.trim() || null,
+      });
+      resetManualForm();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Eintrag konnte nicht gespeichert werden.';
+      setManualError(message);
+    }
+  };
+
   return (
     <>
       <PageHeader
@@ -173,11 +210,25 @@ export function DayPage() {
               type="date"
               value={date}
               onChange={(event) => {
-                setDate(event.target.value);
+                const value = event.target.value;
+                setDate(value);
+                setSearchParams({ date: value });
+                setManualTimestamp(`${value}T08:00`);
                 exporter.clearError();
               }}
             />
             <ReportExportActions disabled={exporter.isExporting} onExport={(format) => void exporter.exportDay(date, format)} />
+            <button
+              type="button"
+              className="btn outline"
+              onClick={() => {
+                setShowManualForm((prev) => !prev);
+                setManualTimestamp(`${date}T08:00`);
+                setManualError(null);
+              }}
+            >
+              Zeitstempel nacherfassen
+            </button>
           </>
         }
       />
@@ -196,8 +247,38 @@ export function DayPage() {
       ) : null}
 
       <DataSection title="Event List">
+        {showManualForm ? (
+          <div className="inline-form">
+            <div className="inline-form-row">
+              <label htmlFor="manual-type">Zeittyp</label>
+              <select id="manual-type" value={manualType} onChange={(event) => setManualType(event.target.value as 'clock_in' | 'clock_out')}>
+                <option value="clock_in">CLOCK_IN</option>
+                <option value="clock_out">CLOCK_OUT</option>
+              </select>
+            </div>
+            <div className="inline-form-row">
+              <label htmlFor="manual-timestamp">Zeitpunkt</label>
+              <input id="manual-timestamp" type="datetime-local" value={manualTimestamp} onChange={(event) => setManualTimestamp(event.target.value)} />
+            </div>
+            <div className="inline-form-row">
+              <label htmlFor="manual-comment">Kommentar</label>
+              <input id="manual-comment" type="text" maxLength={300} value={manualComment} onChange={(event) => setManualComment(event.target.value)} />
+            </div>
+            <div className="actions">
+              <button type="button" className="btn primary" onClick={() => void submitManualForm()} disabled={manualMutation.isPending}>
+                Eintrag speichern
+              </button>
+              <button type="button" className="btn outline" onClick={resetManualForm}>
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         {editError ? <p className="inline-error">{editError}</p> : null}
         {updateMutation.error ? <p className="inline-error">{String(updateMutation.error.message)}</p> : null}
+        {manualError ? <p className="inline-error">{manualError}</p> : null}
+        {manualMutation.error ? <p className="inline-error">{String(manualMutation.error.message)}</p> : null}
 
         {!events.data?.length ? (
           <EmptyState title="No events for this day" description="Time stamp events will appear here." />

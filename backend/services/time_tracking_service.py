@@ -6,7 +6,7 @@ from backend.models.employee import Employee
 from backend.models.enums import TimeStampEventType, UserRole
 from backend.models.time_stamp_event import TimeStampEvent
 from backend.repositories.time_stamp_event_repository import TimeStampEventRepository
-from backend.schemas.time_tracking import ClockStatus, CurrentClockStatusRead, TimeStampEventUpdate
+from backend.schemas.time_tracking import ClockStatus, CurrentClockStatusRead, ManualTimeStampCreate, TimeStampEventUpdate
 
 
 class TimeTrackingService:
@@ -89,6 +89,35 @@ class TimeTrackingService:
         _ = actor_user_id
         return self.repository.update_event(event=event, timestamp=next_timestamp, comment=next_comment)
 
+    def create_manual_event(
+        self,
+        *,
+        tenant_id: int,
+        employee: Employee,
+        payload: ManualTimeStampCreate,
+    ) -> TimeStampEvent:
+        if payload.type not in (TimeStampEventType.CLOCK_IN, TimeStampEventType.CLOCK_OUT):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Manual entry supports only clock_in and clock_out",
+            )
+
+        existing = self.repository.list_all_clock_events(tenant_id=tenant_id, employee_id=employee.id)
+        self._validate_sequence_for_events(
+            events=existing,
+            candidate_timestamp=payload.timestamp,
+            candidate_type=payload.type,
+        )
+
+        return self.repository.create_event(
+            tenant_id=tenant_id,
+            employee_id=employee.id,
+            event_type=payload.type,
+            event_timestamp=payload.timestamp,
+            source="manual_entry",
+            comment=payload.comment,
+        )
+
     def _create_event(
         self,
         *,
@@ -109,6 +138,12 @@ class TimeTrackingService:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cannot clock out without prior clock in")
 
         stamp_time = event_timestamp or datetime.now(timezone.utc)
+        existing = self.repository.list_all_clock_events(tenant_id=tenant_id, employee_id=employee_id)
+        self._validate_sequence_for_events(
+            events=existing,
+            candidate_timestamp=stamp_time,
+            candidate_type=event_type,
+        )
 
         return self.repository.create_event(
             tenant_id=tenant_id,
@@ -131,6 +166,23 @@ class TimeTrackingService:
             (next_timestamp if event.id == event_id else event.timestamp, event.id, event.type)
             for event in events
         ]
+        self._validate_reordered_sequence(reordered)
+
+    def _validate_sequence_for_events(
+        self,
+        *,
+        events: list[TimeStampEvent],
+        candidate_timestamp: datetime,
+        candidate_type: TimeStampEventType,
+    ) -> None:
+        reordered = [(event.timestamp, event.id, event.type) for event in events]
+        reordered.append((candidate_timestamp, 0, candidate_type))
+        self._validate_reordered_sequence(reordered)
+
+    def _validate_reordered_sequence(
+        self,
+        reordered: list[tuple[datetime, int, TimeStampEventType]],
+    ) -> None:
         reordered.sort(key=lambda item: (item[0], item[1]))
 
         expected_type = TimeStampEventType.CLOCK_IN

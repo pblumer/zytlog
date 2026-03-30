@@ -8,7 +8,12 @@ from backend.core.auth import AuthContext, require_authenticated_user
 from backend.models.enums import UserRole
 from backend.repositories.employee_repository import EmployeeRepository
 from backend.repositories.time_stamp_event_repository import TimeStampEventRepository
-from backend.schemas.time_tracking import CurrentClockStatusRead, TimeStampEventRead, TimeStampEventUpdate
+from backend.schemas.time_tracking import (
+    CurrentClockStatusRead,
+    ManualTimeStampCreate,
+    TimeStampEventRead,
+    TimeStampEventUpdate,
+)
 from backend.services.time_tracking_service import TimeTrackingService
 
 router = APIRouter(prefix="/time-stamps", tags=["time-stamps"])
@@ -92,3 +97,19 @@ def update_time_stamp(
         actor_user_id=context.internal_user_id,
     )
     return TimeStampEventRead.model_validate(updated)
+
+
+@router.post("/manual", response_model=TimeStampEventRead)
+def create_manual_time_stamp(
+    payload: ManualTimeStampCreate,
+    db: Session = Depends(get_db),
+    context: AuthContext = Depends(require_authenticated_user),
+) -> TimeStampEventRead:
+    employee = _resolve_employee(context, db)
+    service = TimeTrackingService(TimeStampEventRepository(db))
+    event = service.create_manual_event(
+        tenant_id=context.tenant_id,
+        employee=employee,
+        payload=payload,
+    )
+    return TimeStampEventRead.model_validate(event)
