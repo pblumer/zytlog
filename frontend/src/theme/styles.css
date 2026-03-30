@@ -1,0 +1,35 @@
+:root {
+  --bg: #eceff4;
+  --surface: #ffffff;
+  --surface-alt: #e5e9f0;
+  --text: #2e3440;
+  --muted: #4c566a;
+  --border: #d8dee9;
+  --primary: #5e81ac;
+  --primary-strong: #3b6ea5;
+  --success: #a3be8c;
+  --warning: #ebcb8b;
+  --danger: #bf616a;
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
