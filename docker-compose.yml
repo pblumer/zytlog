@@ -19,6 +19,8 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://zytlog:zytlog@db:5432/zytlog
       AUTH_ENABLED: "true"
+      KEYCLOAK_ISSUER: http://localhost:8080/realms/zytlog
+      KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/zytlog/protocol/openid-connect/certs
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_REALM: zytlog
       KEYCLOAK_VERIFY_AUDIENCE: "false"
@@ -44,12 +46,14 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.1
-    command: start-dev
+    command: start-dev --import-realm
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
     ports:
       - '8080:8080'
+    volumes:
+      - ./keycloak/realm-import:/opt/keycloak/data/import
 
 volumes:
   postgres_data:
