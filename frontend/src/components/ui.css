@@ -657,3 +657,147 @@ a:focus-visible,
   color: #8a6a21;
   font-weight: 600;
 }
+
+.year-month-grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.year-month-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 0.85rem;
+  display: grid;
+  gap: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.year-month-card:hover {
+  background: #fbfcfe;
+  border-color: #bcc8da;
+}
+
+.year-month-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 0.5rem;
+}
+
+.year-month-card-header h3 {
+  margin: 0;
+  text-transform: capitalize;
+  font-size: 1rem;
+}
+
+.year-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.year-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.year-status-valid {
+  color: #2e7d32;
+  background: #edf7ed;
+}
+
+.year-status-incomplete {
+  color: #9a640f;
+  background: #fff6e5;
+}
+
+.year-status-invalid {
+  color: #a62c2c;
+  background: #fdeeee;
+}
+
+.year-month-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.year-month-summary dt {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.year-month-summary dd {
+  margin: 0.1rem 0 0;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+}
+
+.year-mini-grid-wrap {
+  border-top: 1px solid var(--border);
+  padding-top: 0.6rem;
+}
+
+.year-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 0.22rem;
+}
+
+.year-mini-dot {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 2px;
+  background: #d7dce5;
+}
+
+.year-mini-dot-valid {
+  background: #43a047;
+}
+
+.year-mini-dot-incomplete {
+  background: #ef8f00;
+}
+
+.year-mini-dot-invalid {
+  background: #d32f2f;
+}
+
+.year-mini-dot-empty {
+  background: #d4d9e1;
+}
+
+.year-month-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 1100px) {
+  .year-month-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 840px) {
+  .year-month-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .year-month-grid {
+    grid-template-columns: 1fr;
+  }
+}

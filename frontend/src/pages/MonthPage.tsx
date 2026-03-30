@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
 import type { DataGridColumn } from '../components/DataGrid';
@@ -14,8 +15,11 @@ import { formatMinutes } from '../utils/date';
 const now = new Date();
 
 export function MonthPage() {
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [searchParams] = useSearchParams();
+  const initialYear = Number(searchParams.get('year')) || now.getFullYear();
+  const initialMonth = Number(searchParams.get('month')) || now.getMonth() + 1;
+  const [year, setYear] = useState(initialYear);
+  const [month, setMonth] = useState(initialMonth);
   const query = useMonthReport(year, month);
   const exporter = useReportExport();
 
