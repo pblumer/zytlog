@@ -1,0 +1,47 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: zytlog
+      POSTGRES_USER: zytlog
+      POSTGRES_PASSWORD: zytlog
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    image: python:3.12-slim
+    working_dir: /app
+    command: bash -lc "echo 'Backend container placeholder. Add uvicorn startup later.' && sleep infinity"
+    environment:
+      DATABASE_URL: postgresql+psycopg://zytlog:zytlog@db:5432/zytlog
+    volumes:
+      - ./backend:/app/backend
+    ports:
+      - '8000:8000'
+    depends_on:
+      - db
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -lc "echo 'Frontend container placeholder. Add Vite startup later.' && sleep infinity"
+    volumes:
+      - ./frontend:/app/frontend
+    ports:
+      - '5173:5173'
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - '8080:8080'
+
+volumes:
+  postgres_data:
