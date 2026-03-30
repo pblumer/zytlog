@@ -29,6 +29,19 @@ function statusClassName(status: CalendarDayStatus) {
   }
 }
 
+function statusDotClassName(status: CalendarDayStatus) {
+  switch (status) {
+    case 'complete':
+      return 'calendar-status-dot calendar-status-valid';
+    case 'incomplete':
+      return 'calendar-status-dot calendar-status-incomplete';
+    case 'invalid':
+      return 'calendar-status-dot calendar-status-invalid';
+    default:
+      return 'calendar-status-dot';
+  }
+}
+
 export function DashboardMonthCalendar({
   year,
   month,
@@ -62,7 +75,10 @@ export function DashboardMonthCalendar({
         onClick={() => (onSelectDate ? onSelectDate(iso) : navigate(`/day?date=${iso}`))}
         title={`${iso} · ${status}`}
       >
-        <span className="calendar-day-number">{dayNumber}</span>
+        <span className="calendar-day-number-row">
+          <span className="calendar-day-number">{dayNumber}</span>
+          <span className={statusDotClassName(status)} aria-hidden="true" />
+        </span>
         <span className="calendar-day-minutes">{day ? formatMinutes(day.actual_minutes) : '—'}</span>
       </button>,
     );
