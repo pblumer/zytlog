@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from functools import lru_cache
+import logging
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -11,8 +12,10 @@ from backend.core.auth.jwt import JWTValidator, TokenValidationError
 from backend.core.config import settings
 from backend.models.enums import UserRole
 from backend.repositories.user_repository import UserRepository
+from backend.services.user_provisioning_service import UserProvisioningService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/token", auto_error=False)
+logger = logging.getLogger(__name__)
 
 
 @lru_cache
@@ -55,6 +58,7 @@ def get_auth_context(
     validator: JWTValidator = Depends(get_jwt_validator),
 ) -> AuthContext:
     user_repository = UserRepository(db)
+    provisioning_service = UserProvisioningService(db)
 
     if not settings.auth_enabled:
         fallback_user = user_repository.get_by_id(settings.auth_disabled_fallback_user_id)
@@ -84,9 +88,15 @@ def get_auth_context(
 
     user = user_repository.get_by_keycloak_user_id(claims.sub)
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authenticated subject is not linked to an internal user",
+        user = provisioning_service.create_user_from_token(
+            sub=claims.sub,
+            email=claims.email,
+            preferred_username=claims.preferred_username,
+        )
+        logger.info(
+            "Auto-provisioned user %s (sub=%s) in tenant demo-co",
+            user.email,
+            claims.sub,
         )
 
     return _build_context_from_user(

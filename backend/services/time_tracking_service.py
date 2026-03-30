@@ -1,4 +1,5 @@
 from datetime import date, datetime, timezone
+import logging
 
 from fastapi import HTTPException, status
 
@@ -7,6 +8,8 @@ from backend.models.enums import TimeStampEventType, UserRole
 from backend.models.time_stamp_event import TimeStampEvent
 from backend.repositories.time_stamp_event_repository import TimeStampEventRepository
 from backend.schemas.time_tracking import ClockStatus, CurrentClockStatusRead, ManualTimeStampCreate, TimeStampEventUpdate
+
+logger = logging.getLogger(__name__)
 
 
 class TimeTrackingService:
@@ -146,6 +149,19 @@ class TimeTrackingService:
             employee_id=event.employee_id,
             target_date=event.timestamp.date(),
         )
+
+        day_is_currently_valid = self._is_day_sequence_valid(
+            same_day_events=same_day_events,
+            day=event.timestamp.date(),
+        )
+
+        if not day_is_currently_valid:
+            logger.info("Deletion allowed despite invalid day (recovery mode)")
+            # TODO(audit): Persist deletion metadata for traceability.
+            _ = actor_user_id
+            self.repository.delete_event(event=event)
+            return event
+
         reordered = [
             (day_event.timestamp, day_event.id, day_event.type)
             for day_event in same_day_events
@@ -165,6 +181,21 @@ class TimeTrackingService:
         _ = actor_user_id
         self.repository.delete_event(event=event)
         return event
+
+    def _is_day_sequence_valid(
+        self,
+        *,
+        same_day_events: list[TimeStampEvent],
+        day: date,
+    ) -> bool:
+        reordered = [(day_event.timestamp, day_event.id, day_event.type) for day_event in same_day_events]
+        try:
+            self._validate_reordered_day_sequence(reordered, day=day)
+        except HTTPException as exc:
+            if exc.status_code == status.HTTP_409_CONFLICT:
+                return False
+            raise
+        return True
 
     def _create_event(
         self,

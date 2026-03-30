@@ -13,7 +13,7 @@ from backend.core.config import settings
 from backend.db.base import Base
 from backend.main import create_app
 from backend.models.employee import Employee
-from backend.models.enums import UserRole
+from backend.models.enums import TimeStampEventType, UserRole
 from backend.models.tenant import Tenant
 from backend.models.user import User
 from backend.models.working_time_model import WorkingTimeModel
@@ -237,6 +237,25 @@ def _seed_event_timestamps(client: TestClient, day: date = date(2026, 3, 30)) ->
     )
     assert refreshed.status_code == 200
     return refreshed.json()
+
+
+def _insert_raw_clock_events(
+    client: TestClient,
+    *,
+    employee_id: int,
+    tenant_id: int,
+    events: list[tuple[str, TimeStampEventType]],
+) -> None:
+    with client.app.state.test_session_local() as db:
+        repo = TimeStampEventRepository(db)
+        for timestamp, event_type in events:
+            repo.create_event(
+                tenant_id=tenant_id,
+                employee_id=employee_id,
+                event_type=event_type,
+                event_timestamp=datetime.fromisoformat(timestamp.replace("Z", "+00:00")),
+                source="import",
+            )
 
 
 def test_clock_in_success(client: TestClient) -> None:
@@ -465,6 +484,82 @@ def test_delete_rejected_when_resulting_same_day_sequence_invalid(client: TestCl
     response = client.delete(f"/api/v1/time-stamps/{middle.json()['id']}", headers=_auth_headers())
     assert response.status_code == 409
     assert "Tagessequenz" in response.json()["detail"]
+
+
+def test_delete_from_invalid_day_is_always_allowed(client: TestClient) -> None:
+    events = _seed_event_timestamps(client)
+    employee_id = events[0]["employee_id"]
+    tenant_id = events[0]["tenant_id"]
+
+    _insert_raw_clock_events(
+        client,
+        employee_id=employee_id,
+        tenant_id=tenant_id,
+        events=[
+            ("2026-03-30T18:00:00Z", TimeStampEventType.CLOCK_OUT),
+            ("2026-03-30T18:10:00Z", TimeStampEventType.CLOCK_OUT),
+        ],
+    )
+
+    day_events = client.get("/api/v1/time-stamps/my?from=2026-03-30&to=2026-03-30", headers=_auth_headers())
+    assert day_events.status_code == 200
+    imported_out = next(event for event in day_events.json() if event["source"] == "import")
+
+    response = client.delete(f"/api/v1/time-stamps/{imported_out['id']}", headers=_auth_headers())
+    assert response.status_code == 200
+    assert response.json()["id"] == imported_out["id"]
+
+
+def test_delete_that_fixes_invalid_sequence_is_allowed(client: TestClient) -> None:
+    events = _seed_event_timestamps(client)
+    employee_id = events[0]["employee_id"]
+    tenant_id = events[0]["tenant_id"]
+
+    _insert_raw_clock_events(
+        client,
+        employee_id=employee_id,
+        tenant_id=tenant_id,
+        events=[("2026-03-30T18:00:00Z", TimeStampEventType.CLOCK_OUT)],
+    )
+
+    day_events = client.get("/api/v1/time-stamps/my?from=2026-03-30&to=2026-03-30", headers=_auth_headers())
+    assert day_events.status_code == 200
+    imported_out = next(event for event in day_events.json() if event["source"] == "import")
+
+    response = client.delete(f"/api/v1/time-stamps/{imported_out['id']}", headers=_auth_headers())
+    assert response.status_code == 200
+
+    account = client.get("/api/v1/daily-accounts/my?date=2026-03-30", headers=_auth_headers())
+    assert account.status_code == 200
+    assert account.json()["status"] == "complete"
+
+
+def test_delete_that_worsens_invalid_sequence_is_still_allowed(client: TestClient) -> None:
+    events = _seed_event_timestamps(client)
+    employee_id = events[0]["employee_id"]
+    tenant_id = events[0]["tenant_id"]
+
+    _insert_raw_clock_events(
+        client,
+        employee_id=employee_id,
+        tenant_id=tenant_id,
+        events=[
+            ("2026-03-30T18:00:00Z", TimeStampEventType.CLOCK_OUT),
+            ("2026-03-30T18:10:00Z", TimeStampEventType.CLOCK_OUT),
+        ],
+    )
+
+    day_events = client.get("/api/v1/time-stamps/my?from=2026-03-30&to=2026-03-30", headers=_auth_headers())
+    assert day_events.status_code == 200
+    imported_out = next(event for event in day_events.json() if event["source"] == "import")
+
+    response = client.delete(f"/api/v1/time-stamps/{events[2]['id']}", headers=_auth_headers())
+    assert response.status_code == 200
+
+    remaining = client.get("/api/v1/time-stamps/my?from=2026-03-30&to=2026-03-30", headers=_auth_headers())
+    assert remaining.status_code == 200
+    remaining_ids = {event["id"] for event in remaining.json()}
+    assert imported_out["id"] in remaining_ids
 
 
 def test_delete_time_stamp_forbidden_for_unauthorized_user(client: TestClient) -> None:
