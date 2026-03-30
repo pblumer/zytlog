@@ -3,7 +3,7 @@ const STATUS_LABELS: Record<string, string> = {
   clock_out: 'Gehen',
   clocked_in: 'Eingestempelt',
   clocked_out: 'Ausgestempelt',
-  complete: 'Gültig',
+  complete: 'OK',
   incomplete: 'Unvollständig',
   invalid: 'Ungültig',
   active: 'Aktiv',

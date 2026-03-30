@@ -398,3 +398,166 @@
   .sidebar { border-right: 0; border-bottom: 1px solid var(--border); }
   .quick-stamp-btn { width: 100%; }
 }
+
+.week-strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.week-strip-cell {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.45rem;
+  background: var(--surface);
+  cursor: pointer;
+  display: grid;
+  gap: 0.2rem;
+  text-align: left;
+}
+
+.week-strip-cell span {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.week-strip-cell strong {
+  font-size: 1rem;
+}
+
+.week-strip-complete {
+  border-color: #bfd8a9;
+  background: #f3f9ed;
+}
+
+.week-strip-incomplete {
+  border-color: #ead7a8;
+  background: #fff9eb;
+}
+
+.week-strip-invalid {
+  border-color: #e8b1b8;
+  background: #fff1f3;
+}
+
+.week-table tbody tr {
+  cursor: pointer;
+}
+
+.week-table tbody tr.is-today {
+  outline: 2px solid #93aac9;
+  outline-offset: -2px;
+}
+
+.week-table tbody tr.needs-attention {
+  background: #fff8e8;
+}
+
+@media (max-width: 840px) {
+  .week-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.day-timeline {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.day-timeline-flow {
+  display: flex;
+  align-items: stretch;
+  gap: 0.45rem;
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+}
+
+.day-timeline-node-wrap {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.day-timeline-node {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-alt);
+  padding: 0.5rem;
+  min-width: 130px;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.day-timeline-node.is-in {
+  background: #edf6e8;
+  border-color: #bad5a6;
+}
+
+.day-timeline-node.is-out {
+  background: #edf1f7;
+  border-color: #c7d2e2;
+}
+
+.day-timeline-node.is-invalid {
+  background: #fff1f3;
+  border-color: #e8b1b8;
+}
+
+.day-timeline-type {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.day-timeline-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.day-timeline-flag {
+  border-radius: 999px;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.72rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.day-timeline-flag.danger {
+  background: #fdecef;
+  border-color: #e8b1b8;
+  color: #8b3d4a;
+}
+
+.day-timeline-connector {
+  width: 18px;
+  height: 2px;
+  background: #9aa7bd;
+  display: inline-block;
+  margin: 0 0.2rem;
+}
+
+.day-timeline-connector.is-invalid {
+  background: #bf616a;
+}
+
+.day-intervals {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-alt);
+  padding: 0.6rem;
+}
+
+.day-intervals strong {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.day-intervals ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.day-intervals li.is-open {
+  color: #8a6a21;
+  font-weight: 600;
+}
