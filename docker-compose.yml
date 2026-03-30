@@ -18,12 +18,18 @@ services:
     command: bash -lc "echo 'Backend container placeholder. Add uvicorn startup later.' && sleep infinity"
     environment:
       DATABASE_URL: postgresql+psycopg://zytlog:zytlog@db:5432/zytlog
+      AUTH_ENABLED: "true"
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: zytlog
+      KEYCLOAK_VERIFY_AUDIENCE: "false"
+      KEYCLOAK_AUDIENCE: zytlog-api
     volumes:
       - ./backend:/app/backend
     ports:
       - '8000:8000'
     depends_on:
       - db
+      - keycloak
 
   frontend:
     image: node:22-alpine

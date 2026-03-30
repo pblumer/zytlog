@@ -1,3 +1,4 @@
+from backend.schemas.auth import MeRead
 from backend.schemas.employee import EmployeeCreate, EmployeeRead, EmployeeUpdate
 from backend.schemas.tenant import TenantRead
 from backend.schemas.user import UserRead
@@ -8,6 +9,7 @@ from backend.schemas.working_time_model import (
 )
 
 __all__ = [
+    "MeRead",
     "TenantRead",
     "UserRead",
     "EmployeeCreate",
