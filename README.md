@@ -47,6 +47,9 @@ Notes:
 - `POST /api/v1/employees`: admin only
 - `GET /api/v1/working-time-models`: authenticated users
 - `POST /api/v1/working-time-models`: admin only
+- `GET /api/v1/reports/my/week?year=&week=`: authenticated employee week overview with daily rows and totals
+- `GET /api/v1/reports/my/month?year=&month=`: authenticated employee month overview with daily rows and totals
+- `GET /api/v1/reports/my/year?year=`: authenticated employee year overview with month rows and annual totals
 
 ## Local Keycloak setup
 

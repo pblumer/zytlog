@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
 from fastapi import HTTPException, status
@@ -32,6 +32,25 @@ class DailyAccountService:
             status=status,
             event_count=len(events),
         )
+
+    def get_daily_accounts_in_range(
+        self,
+        *,
+        tenant_id: int,
+        employee: Employee,
+        from_date: date,
+        to_date: date,
+    ) -> list[DailyTimeAccountRead]:
+        if from_date > to_date:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid date range")
+
+        accounts: list[DailyTimeAccountRead] = []
+        cursor = from_date
+        while cursor <= to_date:
+            accounts.append(self.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=cursor))
+            cursor += timedelta(days=1)
+
+        return accounts
 
     def _calculate_target_minutes(self, employee: Employee) -> int:
         model = employee.working_time_model
