@@ -109,6 +109,7 @@ export function useUpdateTimeStampMutation() {
       updateTimeStamp(eventId, { timestamp, comment }, token),
     onSuccess: async () => {
       await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['current-status'] }),
         queryClient.invalidateQueries({ queryKey: ['time-stamps'] }),
         queryClient.invalidateQueries({ queryKey: ['daily-account'] }),
         queryClient.invalidateQueries({ queryKey: ['week-report'] }),

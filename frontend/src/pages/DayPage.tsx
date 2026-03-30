@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 
-import { TIME_CORRECTION_API_AVAILABLE } from '../api/endpoints';
 import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
 import type { DataGridColumn } from '../components/DataGrid';
 import { DataGrid } from '../components/DataGrid';
@@ -64,13 +63,17 @@ export function DayPage() {
     }
 
     setEditError(null);
-    await updateMutation.mutateAsync({
-      eventId,
-      timestamp: parsedTimestamp,
-      comment: draft.comment.trim() || null,
-    });
-
-    cancelEdit();
+    try {
+      await updateMutation.mutateAsync({
+        eventId,
+        timestamp: parsedTimestamp,
+        comment: draft.comment.trim() || null,
+      });
+      cancelEdit();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not save correction.';
+      setEditError(message);
+    }
   };
 
   const columns = useMemo<DataGridColumn<TimeStampEvent>[]>(
@@ -121,6 +124,14 @@ export function DayPage() {
         searchableText: (row) => row.comment ?? '',
       },
       {
+        id: 'corrected',
+        header: 'Corrected',
+        cell: (row) => (new Date(row.updated_at).getTime() > new Date(row.created_at).getTime() ? 'Yes' : 'No'),
+        sortValue: (row) => row.updated_at,
+        searchableText: (row) => row.updated_at,
+        sortable: true,
+      },
+      {
         id: 'actions',
         header: 'Actions',
         cell: (row) => {
@@ -131,7 +142,7 @@ export function DayPage() {
                   void saveEdit(row.id);
                 }}
                 onCancel={cancelEdit}
-                saveDisabled={!TIME_CORRECTION_API_AVAILABLE || updateMutation.isPending}
+                saveDisabled={updateMutation.isPending}
                 saving={updateMutation.isPending}
               />
             );
@@ -169,9 +180,6 @@ export function DayPage() {
       ) : null}
 
       <DataSection title="Event List">
-        {!TIME_CORRECTION_API_AVAILABLE ? (
-          <p className="meta">Inline editing is enabled, but save stays disabled until the backend correction endpoint is available.</p>
-        ) : null}
         {editError ? <p className="inline-error">{editError}</p> : null}
         {updateMutation.error ? <p className="inline-error">{String(updateMutation.error.message)}</p> : null}
 

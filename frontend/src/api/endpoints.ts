@@ -44,13 +44,5 @@ export type UpdateTimeStampPayload = {
   comment: string | null;
 };
 
-export const TIME_CORRECTION_API_AVAILABLE = false;
-
-export const updateTimeStamp = async (eventId: number, payload: UpdateTimeStampPayload, token?: string | null) => {
-  if (!TIME_CORRECTION_API_AVAILABLE) {
-    // TODO: switch this guard off once backend correction endpoint is available.
-    throw new Error('Time correction API endpoint is not available yet.');
-  }
-
-  return apiPatch<TimeStampEvent>(`/time-stamps/${eventId}`, payload, token);
-};
+export const updateTimeStamp = (eventId: number, payload: UpdateTimeStampPayload, token?: string | null) =>
+  apiPatch<TimeStampEvent>(`/time-stamps/${eventId}`, payload, token);

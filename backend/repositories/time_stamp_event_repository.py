@@ -78,3 +78,36 @@ class TimeStampEventRepository:
             from_date=target_date,
             to_date=target_date,
         )
+
+    def get_by_id(self, *, tenant_id: int, event_id: int) -> TimeStampEvent | None:
+        stmt = select(TimeStampEvent).where(
+            TimeStampEvent.tenant_id == tenant_id,
+            TimeStampEvent.id == event_id,
+        )
+        return self.db.scalar(stmt)
+
+    def list_all_clock_events(self, *, tenant_id: int, employee_id: int) -> list[TimeStampEvent]:
+        stmt = (
+            select(TimeStampEvent)
+            .where(
+                TimeStampEvent.tenant_id == tenant_id,
+                TimeStampEvent.employee_id == employee_id,
+                TimeStampEvent.type.in_([TimeStampEventType.CLOCK_IN, TimeStampEventType.CLOCK_OUT]),
+            )
+            .order_by(TimeStampEvent.timestamp.asc(), TimeStampEvent.id.asc())
+        )
+        return list(self.db.scalars(stmt).all())
+
+    def update_event(
+        self,
+        *,
+        event: TimeStampEvent,
+        timestamp: datetime,
+        comment: str | None,
+    ) -> TimeStampEvent:
+        event.timestamp = timestamp
+        event.comment = comment
+        self.db.add(event)
+        self.db.commit()
+        self.db.refresh(event)
+        return event

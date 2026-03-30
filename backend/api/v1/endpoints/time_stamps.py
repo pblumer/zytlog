@@ -1,13 +1,14 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from backend.api.deps import get_db
 from backend.core.auth import AuthContext, require_authenticated_user
+from backend.models.enums import UserRole
 from backend.repositories.employee_repository import EmployeeRepository
 from backend.repositories.time_stamp_event_repository import TimeStampEventRepository
-from backend.schemas.time_tracking import CurrentClockStatusRead, TimeStampEventRead
+from backend.schemas.time_tracking import CurrentClockStatusRead, TimeStampEventRead, TimeStampEventUpdate
 from backend.services.time_tracking_service import TimeTrackingService
 
 router = APIRouter(prefix="/time-stamps", tags=["time-stamps"])
@@ -16,8 +17,6 @@ router = APIRouter(prefix="/time-stamps", tags=["time-stamps"])
 def _resolve_employee(context: AuthContext, db: Session):
     employee = EmployeeRepository(db).get_by_user_id(context.tenant_id, context.internal_user_id)
     if employee is None:
-        from fastapi import HTTPException, status
-
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Employee profile not found")
     return employee
 
@@ -70,3 +69,26 @@ def my_events(
         to_date=to_date,
     )
     return [TimeStampEventRead.model_validate(event) for event in events]
+
+
+@router.patch("/{time_stamp_id}", response_model=TimeStampEventRead)
+def update_time_stamp(
+    time_stamp_id: int,
+    payload: TimeStampEventUpdate,
+    db: Session = Depends(get_db),
+    context: AuthContext = Depends(require_authenticated_user),
+) -> TimeStampEventRead:
+    actor_employee = None
+    if context.internal_role != UserRole.ADMIN:
+        actor_employee = _resolve_employee(context, db)
+
+    service = TimeTrackingService(TimeStampEventRepository(db))
+    updated = service.update_event(
+        tenant_id=context.tenant_id,
+        event_id=time_stamp_id,
+        payload=payload,
+        actor_role=context.internal_role,
+        actor_employee_id=actor_employee.id if actor_employee else None,
+        actor_user_id=context.internal_user_id,
+    )
+    return TimeStampEventRead.model_validate(updated)
