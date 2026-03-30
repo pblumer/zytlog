@@ -8,6 +8,10 @@ type Props = {
   year: number;
   month: number;
   days: CalendarMonthDay[];
+  selectedDate?: string;
+  onSelectDate?: (date: string) => void;
+  title?: string;
+  subtitle?: string;
 };
 
 const WEEKDAY_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
@@ -25,7 +29,15 @@ function statusClassName(status: CalendarDayStatus) {
   }
 }
 
-export function DashboardMonthCalendar({ year, month, days }: Props) {
+export function DashboardMonthCalendar({
+  year,
+  month,
+  days,
+  selectedDate,
+  onSelectDate,
+  title = 'Monatsübersicht',
+  subtitle = 'Status pro Tag, klickbar zur Tagesansicht',
+}: Props) {
   const navigate = useNavigate();
   const byDate = useMemo(() => new Map(days.map((day) => [day.date, day])), [days]);
   const todayIso = new Date().toISOString().slice(0, 10);
@@ -46,8 +58,8 @@ export function DashboardMonthCalendar({ year, month, days }: Props) {
       <button
         key={iso}
         type="button"
-        className={`calendar-tile ${statusClassName(status)} ${iso === todayIso ? 'calendar-tile-today' : ''}`}
-        onClick={() => navigate(`/day?date=${iso}`)}
+        className={`calendar-tile ${statusClassName(status)} ${iso === todayIso ? 'calendar-tile-today' : ''} ${iso === selectedDate ? 'calendar-tile-selected' : ''}`}
+        onClick={() => (onSelectDate ? onSelectDate(iso) : navigate(`/day?date=${iso}`))}
         title={`${iso} · ${status}`}
       >
         <span className="calendar-day-number">{dayNumber}</span>
@@ -59,8 +71,8 @@ export function DashboardMonthCalendar({ year, month, days }: Props) {
   return (
     <section className="card" style={{ marginTop: '1rem' }}>
       <div className="calendar-header">
-        <h3>Monatsübersicht</h3>
-        <p className="meta">Status pro Tag, klickbar zur Tagesansicht</p>
+        <h3>{title}</h3>
+        <p className="meta">{subtitle}</p>
       </div>
       <div className="calendar-grid">
         {WEEKDAY_LABELS.map((weekday) => (

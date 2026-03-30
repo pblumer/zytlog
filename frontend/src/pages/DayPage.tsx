@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
@@ -11,6 +11,7 @@ import { useReportExport } from '../hooks/useReportExport';
 import { useDailyAccount, useManualTimeStampMutation, useTimeStamps, useUpdateTimeStampMutation } from '../hooks/useZytlogApi';
 import type { TimeStampEvent } from '../types/api';
 import { formatDateTime, formatMinutes, isoDate } from '../utils/date';
+import { getSuggestedNextStampType } from '../utils/timeStampSuggestions';
 
 type EditDraft = {
   timestamp: string;
@@ -36,6 +37,7 @@ export function DayPage() {
   const [manualTimestamp, setManualTimestamp] = useState(`${searchParams.get('date') ?? isoDate(new Date())}T08:00`);
   const [manualComment, setManualComment] = useState('');
   const [manualError, setManualError] = useState<string | null>(null);
+  const [manualDirty, setManualDirty] = useState(false);
   const [editingRowId, setEditingRowId] = useState<number | null>(null);
   const [draft, setDraft] = useState<EditDraft | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
@@ -172,11 +174,17 @@ export function DayPage() {
 
   const resetManualForm = () => {
     setShowManualForm(false);
-    setManualType('clock_in');
+    setManualType(getSuggestedNextStampType(events.data));
     setManualTimestamp(`${date}T08:00`);
     setManualComment('');
     setManualError(null);
+    setManualDirty(false);
   };
+
+  useEffect(() => {
+    if (!showManualForm || manualDirty) return;
+    setManualType(getSuggestedNextStampType(events.data));
+  }, [events.data, manualDirty, showManualForm]);
 
   const submitManualForm = async () => {
     const parsed = toIsoOrNull(manualTimestamp);
@@ -202,8 +210,8 @@ export function DayPage() {
   return (
     <>
       <PageHeader
-        title="Day"
-        subtitle="Inspect one day in detail"
+        title="Tag"
+        subtitle="Detaillierte Tagesansicht"
         actions={
           <>
             <input
@@ -214,6 +222,9 @@ export function DayPage() {
                 setDate(value);
                 setSearchParams({ date: value });
                 setManualTimestamp(`${value}T08:00`);
+                if (showManualForm && !manualDirty) {
+                  setManualType(getSuggestedNextStampType(events.data));
+                }
                 exporter.clearError();
               }}
             />
@@ -222,9 +233,17 @@ export function DayPage() {
               type="button"
               className="btn outline"
               onClick={() => {
-                setShowManualForm((prev) => !prev);
-                setManualTimestamp(`${date}T08:00`);
-                setManualError(null);
+                setShowManualForm((prev) => {
+                  const next = !prev;
+                  if (next) {
+                    setManualType(getSuggestedNextStampType(events.data));
+                    setManualTimestamp(`${date}T08:00`);
+                    setManualComment('');
+                    setManualDirty(false);
+                    setManualError(null);
+                  }
+                  return next;
+                });
               }}
             >
               Zeitstempel nacherfassen
@@ -246,24 +265,48 @@ export function DayPage() {
         </div>
       ) : null}
 
-      <DataSection title="Event List">
+      <DataSection title="Zeitereignisliste">
         {showManualForm ? (
           <div className="inline-form">
             <p className="meta">Validierung erfolgt pro Kalendertag. Unvollständige Tage sind erlaubt.</p>
             <div className="inline-form-row">
               <label htmlFor="manual-type">Zeittyp</label>
-              <select id="manual-type" value={manualType} onChange={(event) => setManualType(event.target.value as 'clock_in' | 'clock_out')}>
-                <option value="clock_in">CLOCK_IN</option>
-                <option value="clock_out">CLOCK_OUT</option>
+              <select
+                id="manual-type"
+                value={manualType}
+                onChange={(event) => {
+                  setManualType(event.target.value as 'clock_in' | 'clock_out');
+                  setManualDirty(true);
+                }}
+              >
+                <option value="clock_in">Kommen (CLOCK_IN)</option>
+                <option value="clock_out">Gehen (CLOCK_OUT)</option>
               </select>
             </div>
             <div className="inline-form-row">
               <label htmlFor="manual-timestamp">Zeitpunkt</label>
-              <input id="manual-timestamp" type="datetime-local" value={manualTimestamp} onChange={(event) => setManualTimestamp(event.target.value)} />
+              <input
+                id="manual-timestamp"
+                type="datetime-local"
+                value={manualTimestamp}
+                onChange={(event) => {
+                  setManualTimestamp(event.target.value);
+                  setManualDirty(true);
+                }}
+              />
             </div>
             <div className="inline-form-row">
               <label htmlFor="manual-comment">Kommentar</label>
-              <input id="manual-comment" type="text" maxLength={300} value={manualComment} onChange={(event) => setManualComment(event.target.value)} />
+              <input
+                id="manual-comment"
+                type="text"
+                maxLength={300}
+                value={manualComment}
+                onChange={(event) => {
+                  setManualComment(event.target.value);
+                  setManualDirty(true);
+                }}
+              />
             </div>
             <div className="actions">
               <button type="button" className="btn primary" onClick={() => void submitManualForm()} disabled={manualMutation.isPending}>
@@ -282,7 +325,7 @@ export function DayPage() {
         {manualMutation.error ? <p className="inline-error">{String(manualMutation.error.message)}</p> : null}
 
         {!events.data?.length ? (
-          <EmptyState title="No events for this day" description="Time stamp events will appear here." />
+          <EmptyState title="Keine Einträge für diesen Tag" description="Zeitereignisse werden hier angezeigt." />
         ) : (
           <DataGrid
             columns={columns}

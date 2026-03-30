@@ -1,6 +1,7 @@
 import { PageHeader, SummaryCard, StatusBadge, ErrorState, LoadingBlock } from '../components/common';
 import { DashboardMonthCalendar } from '../components/DashboardMonthCalendar';
-import { useClockMutation, useCurrentStatus, useDailyAccount, useDashboardCalendarMonth, useTimeStamps } from '../hooks/useZytlogApi';
+import { QuickStampCard } from '../components/QuickStampCard';
+import { useCurrentStatus, useDailyAccount, useDashboardCalendarMonth, useTimeStamps } from '../hooks/useZytlogApi';
 import { formatDateTime, formatMinutes, isoDate } from '../utils/date';
 
 export function DashboardPage() {
@@ -10,8 +11,6 @@ export function DashboardPage() {
   const events = useTimeStamps(today, today);
   const now = new Date();
   const calendar = useDashboardCalendarMonth(now.getFullYear(), now.getMonth() + 1);
-  const clockIn = useClockMutation('in');
-  const clockOut = useClockMutation('out');
 
   if (currentStatus.isLoading || dailyAccount.isLoading || events.isLoading || calendar.isLoading) return <LoadingBlock />;
   if (currentStatus.error || dailyAccount.error || events.error || calendar.error) return <ErrorState message="Could not load dashboard data." />;
@@ -21,26 +20,15 @@ export function DashboardPage() {
 
   return (
     <>
-      <PageHeader title="Dashboard" subtitle="Current status and today overview" />
+      <PageHeader title="Dashboard" subtitle="Aktueller Status und heutige Übersicht" />
       <div className="grid">
-        <SummaryCard title="Current Status" value={<StatusBadge status={status} />} hint={currentStatus.data?.last_event_timestamp ? `Last update: ${formatDateTime(currentStatus.data.last_event_timestamp)}` : 'No events yet'} />
-        <SummaryCard title="Today Target" value={formatMinutes(dailyAccount.data?.target_minutes ?? 0)} />
-        <SummaryCard title="Today Actual" value={formatMinutes(dailyAccount.data?.actual_minutes ?? 0)} />
+        <SummaryCard title="Aktueller Status" value={<StatusBadge status={status} />} hint={currentStatus.data?.last_event_timestamp ? `Letzte Buchung: ${formatDateTime(currentStatus.data.last_event_timestamp)}` : 'Noch keine Buchung'} />
+        <SummaryCard title="Soll heute" value={formatMinutes(dailyAccount.data?.target_minutes ?? 0)} />
+        <SummaryCard title="Ist heute" value={formatMinutes(dailyAccount.data?.actual_minutes ?? 0)} />
         <SummaryCard title="Balance" value={formatMinutes(dailyAccount.data?.balance_minutes ?? 0)} hint={<StatusBadge status={dailyAccount.data?.status ?? 'empty'} />} />
       </div>
 
-      <section className="card" style={{ marginTop: '1rem' }}>
-        <h3>Actions</h3>
-        <div className="actions">
-          <button className="btn primary" onClick={() => clockIn.mutate()} disabled={status === 'clocked_in' || clockIn.isPending}>
-            Clock In
-          </button>
-          <button className="btn outline" onClick={() => clockOut.mutate()} disabled={status === 'clocked_out' || clockOut.isPending}>
-            Clock Out
-          </button>
-        </div>
-        {lastEvent ? <p className="meta">Last event: {lastEvent.type} at {formatDateTime(lastEvent.timestamp)}</p> : null}
-      </section>
+      <QuickStampCard status={status} lastEventTimestamp={lastEvent?.timestamp ?? currentStatus.data?.last_event_timestamp} />
 
       {calendar.data ? <DashboardMonthCalendar year={calendar.data.year} month={calendar.data.month} days={calendar.data.days} /> : null}
     </>
