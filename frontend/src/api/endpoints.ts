@@ -1,6 +1,7 @@
 import { apiDownload, apiGet, apiPatch, apiPost } from './client';
 import type {
   CurrentClockStatus,
+  CalendarMonth,
   DailyTimeAccount,
   Employee,
   Me,
@@ -31,6 +32,9 @@ export const getMonthReport = (year: number, month: number, token?: string | nul
 export const getYearReport = (year: number, token?: string | null) =>
   apiGet<YearlyOverview>(`/reports/my/year?year=${year}`, token);
 
+export const getCalendarMonth = (year: number, month: number, token?: string | null) =>
+  apiGet<CalendarMonth>(`/calendar/my/month?year=${year}&month=${month}`, token);
+
 export const downloadDayExport = (date: string, format: 'csv' | 'pdf', token?: string | null) =>
   apiDownload(`/exports/my/day${format === 'pdf' ? '/pdf' : ''}?date=${encodeURIComponent(date)}`, token);
 
@@ -50,6 +54,15 @@ export const getWorkingTimeModels = (token?: string | null) => apiGet<WorkingTim
 export const clockIn = (token?: string | null) => apiPost<TimeStampEvent>('/time-stamps/clock-in', undefined, token);
 
 export const clockOut = (token?: string | null) => apiPost<TimeStampEvent>('/time-stamps/clock-out', undefined, token);
+
+export type ManualTimeStampPayload = {
+  timestamp: string;
+  type: 'clock_in' | 'clock_out';
+  comment: string | null;
+};
+
+export const createManualTimeStamp = (payload: ManualTimeStampPayload, token?: string | null) =>
+  apiPost<TimeStampEvent>('/time-stamps/manual', payload, token);
 
 export type UpdateTimeStampPayload = {
   timestamp: string;

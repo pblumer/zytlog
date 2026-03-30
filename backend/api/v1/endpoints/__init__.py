@@ -1,4 +1,5 @@
 from backend.api.v1.endpoints.auth import router as auth_router
+from backend.api.v1.endpoints.calendar import router as calendar_router
 from backend.api.v1.endpoints.daily_accounts import router as daily_accounts_router
 from backend.api.v1.endpoints.employees import router as employees_router
 from backend.api.v1.endpoints.exports import router as exports_router
@@ -10,6 +11,7 @@ from backend.api.v1.endpoints.working_time_models import router as working_time_
 __all__ = [
     "health_router",
     "auth_router",
+    "calendar_router",
     "employees_router",
     "exports_router",
     "working_time_models_router",

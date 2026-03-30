@@ -1,5 +1,6 @@
 import { PageHeader, SummaryCard, StatusBadge, ErrorState, LoadingBlock } from '../components/common';
-import { useClockMutation, useCurrentStatus, useDailyAccount, useTimeStamps } from '../hooks/useZytlogApi';
+import { DashboardMonthCalendar } from '../components/DashboardMonthCalendar';
+import { useClockMutation, useCurrentStatus, useDailyAccount, useDashboardCalendarMonth, useTimeStamps } from '../hooks/useZytlogApi';
 import { formatDateTime, formatMinutes, isoDate } from '../utils/date';
 
 export function DashboardPage() {
@@ -7,11 +8,13 @@ export function DashboardPage() {
   const currentStatus = useCurrentStatus();
   const dailyAccount = useDailyAccount(today);
   const events = useTimeStamps(today, today);
+  const now = new Date();
+  const calendar = useDashboardCalendarMonth(now.getFullYear(), now.getMonth() + 1);
   const clockIn = useClockMutation('in');
   const clockOut = useClockMutation('out');
 
-  if (currentStatus.isLoading || dailyAccount.isLoading || events.isLoading) return <LoadingBlock />;
-  if (currentStatus.error || dailyAccount.error || events.error) return <ErrorState message="Could not load dashboard data." />;
+  if (currentStatus.isLoading || dailyAccount.isLoading || events.isLoading || calendar.isLoading) return <LoadingBlock />;
+  if (currentStatus.error || dailyAccount.error || events.error || calendar.error) return <ErrorState message="Could not load dashboard data." />;
 
   const status = currentStatus.data?.status ?? 'clocked_out';
   const lastEvent = events.data?.[events.data.length - 1];
@@ -38,6 +41,8 @@ export function DashboardPage() {
         </div>
         {lastEvent ? <p className="meta">Last event: {lastEvent.type} at {formatDateTime(lastEvent.timestamp)}</p> : null}
       </section>
+
+      {calendar.data ? <DashboardMonthCalendar year={calendar.data.year} month={calendar.data.month} days={calendar.data.days} /> : null}
     </>
   );
 }

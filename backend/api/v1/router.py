@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from backend.api.v1.endpoints import (
     auth_router,
+    calendar_router,
     daily_accounts_router,
     employees_router,
     exports_router,
@@ -19,5 +20,6 @@ router.include_router(exports_router)
 router.include_router(working_time_models_router)
 router.include_router(time_stamps_router)
 router.include_router(daily_accounts_router)
+router.include_router(calendar_router)
 
 router.include_router(reports_router)

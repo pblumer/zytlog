@@ -31,6 +31,7 @@ export type CurrentClockStatus = {
 };
 
 export type DailyAccountStatus = 'empty' | 'complete' | 'incomplete' | 'invalid';
+export type CalendarDayStatus = 'no_data' | 'complete' | 'incomplete' | 'invalid';
 
 export type DailyTimeAccount = {
   date: string;
@@ -91,6 +92,21 @@ export type YearlyOverview = {
   year: number;
   months: MonthlySummaryRow[];
   totals: OverviewTotals;
+};
+
+export type CalendarMonthDay = {
+  date: string;
+  status: CalendarDayStatus;
+  target_minutes: number;
+  actual_minutes: number;
+  balance_minutes: number;
+  event_count: number;
+};
+
+export type CalendarMonth = {
+  year: number;
+  month: number;
+  days: CalendarMonthDay[];
 };
 
 export type Employee = {

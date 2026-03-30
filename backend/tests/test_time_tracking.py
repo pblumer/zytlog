@@ -385,3 +385,75 @@ def test_patch_time_stamp_cross_tenant_not_found(client: TestClient) -> None:
     )
 
     assert response.status_code == 404
+
+
+def test_manual_clock_in_in_past_success(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/time-stamps/manual",
+        json={
+            "timestamp": "2026-03-29T08:00:00+01:00",
+            "type": "clock_in",
+            "comment": "Forgot to stamp yesterday",
+        },
+        headers=_auth_headers(),
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["type"] == "clock_in"
+    assert payload["source"] == "manual_entry"
+    assert payload["comment"] == "Forgot to stamp yesterday"
+
+
+def test_manual_clock_out_in_past_success(client: TestClient) -> None:
+    first = client.post(
+        "/api/v1/time-stamps/manual",
+        json={"timestamp": "2026-03-29T08:00:00Z", "type": "clock_in"},
+        headers=_auth_headers(),
+    )
+    assert first.status_code == 200
+
+    second = client.post(
+        "/api/v1/time-stamps/manual",
+        json={"timestamp": "2026-03-29T16:00:00Z", "type": "clock_out"},
+        headers=_auth_headers(),
+    )
+    assert second.status_code == 200
+    assert second.json()["type"] == "clock_out"
+    assert second.json()["source"] == "manual_entry"
+
+
+def test_manual_entry_invalid_sequence_conflict(client: TestClient) -> None:
+    first = client.post(
+        "/api/v1/time-stamps/manual",
+        json={"timestamp": "2026-03-29T08:00:00Z", "type": "clock_in"},
+        headers=_auth_headers(),
+    )
+    assert first.status_code == 200
+
+    conflict = client.post(
+        "/api/v1/time-stamps/manual",
+        json={"timestamp": "2026-03-29T09:00:00Z", "type": "clock_in"},
+        headers=_auth_headers(),
+    )
+    assert conflict.status_code == 409
+    assert "Invalid stamp sequence" in conflict.json()["detail"]
+
+
+def test_manual_entry_auth_required(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/time-stamps/manual",
+        json={"timestamp": "2026-03-29T08:00:00Z", "type": "clock_in"},
+    )
+    assert response.status_code == 401
+
+
+def test_manual_entry_is_tenant_scoped_to_authenticated_user(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/time-stamps/manual",
+        json={"timestamp": "2026-03-29T08:00:00Z", "type": "clock_in"},
+        headers=_auth_headers("other-tenant-admin-token"),
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["tenant_id"] == 2
