@@ -134,6 +134,79 @@
 .table th, .table td { text-align: left; padding: 0.55rem; border-bottom: 1px solid var(--border); }
 .table th { font-size: 0.8rem; text-transform: uppercase; color: var(--muted); }
 
+.data-grid-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+
+.data-grid-toolbar,
+.data-grid-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.data-grid-pagination {
+  margin-top: 0.8rem;
+  margin-bottom: 0;
+}
+
+.data-grid-search {
+  min-width: 220px;
+  max-width: 360px;
+  width: 100%;
+}
+
+.sort-header,
+.plain-header {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  padding: 0;
+}
+
+.sort-header {
+  cursor: pointer;
+}
+
+.table-state {
+  display: grid;
+  gap: 0.4rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+.table-state-error,
+.inline-error {
+  color: var(--danger);
+}
+
+.totals-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-alt);
+  padding: 0.7rem;
+  margin-bottom: 0.9rem;
+}
+
+.totals-item {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.table tr.is-editing {
+  background: #eef3fb;
+}
+
 .meta { color: var(--muted); font-size: 0.9rem; }
 
 @media (max-width: 900px) {

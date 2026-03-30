@@ -10,6 +10,7 @@ import {
   getTimeStamps,
   getWeekReport,
   getWorkingTimeModels,
+  updateTimeStamp,
   getYearReport,
 } from '../api/endpoints';
 import { useAuth } from '../auth/provider';
@@ -91,6 +92,25 @@ export function useClockMutation(type: 'in' | 'out') {
         queryClient.invalidateQueries({ queryKey: ['current-status'] }),
         queryClient.invalidateQueries({ queryKey: ['daily-account'] }),
         queryClient.invalidateQueries({ queryKey: ['time-stamps'] }),
+        queryClient.invalidateQueries({ queryKey: ['week-report'] }),
+        queryClient.invalidateQueries({ queryKey: ['month-report'] }),
+        queryClient.invalidateQueries({ queryKey: ['year-report'] }),
+      ]);
+    },
+  });
+}
+
+export function useUpdateTimeStampMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+
+  return useMutation({
+    mutationFn: ({ eventId, timestamp, comment }: { eventId: number; timestamp: string; comment: string | null }) =>
+      updateTimeStamp(eventId, { timestamp, comment }, token),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['time-stamps'] }),
+        queryClient.invalidateQueries({ queryKey: ['daily-account'] }),
         queryClient.invalidateQueries({ queryKey: ['week-report'] }),
         queryClient.invalidateQueries({ queryKey: ['month-report'] }),
         queryClient.invalidateQueries({ queryKey: ['year-report'] }),

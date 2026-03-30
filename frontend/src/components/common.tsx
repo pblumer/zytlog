@@ -1,3 +1,4 @@
+import { TableStatusBadge } from './TableStatusBadge';
 import type { PropsWithChildren, ReactNode } from 'react';
 
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
@@ -21,16 +22,7 @@ export function SummaryCard({ title, value, hint }: { title: string; value: Reac
 }
 
 export function StatusBadge({ status }: { status: string }) {
-  const tone =
-    status.includes('complete') || status.includes('clocked_in')
-      ? 'success'
-      : status.includes('incomplete')
-        ? 'warning'
-        : status.includes('invalid')
-          ? 'danger'
-          : 'neutral';
-
-  return <span className={`status ${tone}`}>{status.replace('_', ' ')}</span>;
+  return <TableStatusBadge status={status} />;
 }
 
 export function LoadingBlock() {

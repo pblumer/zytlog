@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from './client';
+import { apiGet, apiPatch, apiPost } from './client';
 import type {
   CurrentClockStatus,
   DailyTimeAccount,
@@ -38,3 +38,19 @@ export const getWorkingTimeModels = (token?: string | null) => apiGet<WorkingTim
 export const clockIn = (token?: string | null) => apiPost<TimeStampEvent>('/time-stamps/clock-in', undefined, token);
 
 export const clockOut = (token?: string | null) => apiPost<TimeStampEvent>('/time-stamps/clock-out', undefined, token);
+
+export type UpdateTimeStampPayload = {
+  timestamp: string;
+  comment: string | null;
+};
+
+export const TIME_CORRECTION_API_AVAILABLE = false;
+
+export const updateTimeStamp = async (eventId: number, payload: UpdateTimeStampPayload, token?: string | null) => {
+  if (!TIME_CORRECTION_API_AVAILABLE) {
+    // TODO: switch this guard off once backend correction endpoint is available.
+    throw new Error('Time correction API endpoint is not available yet.');
+  }
+
+  return apiPatch<TimeStampEvent>(`/time-stamps/${eventId}`, payload, token);
+};
