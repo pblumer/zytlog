@@ -79,7 +79,7 @@ class TimeTrackingService:
         next_timestamp = payload.timestamp if timestamp_provided else event.timestamp
         next_comment = payload.comment if comment_provided else event.comment
         if timestamp_provided:
-            self._validate_employee_sequence(
+            self._validate_employee_day_sequences_for_update(
                 tenant_id=tenant_id,
                 employee_id=event.employee_id,
                 event_id=event.id,
@@ -102,9 +102,13 @@ class TimeTrackingService:
                 detail="Manual entry supports only clock_in and clock_out",
             )
 
-        existing = self.repository.list_all_clock_events(tenant_id=tenant_id, employee_id=employee.id)
-        self._validate_sequence_for_events(
-            events=existing,
+        existing_same_day = self.repository.list_clock_events_for_day(
+            tenant_id=tenant_id,
+            employee_id=employee.id,
+            target_date=payload.timestamp.date(),
+        )
+        self._validate_day_sequence_for_events(
+            events=existing_same_day,
             candidate_timestamp=payload.timestamp,
             candidate_type=payload.type,
         )
@@ -138,8 +142,12 @@ class TimeTrackingService:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cannot clock out without prior clock in")
 
         stamp_time = event_timestamp or datetime.now(timezone.utc)
-        existing = self.repository.list_all_clock_events(tenant_id=tenant_id, employee_id=employee_id)
-        self._validate_sequence_for_events(
+        existing = self.repository.list_clock_events_for_day(
+            tenant_id=tenant_id,
+            employee_id=employee_id,
+            target_date=stamp_time.date(),
+        )
+        self._validate_day_sequence_for_events(
             events=existing,
             candidate_timestamp=stamp_time,
             candidate_type=event_type,
@@ -152,7 +160,7 @@ class TimeTrackingService:
             event_timestamp=stamp_time,
         )
 
-    def _validate_employee_sequence(
+    def _validate_employee_day_sequences_for_update(
         self,
         *,
         tenant_id: int,
@@ -161,14 +169,20 @@ class TimeTrackingService:
         next_timestamp: datetime,
     ) -> None:
         events = self.repository.list_all_clock_events(tenant_id=tenant_id, employee_id=employee_id)
+        current_event = next((event for event in events if event.id == event_id), None)
+        if current_event is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Time stamp event not found")
 
-        reordered = [
+        reordered_all = [
             (next_timestamp if event.id == event_id else event.timestamp, event.id, event.type)
             for event in events
         ]
-        self._validate_reordered_sequence(reordered)
+        affected_dates = {current_event.timestamp.date(), next_timestamp.date()}
+        for target_date in affected_dates:
+            reordered_for_day = [item for item in reordered_all if item[0].date() == target_date]
+            self._validate_reordered_day_sequence(reordered_for_day, day=target_date)
 
-    def _validate_sequence_for_events(
+    def _validate_day_sequence_for_events(
         self,
         *,
         events: list[TimeStampEvent],
@@ -177,11 +191,13 @@ class TimeTrackingService:
     ) -> None:
         reordered = [(event.timestamp, event.id, event.type) for event in events]
         reordered.append((candidate_timestamp, 0, candidate_type))
-        self._validate_reordered_sequence(reordered)
+        self._validate_reordered_day_sequence(reordered, day=candidate_timestamp.date())
 
-    def _validate_reordered_sequence(
+    def _validate_reordered_day_sequence(
         self,
         reordered: list[tuple[datetime, int, TimeStampEventType]],
+        *,
+        day: date,
     ) -> None:
         reordered.sort(key=lambda item: (item[0], item[1]))
 
@@ -191,7 +207,10 @@ class TimeTrackingService:
             if event_type != expected_type:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail=f"Invalid stamp sequence around event {current_event_id}: expected {expected_type.value}",
+                    detail=(
+                        f"Invalid same-day stamp sequence on {day.isoformat()} around event "
+                        f"{current_event_id}: expected {expected_type.value}"
+                    ),
                 )
 
             if event_type == TimeStampEventType.CLOCK_IN:

@@ -249,6 +249,7 @@ export function DayPage() {
       <DataSection title="Event List">
         {showManualForm ? (
           <div className="inline-form">
+            <p className="meta">Validierung erfolgt pro Kalendertag. Unvollständige Tage sind erlaubt.</p>
             <div className="inline-form-row">
               <label htmlFor="manual-type">Zeittyp</label>
               <select id="manual-type" value={manualType} onChange={(event) => setManualType(event.target.value as 'clock_in' | 'clock_out')}>

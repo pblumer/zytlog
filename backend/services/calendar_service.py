@@ -46,6 +46,7 @@ class CalendarService:
         )
 
     def _map_status(self, status: DailyAccountStatus) -> CalendarDayStatus:
+        # Calendar uses "no_data" as the UI label for daily "empty" rows.
         if status == DailyAccountStatus.COMPLETE:
             return CalendarDayStatus.COMPLETE
         if status == DailyAccountStatus.INCOMPLETE:
