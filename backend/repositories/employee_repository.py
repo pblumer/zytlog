@@ -1,5 +1,5 @@
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from backend.models.employee import Employee
 from backend.schemas.employee import EmployeeCreate
@@ -19,3 +19,12 @@ class EmployeeRepository:
         self.db.commit()
         self.db.refresh(employee)
         return employee
+
+
+    def get_by_user_id(self, tenant_id: int, user_id: int) -> Employee | None:
+        stmt = (
+            select(Employee)
+            .where(Employee.tenant_id == tenant_id, Employee.user_id == user_id)
+            .options(joinedload(Employee.working_time_model))
+        )
+        return self.db.scalar(stmt)
