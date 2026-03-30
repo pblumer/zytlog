@@ -1,7 +1,8 @@
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import Enum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.db.base import Base, TimestampMixin
+from backend.models.enums import UserRole
 
 
 class User(TimestampMixin, Base):
@@ -12,7 +13,7 @@ class User(TimestampMixin, Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     full_name: Mapped[str] = mapped_column(String(120), nullable=False)
     keycloak_subject: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
-    is_admin: Mapped[bool] = mapped_column(default=False, nullable=False)
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.EMPLOYEE, nullable=False)
 
     tenant: Mapped["Tenant"] = relationship(back_populates="users")
     employee: Mapped["Employee"] = relationship(back_populates="user", uselist=False)
