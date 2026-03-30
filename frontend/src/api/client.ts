@@ -114,3 +114,10 @@ export function apiPatch<T>(path: string, body?: unknown, token?: string | null)
     token,
   });
 }
+
+export function apiDelete<T>(path: string, token?: string | null): Promise<T> {
+  return apiRequest<T>(path, {
+    method: 'DELETE',
+    token,
+  });
+}

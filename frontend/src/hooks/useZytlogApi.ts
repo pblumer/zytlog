@@ -4,6 +4,7 @@ import {
   clockIn,
   clockOut,
   createManualTimeStamp,
+  deleteTimeStamp,
   getCalendarMonth,
   getCurrentStatus,
   getDailyAccount,
@@ -139,6 +140,26 @@ export function useManualTimeStampMutation() {
   return useMutation({
     mutationFn: ({ timestamp, type, comment }: { timestamp: string; type: 'clock_in' | 'clock_out'; comment: string | null }) =>
       createManualTimeStamp({ timestamp, type, comment }, token),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['current-status'] }),
+        queryClient.invalidateQueries({ queryKey: ['time-stamps'] }),
+        queryClient.invalidateQueries({ queryKey: ['daily-account'] }),
+        queryClient.invalidateQueries({ queryKey: ['week-report'] }),
+        queryClient.invalidateQueries({ queryKey: ['month-report'] }),
+        queryClient.invalidateQueries({ queryKey: ['year-report'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-calendar'] }),
+      ]);
+    },
+  });
+}
+
+export function useDeleteTimeStampMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+
+  return useMutation({
+    mutationFn: (eventId: number) => deleteTimeStamp(eventId, token),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['current-status'] }),

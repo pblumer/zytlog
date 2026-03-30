@@ -113,3 +113,24 @@ def create_manual_time_stamp(
         payload=payload,
     )
     return TimeStampEventRead.model_validate(event)
+
+
+@router.delete("/{time_stamp_id}", response_model=TimeStampEventRead)
+def delete_time_stamp(
+    time_stamp_id: int,
+    db: Session = Depends(get_db),
+    context: AuthContext = Depends(require_authenticated_user),
+) -> TimeStampEventRead:
+    actor_employee = None
+    if context.internal_role != UserRole.ADMIN:
+        actor_employee = _resolve_employee(context, db)
+
+    service = TimeTrackingService(TimeStampEventRepository(db))
+    deleted = service.delete_event(
+        tenant_id=context.tenant_id,
+        event_id=time_stamp_id,
+        actor_role=context.internal_role,
+        actor_employee_id=actor_employee.id if actor_employee else None,
+        actor_user_id=context.internal_user_id,
+    )
+    return TimeStampEventRead.model_validate(deleted)

@@ -116,6 +116,11 @@
   background: transparent;
 }
 
+.btn.danger {
+  background: #a73645;
+  color: white;
+}
+
 .status {
   display: inline-flex;
   border-radius: 999px;
