@@ -1,32 +1,62 @@
 import { useMemo, useState } from 'react';
+import { useQueries } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 
+import { getCalendarMonth } from '../api/endpoints';
+import { useAuth } from '../auth/provider';
 import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
-import type { DataGridColumn } from '../components/DataGrid';
-import { DataGrid } from '../components/DataGrid';
 import { ReportExportActions } from '../components/ReportExportActions';
 import { TotalsBar } from '../components/TotalsBar';
 import { useReportExport } from '../hooks/useReportExport';
 import { useYearReport } from '../hooks/useZytlogApi';
-import type { MonthlySummaryRow } from '../types/api';
+import type { CalendarMonthDay, MonthlySummaryRow } from '../types/api';
 import { formatMinutes } from '../utils/date';
 
 const now = new Date();
 
+const monthLabelFormatter = new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric' });
+
+function getMonthOverallStatus(month: MonthlySummaryRow): 'valid' | 'incomplete' | 'invalid' {
+  if (month.days_invalid > 0) return 'invalid';
+  if (month.days_incomplete > 0 || month.days_empty > 0) return 'incomplete';
+  return 'valid';
+}
+
+function getDayDotStatus(day: CalendarMonthDay): 'valid' | 'incomplete' | 'invalid' | 'empty' {
+  if (day.status === 'invalid') return 'invalid';
+  if (day.status === 'incomplete') return 'incomplete';
+  if (day.status === 'complete') return 'valid';
+  return 'empty';
+}
+
 export function YearPage() {
+  const { token } = useAuth();
+  const navigate = useNavigate();
   const [year, setYear] = useState(now.getFullYear());
   const query = useYearReport(year);
   const exporter = useReportExport();
 
-  const columns = useMemo<DataGridColumn<MonthlySummaryRow>[]>(
-    () => [
-      { id: 'month', header: 'Month', cell: (row) => row.month, sortValue: (row) => row.month, searchableText: (row) => `${row.month}`, sortable: true },
-      { id: 'target', header: 'Target', cell: (row) => formatMinutes(row.target_minutes), sortValue: (row) => row.target_minutes, sortable: true },
-      { id: 'actual', header: 'Actual', cell: (row) => formatMinutes(row.actual_minutes), sortValue: (row) => row.actual_minutes, sortable: true },
-      { id: 'balance', header: 'Balance', cell: (row) => formatMinutes(row.balance_minutes), sortValue: (row) => row.balance_minutes, sortable: true },
-      { id: 'days', header: 'Days', cell: (row) => row.days_total, sortValue: (row) => row.days_total, sortable: true },
-    ],
-    [],
-  );
+  const monthNumbers = useMemo(() => Array.from({ length: 12 }, (_, index) => index + 1), []);
+  const calendarQueries = useQueries({
+    queries: monthNumbers.map((month) => ({
+      queryKey: ['calendar-month', year, month],
+      queryFn: () => getCalendarMonth(year, month, token),
+      staleTime: 60_000,
+    })),
+  });
+
+  const monthCalendars = useMemo(() => {
+    const byMonth = new Map<number, CalendarMonthDay[]>();
+    calendarQueries.forEach((calendarQuery, index) => {
+      if (calendarQuery.data) {
+        byMonth.set(monthNumbers[index], calendarQuery.data.days);
+      }
+    });
+    return byMonth;
+  }, [calendarQueries, monthNumbers]);
+
+  const isCalendarLoading = calendarQueries.some((calendarQuery) => calendarQuery.isLoading);
+  const hasCalendarError = calendarQueries.some((calendarQuery) => calendarQuery.isError);
 
   return (
     <>
@@ -43,6 +73,8 @@ export function YearPage() {
       {exporter.error ? <ErrorState message={exporter.error} /> : null}
       {query.isLoading ? <LoadingBlock /> : null}
       {query.error ? <ErrorState message="Could not load yearly report." /> : null}
+      {!query.isLoading && !query.error && isCalendarLoading ? <LoadingBlock /> : null}
+      {hasCalendarError ? <ErrorState message="Could not load yearly day statuses." /> : null}
       {query.data ? (
         <>
           <div className="grid">
@@ -61,7 +93,67 @@ export function YearPage() {
               ]}
             />
             {query.data.months.length ? (
-              <DataGrid columns={columns} data={query.data.months} searchPlaceholder="Search months…" />
+              <div className="year-month-grid" role="list" aria-label={`Monthly overview for ${year}`}>
+                {query.data.months.map((month) => {
+                  const monthDate = new Date(year, month.month - 1, 1);
+                  const monthTitle = monthLabelFormatter.format(monthDate);
+                  const overallStatus = getMonthOverallStatus(month);
+                  const balanceClass = month.balance_minutes > 0 ? 'balance-positive' : month.balance_minutes < 0 ? 'balance-negative' : 'balance-neutral';
+                  const monthDays = monthCalendars.get(month.month) ?? [];
+
+                  return (
+                    <button
+                      key={month.month}
+                      className="year-month-card"
+                      type="button"
+                      role="listitem"
+                      onClick={() => navigate(`/month?year=${year}&month=${month.month}`)}
+                      aria-label={`${monthTitle}. Status: ${overallStatus}. Soll ${formatMinutes(month.target_minutes)}, Ist ${formatMinutes(month.actual_minutes)}, Saldo ${formatMinutes(month.balance_minutes)}.`}
+                      title="Open month details"
+                    >
+                      <div className="year-month-card-header">
+                        <h3>{monthTitle}</h3>
+                        <span className={`year-status-pill year-status-${overallStatus}`}>
+                          <span aria-hidden="true" className="year-status-dot" />
+                          <span>{overallStatus === 'valid' ? 'OK' : overallStatus === 'incomplete' ? 'Unvollständig' : 'Fehlerhaft'}</span>
+                        </span>
+                      </div>
+
+                      <dl className="year-month-summary">
+                        <div>
+                          <dt>Soll</dt>
+                          <dd>{formatMinutes(month.target_minutes)}</dd>
+                        </div>
+                        <div>
+                          <dt>Ist</dt>
+                          <dd>{formatMinutes(month.actual_minutes)}</dd>
+                        </div>
+                        <div>
+                          <dt>Saldo</dt>
+                          <dd className={balanceClass}>{formatMinutes(month.balance_minutes)}</dd>
+                        </div>
+                      </dl>
+
+                      <div className="year-mini-grid-wrap" aria-hidden="true">
+                        <div className="year-mini-grid">
+                          {monthDays.map((day) => {
+                            const dotStatus = getDayDotStatus(day);
+                            return (
+                              <span
+                                key={day.date}
+                                className={`year-mini-dot year-mini-dot-${dotStatus}`}
+                                title={`${day.date}: ${dotStatus}`}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <p className="year-month-meta">{month.days_total} Tage</p>
+                    </button>
+                  );
+                })}
+              </div>
             ) : (
               <EmptyState title="No rows for this year" description="No time data has been recorded for the selected year." />
             )}
