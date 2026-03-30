@@ -3,7 +3,9 @@ import { useMemo, useState } from 'react';
 import { DataSection, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
 import type { DataGridColumn } from '../components/DataGrid';
 import { DataGrid } from '../components/DataGrid';
+import { ReportExportActions } from '../components/ReportExportActions';
 import { TotalsBar } from '../components/TotalsBar';
+import { useReportExport } from '../hooks/useReportExport';
 import { useYearReport } from '../hooks/useZytlogApi';
 import type { MonthlySummaryRow } from '../types/api';
 import { formatMinutes } from '../utils/date';
@@ -13,6 +15,7 @@ const now = new Date();
 export function YearPage() {
   const [year, setYear] = useState(now.getFullYear());
   const query = useYearReport(year);
+  const exporter = useReportExport();
 
   const columns = useMemo<DataGridColumn<MonthlySummaryRow>[]>(
     () => [
@@ -30,8 +33,14 @@ export function YearPage() {
       <PageHeader
         title="Year"
         subtitle="Yearly totals"
-        actions={<input type="number" value={year} onChange={(event) => setYear(Number(event.target.value))} min={1970} max={2100} />}
+        actions={
+          <>
+            <input type="number" value={year} onChange={(event) => setYear(Number(event.target.value))} min={1970} max={2100} />
+            <ReportExportActions disabled={exporter.isExporting} onExport={(format) => void exporter.exportYear(year, format)} />
+          </>
+        }
       />
+      {exporter.error ? <ErrorState message={exporter.error} /> : null}
       {query.isLoading ? <LoadingBlock /> : null}
       {query.error ? <ErrorState message="Could not load yearly report." /> : null}
       {query.data ? (

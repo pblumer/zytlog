@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost } from './client';
+import { apiDownload, apiGet, apiPatch, apiPost } from './client';
 import type {
   CurrentClockStatus,
   DailyTimeAccount,
@@ -30,6 +30,18 @@ export const getMonthReport = (year: number, month: number, token?: string | nul
 
 export const getYearReport = (year: number, token?: string | null) =>
   apiGet<YearlyOverview>(`/reports/my/year?year=${year}`, token);
+
+export const downloadDayExport = (date: string, format: 'csv' | 'pdf', token?: string | null) =>
+  apiDownload(`/exports/my/day${format === 'pdf' ? '/pdf' : ''}?date=${encodeURIComponent(date)}`, token);
+
+export const downloadWeekExport = (year: number, week: number, format: 'csv' | 'pdf', token?: string | null) =>
+  apiDownload(`/exports/my/week${format === 'pdf' ? '/pdf' : ''}?year=${year}&week=${week}`, token);
+
+export const downloadMonthExport = (year: number, month: number, format: 'csv' | 'pdf', token?: string | null) =>
+  apiDownload(`/exports/my/month${format === 'pdf' ? '/pdf' : ''}?year=${year}&month=${month}`, token);
+
+export const downloadYearExport = (year: number, format: 'csv' | 'pdf', token?: string | null) =>
+  apiDownload(`/exports/my/year${format === 'pdf' ? '/pdf' : ''}?year=${year}`, token);
 
 export const getEmployees = (token?: string | null) => apiGet<Employee[]>('/employees', token);
 

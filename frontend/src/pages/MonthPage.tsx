@@ -3,8 +3,10 @@ import { useMemo, useState } from 'react';
 import { DataSection, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
 import type { DataGridColumn } from '../components/DataGrid';
 import { DataGrid } from '../components/DataGrid';
+import { ReportExportActions } from '../components/ReportExportActions';
 import { TableStatusBadge } from '../components/TableStatusBadge';
 import { TotalsBar } from '../components/TotalsBar';
+import { useReportExport } from '../hooks/useReportExport';
 import { useMonthReport } from '../hooks/useZytlogApi';
 import type { DailyOverviewRow } from '../types/api';
 import { formatMinutes } from '../utils/date';
@@ -15,6 +17,7 @@ export function MonthPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const query = useMonthReport(year, month);
+  const exporter = useReportExport();
 
   const columns = useMemo<DataGridColumn<DailyOverviewRow>[]>(
     () => [
@@ -43,9 +46,11 @@ export function MonthPage() {
           <>
             <input type="number" value={year} onChange={(event) => setYear(Number(event.target.value))} min={1970} max={2100} />
             <input type="number" value={month} onChange={(event) => setMonth(Number(event.target.value))} min={1} max={12} />
+            <ReportExportActions disabled={exporter.isExporting} onExport={(format) => void exporter.exportMonth(year, month, format)} />
           </>
         }
       />
+      {exporter.error ? <ErrorState message={exporter.error} /> : null}
       {query.isLoading ? <LoadingBlock /> : null}
       {query.error ? <ErrorState message="Could not load monthly report." /> : null}
       {query.data ? (

@@ -250,3 +250,30 @@ def test_week_overview_totals_aggregation_sanity(client: TestClient) -> None:
 
     assert payload["totals"]["actual_minutes"] == daily_actual_sum
     assert payload["totals"]["balance_minutes"] == daily_balance_sum
+
+
+def test_day_csv_export(client: TestClient) -> None:
+    response = client.get("/api/v1/exports/my/day?date=2026-03-30", headers=_auth_headers())
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert "zytlog_day_2026-03-30.csv" in response.headers["content-disposition"]
+    decoded = response.content.decode("utf-8-sig")
+    assert "Date,Status,Target Minutes" in decoded
+    assert "2026-03-30,complete,480,08:00,480,08:00,0,00:00,0,00:00,2" in decoded
+    assert "TOTAL,,480,08:00,480,08:00,0,00:00,0,00:00,2" in decoded
+
+
+def test_week_pdf_export(client: TestClient) -> None:
+    response = client.get("/api/v1/exports/my/week/pdf?year=2026&week=14", headers=_auth_headers())
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert "zytlog_week_2026_w14.pdf" in response.headers["content-disposition"]
+    assert response.content.startswith(b"%PDF")
+
+
+def test_exports_require_authentication(client: TestClient) -> None:
+    response = client.get("/api/v1/exports/my/year?year=2026")
+
+    assert response.status_code == 401
