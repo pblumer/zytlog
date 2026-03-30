@@ -43,6 +43,7 @@ export function QuickStampCard({ status, lastEventTimestamp, title = 'Schnellerf
         type="button"
         className="btn primary quick-stamp-btn"
         disabled={isPending}
+        aria-label={actionLabel}
         onClick={async () => {
           try {
             if (nextAction === 'clock_in') {
@@ -60,7 +61,11 @@ export function QuickStampCard({ status, lastEventTimestamp, title = 'Schnellerf
       </button>
       <p className="meta quick-stamp-preview">{actionLabelWithTime}</p>
       <p className="meta">{lastEventTimestamp ? `Letztes Ereignis: ${formatDateTime(lastEventTimestamp)}` : 'Noch keine Buchung vorhanden.'}</p>
-      {successMessage ? <p className="quick-stamp-success">{successMessage}</p> : null}
+      {successMessage ? (
+        <p className="quick-stamp-success" role="status" aria-live="polite">
+          {successMessage}
+        </p>
+      ) : null}
       {errorMessage ? <ErrorState message={errorMessage} /> : null}
     </section>
   );

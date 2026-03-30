@@ -105,6 +105,8 @@ export function WeekPage() {
                     className={`week-strip-cell week-strip-${day.status} ${isToday ? 'is-today' : ''}`.trim()}
                     onClick={() => openDay(day.date)}
                     title={`${formatWeekday(day.date)} ${formatDateLabel(day.date)} öffnen`}
+                    aria-label={`${formatWeekday(day.date)} ${formatDateLabel(day.date)}. Status ${day.status}. Tag öffnen`}
+                    aria-current={isToday ? 'date' : undefined}
                   >
                     <span>{formatWeekday(day.date)}</span>
                     <strong>{day.date.slice(8, 10)}</strong>
@@ -136,22 +138,18 @@ export function WeekPage() {
                       const needsAttention = day.status === 'incomplete' || day.status === 'invalid';
 
                       return (
-                        <tr
-                          key={day.date}
-                          className={`${isToday ? 'is-today' : ''} ${needsAttention ? 'needs-attention' : ''}`.trim()}
-                          onClick={() => openDay(day.date)}
-                        >
-                          <td>{formatWeekday(day.date)}</td>
-                          <td>{formatDateLabel(day.date)}</td>
-                          <td>
+                        <tr key={day.date} className={`${isToday ? 'is-today' : ''} ${needsAttention ? 'needs-attention' : ''}`.trim()}>
+                          <td data-label="Tag">{formatWeekday(day.date)}</td>
+                          <td data-label="Datum">{formatDateLabel(day.date)}</td>
+                          <td data-label="Status">
                             <TableStatusBadge status={day.status} />
                           </td>
-                          <td className="time-value">{formatMinutes(day.target_minutes)}</td>
-                          <td className="time-value">{formatMinutes(day.actual_minutes)}</td>
-                          <td className={`time-value ${getBalanceClassName(day.balance_minutes)}`}>{formatMinutes(day.balance_minutes)}</td>
-                          <td>{day.event_count}</td>
-                          <td onClick={(event) => event.stopPropagation()}>
-                            <button type="button" className="btn outline" onClick={() => openDay(day.date)}>
+                          <td className="time-value" data-label="Soll">{formatMinutes(day.target_minutes)}</td>
+                          <td className="time-value" data-label="Ist">{formatMinutes(day.actual_minutes)}</td>
+                          <td className={`time-value ${getBalanceClassName(day.balance_minutes)}`} data-label="Saldo">{formatMinutes(day.balance_minutes)}</td>
+                          <td data-label="Ereignisse">{day.event_count}</td>
+                          <td data-label="Aktion">
+                            <button type="button" className="btn outline" onClick={() => openDay(day.date)} aria-label={`Tag ${formatDateLabel(day.date)} öffnen`}>
                               Tag öffnen
                             </button>
                           </td>

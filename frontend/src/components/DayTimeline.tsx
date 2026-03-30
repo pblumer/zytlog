@@ -18,10 +18,10 @@ export function DayTimeline({ events, status }: { events: TimeStampEvent[]; stat
   const hint = getTimelineHint(status, model.hasOpenBlock, Boolean(model.firstInvalidItemId));
 
   return (
-    <div className="day-timeline" aria-label="Zeitverlauf">
-      <div className="day-timeline-flow">
+    <section className="day-timeline" aria-label="Zeitverlauf">
+      <div className="day-timeline-flow" role="list" aria-label="Zeitereignisse in Reihenfolge">
         {model.items.map((item, index) => (
-          <div key={item.id} className="day-timeline-node-wrap">
+          <div key={item.id} className="day-timeline-node-wrap" role="listitem">
             <div
               className={`day-timeline-node ${item.type === 'clock_in' ? 'is-in' : 'is-out'} ${item.isInvalidFlow ? 'is-invalid' : ''}`.trim()}
               title={item.hasComment ? 'Kommentiert' : undefined}
@@ -53,6 +53,6 @@ export function DayTimeline({ events, status }: { events: TimeStampEvent[]; stat
           </ul>
         </div>
       ) : null}
-    </div>
+    </section>
   );
 }

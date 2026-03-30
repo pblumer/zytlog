@@ -42,6 +42,19 @@ function statusDotClassName(status: CalendarDayStatus) {
   }
 }
 
+function statusText(status: CalendarDayStatus) {
+  switch (status) {
+    case 'complete':
+      return 'Vollständig';
+    case 'incomplete':
+      return 'Unvollständig';
+    case 'invalid':
+      return 'Ungültig';
+    default:
+      return 'Keine Daten';
+  }
+}
+
 export function DashboardMonthCalendar({
   year,
   month,
@@ -60,7 +73,7 @@ export function DashboardMonthCalendar({
   const monthLength = new Date(Date.UTC(year, month, 0)).getUTCDate();
   const cells = [];
 
-  for (let i = 0; i < firstWeekday; i += 1) cells.push(<div key={`empty-${i}`} className="calendar-empty" />);
+  for (let i = 0; i < firstWeekday; i += 1) cells.push(<div key={`empty-${i}`} className="calendar-empty" aria-hidden="true" />);
 
   for (let dayNumber = 1; dayNumber <= monthLength; dayNumber += 1) {
     const iso = `${year}-${String(month).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
@@ -73,12 +86,16 @@ export function DashboardMonthCalendar({
         type="button"
         className={`calendar-tile ${statusClassName(status)} ${iso === todayIso ? 'calendar-tile-today' : ''} ${iso === selectedDate ? 'calendar-tile-selected' : ''}`}
         onClick={() => (onSelectDate ? onSelectDate(iso) : navigate(`/day?date=${iso}`))}
-        title={`${iso} · ${status}`}
+        title={`${iso} · ${statusText(status)}`}
+        aria-label={`${iso}. Status: ${statusText(status)}.${iso === todayIso ? ' Heute.' : ''}${iso === selectedDate ? ' Ausgewählt.' : ''}`}
+        aria-current={iso === todayIso ? 'date' : undefined}
+        aria-pressed={onSelectDate ? iso === selectedDate : undefined}
       >
         <span className="calendar-day-number-row">
           <span className="calendar-day-number">{dayNumber}</span>
           <span className={statusDotClassName(status)} aria-hidden="true" />
         </span>
+        <span className="calendar-day-status-text">{statusText(status)}</span>
         <span className="calendar-day-minutes">{day ? formatMinutes(day.actual_minutes) : '—'}</span>
       </button>,
     );

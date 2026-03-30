@@ -21,7 +21,7 @@ export function DashboardPage() {
   return (
     <>
       <PageHeader title="Dashboard" subtitle="Aktueller Status und heutige Übersicht" />
-      <div className="grid">
+      <section className="grid" aria-label="Heutige Kennzahlen">
         <SummaryCard title="Aktueller Status" value={<StatusBadge status={status} />} hint={currentStatus.data?.last_event_timestamp ? `Letzte Buchung: ${formatDateTime(currentStatus.data.last_event_timestamp)}` : 'Noch keine Buchung'} />
         <SummaryCard title="Soll heute" value={<span className="time-value">{formatMinutes(dailyAccount.data?.target_minutes ?? 0)}</span>} />
         <SummaryCard title="Ist heute" value={<span className="time-value">{formatMinutes(dailyAccount.data?.actual_minutes ?? 0)}</span>} />
@@ -36,7 +36,7 @@ export function DashboardPage() {
           }
           hint={<StatusBadge status={dailyAccount.data?.status ?? 'empty'} />}
         />
-      </div>
+      </section>
 
       <QuickStampCard status={status} lastEventTimestamp={lastEvent?.timestamp ?? currentStatus.data?.last_event_timestamp} />
 

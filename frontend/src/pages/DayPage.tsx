@@ -152,6 +152,7 @@ export function DayPage() {
               <input
                 type="datetime-local"
                 value={draft.timestamp}
+                aria-label={`Zeitpunkt für Eintrag um ${formatTime(row.timestamp)} bearbeiten`}
                 onChange={(event) => setDraft((prev) => (prev ? { ...prev, timestamp: event.target.value } : prev))}
               />
             );
@@ -172,6 +173,7 @@ export function DayPage() {
                 type="text"
                 value={draft.comment}
                 maxLength={300}
+                aria-label={`Kommentar für Eintrag um ${formatTime(row.timestamp)} bearbeiten`}
                 onChange={(event) => setDraft((prev) => (prev ? { ...prev, comment: event.target.value } : prev))}
               />
             );
@@ -212,12 +214,19 @@ export function DayPage() {
 
           return (
             <div className="actions">
-              <button type="button" className="btn secondary" onClick={() => startEdit(row)} disabled={deletingRowId === row.id}>
+              <button
+                type="button"
+                className="btn secondary"
+                aria-label={`Eintrag von ${formatTime(row.timestamp)} bearbeiten`}
+                onClick={() => startEdit(row)}
+                disabled={deletingRowId === row.id}
+              >
                 Bearbeiten
               </button>
               <button
                 type="button"
                 className="btn danger"
+                aria-label={`Eintrag von ${formatTime(row.timestamp)} löschen`}
                 onClick={() => {
                   void deleteEvent(row);
                 }}
@@ -278,6 +287,7 @@ export function DayPage() {
             <input
               type="date"
               value={date}
+              aria-label="Datum auswählen"
               onChange={(event) => {
                 const value = event.target.value;
                 setDate(value);
@@ -293,6 +303,8 @@ export function DayPage() {
             <button
               type="button"
               className="btn outline"
+              aria-expanded={showManualForm}
+              aria-controls="manual-entry-form"
               onClick={() => {
                 setShowManualForm((prev) => {
                   const next = !prev;
@@ -318,7 +330,7 @@ export function DayPage() {
       {dailyAccount.error || events.error ? <ErrorState message="Ausgewählter Tag konnte nicht geladen werden." /> : null}
 
       {dailyAccount.data ? (
-        <div className="grid">
+        <section className="grid" aria-label="Tageszusammenfassung">
           <SummaryCard
             title="Status"
             value={<span className={`status ${statusContent.tone}`}>{statusContent.text}</span>}
@@ -344,7 +356,7 @@ export function DayPage() {
               </span>
             }
           />
-        </div>
+        </section>
       ) : null}
 
 
@@ -356,7 +368,15 @@ export function DayPage() {
       <DataSection title={`Zeitereignisliste${isInvalidDay ? ' ⚠️' : ''}`}>
         <p className="meta">Datum: {formatDate(date)}</p>
         {showManualForm ? (
-          <div className="inline-form">
+          <form
+            id="manual-entry-form"
+            className="inline-form"
+            aria-label="Zeitstempel manuell nacherfassen"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void submitManualForm();
+            }}
+          >
             <p className="meta">Validierung erfolgt pro Kalendertag. Unvollständige Tage sind erlaubt.</p>
             <div className="inline-form-row">
               <label htmlFor="manual-type">Zeittyp</label>
@@ -378,6 +398,9 @@ export function DayPage() {
                 id="manual-timestamp"
                 type="datetime-local"
                 value={manualTimestamp}
+                required
+                aria-invalid={Boolean(manualError)}
+                aria-describedby={manualError ? 'manual-form-error' : undefined}
                 onChange={(event) => {
                   setManualTimestamp(event.target.value);
                   setManualDirty(true);
@@ -391,29 +414,33 @@ export function DayPage() {
                 type="text"
                 maxLength={300}
                 value={manualComment}
+                aria-describedby="manual-comment-hint"
                 onChange={(event) => {
                   setManualComment(event.target.value);
                   setManualDirty(true);
                 }}
               />
+              <p id="manual-comment-hint" className="meta">
+                Optional, maximal 300 Zeichen.
+              </p>
             </div>
             <div className="actions">
-              <button type="button" className="btn primary" onClick={() => void submitManualForm()} disabled={manualMutation.isPending}>
+              <button type="submit" className="btn primary" disabled={manualMutation.isPending}>
                 Eintrag speichern
               </button>
               <button type="button" className="btn outline" onClick={resetManualForm}>
                 Abbrechen
               </button>
             </div>
-          </div>
+          </form>
         ) : null}
 
-        {editError ? <p className="inline-error">{editError}</p> : null}
-        {updateMutation.error ? <p className="inline-error">{String(updateMutation.error.message)}</p> : null}
-        {deleteError ? <p className="inline-error">{deleteError}</p> : null}
-        {deleteMutation.error ? <p className="inline-error">{String(deleteMutation.error.message)}</p> : null}
-        {manualError ? <p className="inline-error">{manualError}</p> : null}
-        {manualMutation.error ? <p className="inline-error">{String(manualMutation.error.message)}</p> : null}
+        {editError ? <p className="inline-error" role="alert">{editError}</p> : null}
+        {updateMutation.error ? <p className="inline-error" role="alert">{String(updateMutation.error.message)}</p> : null}
+        {deleteError ? <p className="inline-error" role="alert">{deleteError}</p> : null}
+        {deleteMutation.error ? <p className="inline-error" role="alert">{String(deleteMutation.error.message)}</p> : null}
+        {manualError ? <p id="manual-form-error" className="inline-error" role="alert">{manualError}</p> : null}
+        {manualMutation.error ? <p className="inline-error" role="alert">{String(manualMutation.error.message)}</p> : null}
 
         {!events.data?.length ? (
           <EmptyState title="Keine Zeitstempel vorhanden" description="Erfasse deinen ersten Zeitstempel über 'Kommen'" />
