@@ -331,6 +331,20 @@ def test_patch_time_stamp_timestamp_success(client: TestClient) -> None:
     assert response.json()["timestamp"] == "2026-03-30T08:15:00Z"
 
 
+def test_patch_time_stamp_cross_day_preserves_same_day_validity(client: TestClient) -> None:
+    events = _seed_event_timestamps(client)
+    second_clock_in_id = events[2]["id"]
+
+    response = client.patch(
+        f"/api/v1/time-stamps/{second_clock_in_id}",
+        json={"timestamp": "2026-03-31T08:00:00Z"},
+        headers=_auth_headers(),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["timestamp"] == "2026-03-31T08:00:00Z"
+
+
 
 def test_patch_time_stamp_invalid_sequence_conflict(client: TestClient) -> None:
     events = _seed_event_timestamps(client)
@@ -344,7 +358,7 @@ def test_patch_time_stamp_invalid_sequence_conflict(client: TestClient) -> None:
     )
 
     assert response.status_code == 409
-    assert "Invalid stamp sequence" in response.json()["detail"]
+    assert "Invalid same-day stamp sequence" in response.json()["detail"]
 
 
 def test_patch_time_stamp_forbidden_for_unauthorized_user(client: TestClient) -> None:
@@ -405,6 +419,24 @@ def test_manual_clock_in_in_past_success(client: TestClient) -> None:
     assert payload["comment"] == "Forgot to stamp yesterday"
 
 
+def test_manual_clock_in_in_past_allows_open_day_elsewhere(client: TestClient) -> None:
+    open_today = client.post("/api/v1/time-stamps/clock-in", headers=_auth_headers())
+    assert open_today.status_code == 200
+
+    response = client.post(
+        "/api/v1/time-stamps/manual",
+        json={
+            "timestamp": "2026-03-29T08:00:00Z",
+            "type": "clock_in",
+            "comment": "Back entry for previous day",
+        },
+        headers=_auth_headers(),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["type"] == "clock_in"
+
+
 def test_manual_clock_out_in_past_success(client: TestClient) -> None:
     first = client.post(
         "/api/v1/time-stamps/manual",
@@ -423,6 +455,17 @@ def test_manual_clock_out_in_past_success(client: TestClient) -> None:
     assert second.json()["source"] == "manual_entry"
 
 
+def test_manual_clock_out_without_same_day_clock_in_fails(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/time-stamps/manual",
+        json={"timestamp": "2026-03-29T16:00:00Z", "type": "clock_out"},
+        headers=_auth_headers(),
+    )
+
+    assert response.status_code == 409
+    assert "Invalid same-day stamp sequence" in response.json()["detail"]
+
+
 def test_manual_entry_invalid_sequence_conflict(client: TestClient) -> None:
     first = client.post(
         "/api/v1/time-stamps/manual",
@@ -437,7 +480,7 @@ def test_manual_entry_invalid_sequence_conflict(client: TestClient) -> None:
         headers=_auth_headers(),
     )
     assert conflict.status_code == 409
-    assert "Invalid stamp sequence" in conflict.json()["detail"]
+    assert "Invalid same-day stamp sequence" in conflict.json()["detail"]
 
 
 def test_manual_entry_auth_required(client: TestClient) -> None:
@@ -457,3 +500,19 @@ def test_manual_entry_is_tenant_scoped_to_authenticated_user(client: TestClient)
     assert response.status_code == 200
     payload = response.json()
     assert payload["tenant_id"] == 2
+
+
+def test_current_status_uses_latest_event_overall_with_back_entry(client: TestClient) -> None:
+    current_clock_in = client.post("/api/v1/time-stamps/clock-in", headers=_auth_headers())
+    assert current_clock_in.status_code == 200
+
+    past_manual_entry = client.post(
+        "/api/v1/time-stamps/manual",
+        json={"timestamp": "2026-03-29T08:00:00Z", "type": "clock_in"},
+        headers=_auth_headers(),
+    )
+    assert past_manual_entry.status_code == 200
+
+    response = client.get("/api/v1/time-stamps/my/current-status", headers=_auth_headers())
+    assert response.status_code == 200
+    assert response.json()["status"] == "clocked_in"
