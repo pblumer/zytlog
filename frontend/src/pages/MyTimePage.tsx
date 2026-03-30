@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { DataSection, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
+import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
 import type { DataGridColumn } from '../components/DataGrid';
 import { DataGrid } from '../components/DataGrid';
 import { TableStatusBadge } from '../components/TableStatusBadge';
@@ -52,7 +52,11 @@ export function MyTimePage() {
       </div>
 
       <DataSection title="Today's Events">
-        <DataGrid columns={columns} data={events.data ?? []} searchPlaceholder="Search today's events…" />
+        {!events.data?.length ? (
+          <EmptyState title="No events yet today" description="Use Clock In to start tracking your day." />
+        ) : (
+          <DataGrid columns={columns} data={events.data} searchPlaceholder="Search today's events…" />
+        )}
       </DataSection>
     </>
   );

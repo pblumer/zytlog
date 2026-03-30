@@ -1,77 +1,205 @@
-# Zytlog — Architecture Foundation (MVP Baseline)
+# Zytlog MVP
 
-Zytlog is a tenant-aware web time tracking platform. This baseline now includes a real authentication/authorization foundation around FastAPI + SQLAlchemy + tenant-aware scoping.
+Zytlog is a **tenant-aware web time-tracking MVP** for small teams. It supports authenticated clock-in/clock-out tracking, derived daily time accounts, period reporting (week/month/year), correction flow, and CSV/PDF exports.
 
-## Backend auth foundation
+This repository is focused on a demo-ready MVP baseline that is practical to run locally and safe to extend.
 
-- Bearer JWT validation using Keycloak JWKS.
-- Issuer validation (required).
-- Optional audience validation.
-- Claim extraction (`sub`, `preferred_username`, `email`, roles).
-- Internal user mapping through `users.keycloak_user_id`.
-- Tenant context derived from internal user (`users.tenant_id`).
-- Role-enforcement dependencies:
-  - `require_authenticated_user`
-  - `require_role(...)`
-  - `require_admin`
-  - `require_team_lead_or_admin`
+## MVP scope (current)
 
-## Environment configuration
+Included:
+- FastAPI backend with tenant-scoped data access.
+- Keycloak-ready JWT authentication and role checks.
+- Employee time-stamp tracking (`clock_in`, `clock_out`, breaks).
+- Derived daily accounts and status calculations.
+- Weekly / monthly / yearly personal reporting.
+- Day/week/month/year CSV + PDF export endpoints.
+- Correction endpoint for timestamp/comment updates with sequence validation.
+- React + Vite frontend app shell with DataGrid-based reporting pages.
 
-Set these variables in `backend/.env` (or process env):
+Out of scope (not implemented here):
+- Approval workflows.
+- Absence management.
+- Full audit trail module.
+- Production-grade SSO provisioning automation.
 
-```env
-DATABASE_URL=postgresql+psycopg://zytlog:zytlog@db:5432/zytlog
+## Architecture overview
 
-AUTH_ENABLED=true
-AUTH_DISABLED_FALLBACK_USER_ID=1
+### Backend
+- **Framework**: FastAPI + SQLAlchemy + Alembic.
+- **Auth**: JWT validation via Keycloak JWKS.
+- **Tenant model**: user -> tenant mapping in DB; all business data is tenant-scoped.
+- **Business services**: time tracking, daily account derivation, reporting, export.
 
-KEYCLOAK_URL=http://localhost:8080
-KEYCLOAK_REALM=zytlog
-KEYCLOAK_ISSUER=http://localhost:8080/realms/zytlog
-KEYCLOAK_JWKS_URL=http://localhost:8080/realms/zytlog/protocol/openid-connect/certs
+### Frontend
+- **Framework**: React 19 + TypeScript + Vite.
+- **Data/state**: TanStack Query + typed API client.
+- **Routing/auth shell**: protected routes and app shell layout.
+- **Primary table UI**: `DataGrid` in `frontend/src/components/DataGrid.tsx`.
 
-KEYCLOAK_VERIFY_AUDIENCE=true
-KEYCLOAK_AUDIENCE=account
+## Repository structure
+
+```text
+backend/                  FastAPI app, services, repositories, models, tests
+frontend/                 React app
+frontend/src/             Active frontend source tree (source of truth)
+infrastructure/keycloak/  Local Keycloak setup notes
+docker-compose.yml        Local multi-service startup
 ```
 
-Notes:
-- `KEYCLOAK_ISSUER` and `KEYCLOAK_JWKS_URL` are optional; they are derived from `KEYCLOAK_URL` + `KEYCLOAK_REALM` if omitted.
-- Keep `AUTH_ENABLED=true` in normal development to use real JWT flows.
-- `AUTH_ENABLED=false` can be used temporarily for local fallback wiring.
+> Note: Legacy duplicate frontend folders outside `frontend/src/*` were removed to avoid confusion. Use `frontend/src/*` as the single active tree.
 
-## Protected API behavior
+## Role model and tenant-aware behavior
 
-- `GET /api/v1/me`: authenticated user context (`user_id`, `username`, `email`, `role`, `tenant_id`)
-- `GET /api/v1/employees`: authenticated users
-- `POST /api/v1/employees`: admin only
-- `GET /api/v1/working-time-models`: authenticated users
-- `POST /api/v1/working-time-models`: admin only
-- `GET /api/v1/reports/my/week?year=&week=`: authenticated employee week overview with daily rows and totals
-- `GET /api/v1/reports/my/month?year=&month=`: authenticated employee month overview with daily rows and totals
-- `GET /api/v1/reports/my/year?year=`: authenticated employee year overview with month rows and annual totals
-- `GET /api/v1/exports/my/day?date=` and `GET /api/v1/exports/my/day/pdf?date=`: export day report as CSV/PDF
-- `GET /api/v1/exports/my/week?year=&week=` and `GET /api/v1/exports/my/week/pdf?year=&week=`: export week overview as CSV/PDF
-- `GET /api/v1/exports/my/month?year=&month=` and `GET /api/v1/exports/my/month/pdf?year=&month=`: export month overview as CSV/PDF
-- `GET /api/v1/exports/my/year?year=` and `GET /api/v1/exports/my/year/pdf?year=`: export year overview as CSV/PDF
-- `PATCH /api/v1/time-stamps/{time_stamp_id}`: correction endpoint for `timestamp` and `comment`
-  - tenant admin can correct any event in their tenant
-  - employees/team leads can only correct their own events
-  - correction is rejected with `409` if clock-in/clock-out sequence would become invalid
-  - daily account/reporting values reflect corrections automatically because accounts are derived from event reads
+Roles:
+- `employee`
+- `team_lead`
+- `admin`
 
-## Local Keycloak setup
+Tenant behavior:
+- Every internal user belongs to exactly one tenant.
+- API access is scoped by tenant from auth context.
+- Admin-only operations (e.g., employee/model create) require `admin`.
+- Time-stamp correction allows tenant admins for all tenant events, while employees/team leads can only edit their own events.
 
-See detailed bootstrap steps in `infrastructure/keycloak/README.md`.
+## Key API flows
 
-## Docker Compose
+Authentication + context:
+- `GET /api/v1/me`
+
+Time tracking:
+- `POST /api/v1/time-stamps/clock-in`
+- `POST /api/v1/time-stamps/clock-out`
+- `GET /api/v1/time-stamps/my?from=YYYY-MM-DD&to=YYYY-MM-DD`
+- `GET /api/v1/time-stamps/my/current-status`
+- `PATCH /api/v1/time-stamps/{time_stamp_id}`
+
+Daily account + reports:
+- `GET /api/v1/daily-accounts/my?date=YYYY-MM-DD`
+- `GET /api/v1/reports/my/week?year=YYYY&week=WW`
+- `GET /api/v1/reports/my/month?year=YYYY&month=MM`
+- `GET /api/v1/reports/my/year?year=YYYY`
+
+Exports:
+- Day: `GET /api/v1/exports/my/day` + `/pdf`
+- Week: `GET /api/v1/exports/my/week` + `/pdf`
+- Month: `GET /api/v1/exports/my/month` + `/pdf`
+- Year: `GET /api/v1/exports/my/year` + `/pdf`
+
+## Local development setup
+
+## 1) Prerequisites
+- Docker + Docker Compose
+- Python 3.12+ (for local backend outside Docker)
+- Node 22+ and npm (for local frontend outside Docker)
+
+## 2) Environment files
+
+Copy examples:
 
 ```bash
-docker compose up -d
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 ```
 
-Includes:
-- `db` (PostgreSQL)
-- `backend` container scaffold
-- `frontend` container scaffold
-- `keycloak` (dev mode)
+## 3) Start full stack with Docker Compose
+
+```bash
+docker compose up --build
+```
+
+Services:
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000
+- API docs: http://localhost:8000/docs
+- Keycloak: http://localhost:8080
+- PostgreSQL: localhost:5432
+
+## 4) Apply DB migrations
+
+From repository root:
+
+```bash
+cd backend
+alembic upgrade head
+```
+
+(You can run this on host Python env or inside backend container.)
+
+## 5) Seed demo data (recommended for demos)
+
+```bash
+python -m backend.scripts.seed_demo
+```
+
+This creates (idempotently):
+- one demo tenant (`demo-co`)
+- one admin user mapping (`admin@demo.local`)
+- one employee user mapping (`employee@demo.local`)
+- one working time model
+- sample timestamp events for current and previous day
+
+### Keycloak note for local demo
+
+If your Keycloak users use different subject IDs, update the seeded `users.keycloak_user_id` values or create matching users in Keycloak so JWT `sub` matches DB records.
+
+Detailed Keycloak bootstrap remains in:
+- `infrastructure/keycloak/README.md`
+
+## Alternative: run backend/frontend directly (without Compose)
+
+### Backend
+
+```bash
+cd backend
+pip install -e .
+alembic upgrade head
+uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## Development checks
+
+Backend:
+```bash
+cd backend
+pytest
+```
+
+Frontend:
+```bash
+cd frontend
+npm run check
+npm run build
+```
+
+## Known MVP limitations
+
+- Auth flow is Keycloak-ready but still demo-oriented in local setup.
+- No dedicated approval pipeline for corrections yet.
+- No absence planning/calendar module.
+- No long-term audit/event sourcing stream.
+- Local compose installs dependencies at container start (optimized for simplicity, not production image performance).
+
+## Frontend consistency and UX notes
+
+Current frontend hardening includes:
+- consistent empty-state handling across day/week/month/year pages
+- consistent report export action placement in page headers
+- clearer export and correction failure messages
+- DataGrid-first table usage
+
+## Demo startup sequence (quick)
+
+1. `docker compose up --build`
+2. `cd backend && alembic upgrade head`
+3. `python -m backend.scripts.seed_demo`
+4. Configure Keycloak realm/users (see `infrastructure/keycloak/README.md`)
+5. Open http://localhost:5173 and sign in with a mapped user
+

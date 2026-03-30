@@ -74,7 +74,7 @@ export function DayPage() {
       });
       cancelEdit();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Could not save correction.';
+      const message = error instanceof Error ? error.message : 'Could not save correction. Please retry.';
       setEditError(message);
     }
   };
