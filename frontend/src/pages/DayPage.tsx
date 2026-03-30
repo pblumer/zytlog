@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
 import type { DataGridColumn } from '../components/DataGrid';
 import { DataGrid } from '../components/DataGrid';
+import { DayTimeline } from '../components/DayTimeline';
 import { InlineEditActions } from '../components/InlineEditActions';
 import { ReportExportActions } from '../components/ReportExportActions';
 import { TableStatusBadge } from '../components/TableStatusBadge';
@@ -314,7 +315,7 @@ export function DayPage() {
 
       {exporter.error ? <ErrorState message={exporter.error} /> : null}
       {dailyAccount.isLoading || events.isLoading ? <LoadingBlock /> : null}
-      {dailyAccount.error || events.error ? <ErrorState message="Could not load selected day." /> : null}
+      {dailyAccount.error || events.error ? <ErrorState message="Ausgewählter Tag konnte nicht geladen werden." /> : null}
 
       {dailyAccount.data ? (
         <div className="grid">
@@ -345,6 +346,12 @@ export function DayPage() {
           />
         </div>
       ) : null}
+
+
+      <DataSection title="Zeitverlauf">
+        <p className="meta">Chronologische Darstellung deiner Zeitereignisse.</p>
+        <DayTimeline events={events.data ?? []} status={dailyAccount.data?.status} />
+      </DataSection>
 
       <DataSection title={`Zeitereignisliste${isInvalidDay ? ' ⚠️' : ''}`}>
         <p className="meta">Datum: {formatDate(date)}</p>
