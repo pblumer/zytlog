@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
-import { DataSection, ErrorState, LoadingBlock, PageHeader, StatusBadge, SummaryCard } from '../components/common';
-import { SimpleTable } from '../components/SimpleTable';
+import { DataSection, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
+import type { DataGridColumn } from '../components/DataGrid';
+import { DataGrid } from '../components/DataGrid';
+import { TableStatusBadge } from '../components/TableStatusBadge';
+import { TotalsBar } from '../components/TotalsBar';
 import { useWeekReport } from '../hooks/useZytlogApi';
 import type { DailyOverviewRow } from '../types/api';
 import { formatMinutes, getIsoWeek } from '../utils/date';
@@ -12,6 +15,24 @@ export function WeekPage() {
   const [year, setYear] = useState(nowWeek.year);
   const [week, setWeek] = useState(nowWeek.week);
   const query = useWeekReport(year, week);
+
+  const columns = useMemo<DataGridColumn<DailyOverviewRow>[]>(
+    () => [
+      { id: 'date', header: 'Date', cell: (row) => row.date, sortValue: (row) => row.date, searchableText: (row) => row.date, sortable: true },
+      {
+        id: 'status',
+        header: 'Status',
+        cell: (row) => <TableStatusBadge status={row.status} />,
+        sortValue: (row) => row.status,
+        searchableText: (row) => row.status,
+        sortable: true,
+      },
+      { id: 'target', header: 'Target', cell: (row) => formatMinutes(row.target_minutes), sortValue: (row) => row.target_minutes, sortable: true },
+      { id: 'actual', header: 'Actual', cell: (row) => formatMinutes(row.actual_minutes), sortValue: (row) => row.actual_minutes, sortable: true },
+      { id: 'balance', header: 'Balance', cell: (row) => formatMinutes(row.balance_minutes), sortValue: (row) => row.balance_minutes, sortable: true },
+    ],
+    [],
+  );
 
   return (
     <>
@@ -36,17 +57,15 @@ export function WeekPage() {
             <SummaryCard title="Days" value={query.data.totals.days_total} />
           </div>
           <DataSection title="Daily Rows">
-            <SimpleTable<DailyOverviewRow>
-              columns={[
-                { key: 'date', header: 'Date', render: (row) => row.date },
-                { key: 'status', header: 'Status', render: (row) => <StatusBadge status={row.status} /> },
-                { key: 'target', header: 'Target', render: (row) => formatMinutes(row.target_minutes) },
-                { key: 'actual', header: 'Actual', render: (row) => formatMinutes(row.actual_minutes) },
-                { key: 'balance', header: 'Balance', render: (row) => formatMinutes(row.balance_minutes) },
+            <TotalsBar
+              items={[
+                { label: 'Complete', value: query.data.totals.days_complete },
+                { label: 'Incomplete', value: query.data.totals.days_incomplete },
+                { label: 'Invalid', value: query.data.totals.days_invalid },
+                { label: 'Empty', value: query.data.totals.days_empty },
               ]}
-              data={query.data.days}
-              rowKey={(row) => row.date}
             />
+            <DataGrid columns={columns} data={query.data.days} searchPlaceholder="Search daily rows…" />
           </DataSection>
         </>
       ) : null}

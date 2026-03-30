@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { DataSection, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
-import { SimpleTable } from '../components/SimpleTable';
+import type { DataGridColumn } from '../components/DataGrid';
+import { DataGrid } from '../components/DataGrid';
+import { TotalsBar } from '../components/TotalsBar';
 import { useYearReport } from '../hooks/useZytlogApi';
 import type { MonthlySummaryRow } from '../types/api';
 import { formatMinutes } from '../utils/date';
@@ -11,6 +13,17 @@ const now = new Date();
 export function YearPage() {
   const [year, setYear] = useState(now.getFullYear());
   const query = useYearReport(year);
+
+  const columns = useMemo<DataGridColumn<MonthlySummaryRow>[]>(
+    () => [
+      { id: 'month', header: 'Month', cell: (row) => row.month, sortValue: (row) => row.month, searchableText: (row) => `${row.month}`, sortable: true },
+      { id: 'target', header: 'Target', cell: (row) => formatMinutes(row.target_minutes), sortValue: (row) => row.target_minutes, sortable: true },
+      { id: 'actual', header: 'Actual', cell: (row) => formatMinutes(row.actual_minutes), sortValue: (row) => row.actual_minutes, sortable: true },
+      { id: 'balance', header: 'Balance', cell: (row) => formatMinutes(row.balance_minutes), sortValue: (row) => row.balance_minutes, sortable: true },
+      { id: 'days', header: 'Days', cell: (row) => row.days_total, sortValue: (row) => row.days_total, sortable: true },
+    ],
+    [],
+  );
 
   return (
     <>
@@ -30,17 +43,15 @@ export function YearPage() {
             <SummaryCard title="Days" value={query.data.totals.days_total} />
           </div>
           <DataSection title="Monthly Summary">
-            <SimpleTable<MonthlySummaryRow>
-              columns={[
-                { key: 'month', header: 'Month', render: (row) => row.month },
-                { key: 'target', header: 'Target', render: (row) => formatMinutes(row.target_minutes) },
-                { key: 'actual', header: 'Actual', render: (row) => formatMinutes(row.actual_minutes) },
-                { key: 'balance', header: 'Balance', render: (row) => formatMinutes(row.balance_minutes) },
-                { key: 'days', header: 'Days', render: (row) => row.days_total },
+            <TotalsBar
+              items={[
+                { label: 'Complete', value: query.data.totals.days_complete },
+                { label: 'Incomplete', value: query.data.totals.days_incomplete },
+                { label: 'Invalid', value: query.data.totals.days_invalid },
+                { label: 'Empty', value: query.data.totals.days_empty },
               ]}
-              data={query.data.months}
-              rowKey={(row) => row.month.toString()}
             />
+            <DataGrid columns={columns} data={query.data.months} searchPlaceholder="Search months…" />
           </DataSection>
         </>
       ) : null}

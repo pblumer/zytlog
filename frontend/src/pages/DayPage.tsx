@@ -1,15 +1,152 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
-import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader, StatusBadge, SummaryCard } from '../components/common';
-import { SimpleTable } from '../components/SimpleTable';
-import { useDailyAccount, useTimeStamps } from '../hooks/useZytlogApi';
+import { TIME_CORRECTION_API_AVAILABLE } from '../api/endpoints';
+import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
+import type { DataGridColumn } from '../components/DataGrid';
+import { DataGrid } from '../components/DataGrid';
+import { InlineEditActions } from '../components/InlineEditActions';
+import { TableStatusBadge } from '../components/TableStatusBadge';
+import { useDailyAccount, useTimeStamps, useUpdateTimeStampMutation } from '../hooks/useZytlogApi';
 import type { TimeStampEvent } from '../types/api';
 import { formatDateTime, formatMinutes, isoDate } from '../utils/date';
 
+type EditDraft = {
+  timestamp: string;
+  comment: string;
+};
+
+function toInputDateTimeValue(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
+function toIsoOrNull(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
 export function DayPage() {
   const [date, setDate] = useState(isoDate(new Date()));
+  const [editingRowId, setEditingRowId] = useState<number | null>(null);
+  const [draft, setDraft] = useState<EditDraft | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+
   const dailyAccount = useDailyAccount(date);
   const events = useTimeStamps(date, date);
+  const updateMutation = useUpdateTimeStampMutation();
+
+  const startEdit = (event: TimeStampEvent) => {
+    setEditingRowId(event.id);
+    setDraft({
+      timestamp: toInputDateTimeValue(event.timestamp),
+      comment: event.comment ?? '',
+    });
+    setEditError(null);
+  };
+
+  const cancelEdit = () => {
+    setEditingRowId(null);
+    setDraft(null);
+    setEditError(null);
+  };
+
+  const saveEdit = async (eventId: number) => {
+    if (!draft) return;
+    const parsedTimestamp = toIsoOrNull(draft.timestamp);
+    if (!parsedTimestamp) {
+      setEditError('Timestamp is required and must be valid.');
+      return;
+    }
+    if (draft.comment.length > 300) {
+      setEditError('Comment must be at most 300 characters.');
+      return;
+    }
+
+    setEditError(null);
+    await updateMutation.mutateAsync({
+      eventId,
+      timestamp: parsedTimestamp,
+      comment: draft.comment.trim() || null,
+    });
+
+    cancelEdit();
+  };
+
+  const columns = useMemo<DataGridColumn<TimeStampEvent>[]>(
+    () => [
+      {
+        id: 'type',
+        header: 'Type',
+        cell: (row) => <TableStatusBadge status={row.type} />,
+        sortValue: (row) => row.type,
+        searchableText: (row) => row.type,
+        sortable: true,
+      },
+      {
+        id: 'timestamp',
+        header: 'Timestamp',
+        cell: (row) => {
+          if (editingRowId === row.id && draft) {
+            return (
+              <input
+                type="datetime-local"
+                value={draft.timestamp}
+                onChange={(event) => setDraft((prev) => (prev ? { ...prev, timestamp: event.target.value } : prev))}
+              />
+            );
+          }
+          return formatDateTime(row.timestamp);
+        },
+        sortValue: (row) => row.timestamp,
+        searchableText: (row) => row.timestamp,
+        sortable: true,
+      },
+      {
+        id: 'comment',
+        header: 'Comment',
+        cell: (row) => {
+          if (editingRowId === row.id && draft) {
+            return (
+              <input
+                type="text"
+                value={draft.comment}
+                maxLength={300}
+                onChange={(event) => setDraft((prev) => (prev ? { ...prev, comment: event.target.value } : prev))}
+              />
+            );
+          }
+          return row.comment ?? '—';
+        },
+        searchableText: (row) => row.comment ?? '',
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        cell: (row) => {
+          if (editingRowId === row.id) {
+            return (
+              <InlineEditActions
+                onSave={() => {
+                  void saveEdit(row.id);
+                }}
+                onCancel={cancelEdit}
+                saveDisabled={!TIME_CORRECTION_API_AVAILABLE || updateMutation.isPending}
+                saving={updateMutation.isPending}
+              />
+            );
+          }
+
+          return (
+            <button type="button" className="btn outline" onClick={() => startEdit(row)}>
+              Edit
+            </button>
+          );
+        },
+      },
+    ],
+    [draft, editingRowId, updateMutation.isPending],
+  );
 
   return (
     <>
@@ -24,7 +161,7 @@ export function DayPage() {
 
       {dailyAccount.data ? (
         <div className="grid">
-          <SummaryCard title="Status" value={<StatusBadge status={dailyAccount.data.status} />} />
+          <SummaryCard title="Status" value={<TableStatusBadge status={dailyAccount.data.status} />} />
           <SummaryCard title="Target" value={formatMinutes(dailyAccount.data.target_minutes)} />
           <SummaryCard title="Actual" value={formatMinutes(dailyAccount.data.actual_minutes)} />
           <SummaryCard title="Balance" value={formatMinutes(dailyAccount.data.balance_minutes)} />
@@ -32,17 +169,21 @@ export function DayPage() {
       ) : null}
 
       <DataSection title="Event List">
+        {!TIME_CORRECTION_API_AVAILABLE ? (
+          <p className="meta">Inline editing is enabled, but save stays disabled until the backend correction endpoint is available.</p>
+        ) : null}
+        {editError ? <p className="inline-error">{editError}</p> : null}
+        {updateMutation.error ? <p className="inline-error">{String(updateMutation.error.message)}</p> : null}
+
         {!events.data?.length ? (
           <EmptyState title="No events for this day" description="Time stamp events will appear here." />
         ) : (
-          <SimpleTable<TimeStampEvent>
-            columns={[
-              { key: 'type', header: 'Type', render: (event) => <StatusBadge status={event.type} /> },
-              { key: 'timestamp', header: 'Timestamp', render: (event) => formatDateTime(event.timestamp) },
-              { key: 'comment', header: 'Comment', render: (event) => event.comment ?? '—' },
-            ]}
+          <DataGrid
+            columns={columns}
             data={events.data}
-            rowKey={(event) => event.id.toString()}
+            searchPlaceholder="Search events…"
+            initialPageSize={20}
+            getRowClassName={(row) => (row.id === editingRowId ? 'is-editing' : undefined)}
           />
         )}
       </DataSection>

@@ -1,5 +1,9 @@
-import { DataSection, ErrorState, LoadingBlock, PageHeader, StatusBadge, SummaryCard } from '../components/common';
-import { SimpleTable } from '../components/SimpleTable';
+import { useMemo } from 'react';
+
+import { DataSection, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
+import type { DataGridColumn } from '../components/DataGrid';
+import { DataGrid } from '../components/DataGrid';
+import { TableStatusBadge } from '../components/TableStatusBadge';
 import { useClockMutation, useCurrentStatus, useDailyAccount, useTimeStamps } from '../hooks/useZytlogApi';
 import type { TimeStampEvent } from '../types/api';
 import { formatDateTime, formatMinutes, isoDate } from '../utils/date';
@@ -11,6 +15,15 @@ export function MyTimePage() {
   const events = useTimeStamps(today, today);
   const clockIn = useClockMutation('in');
   const clockOut = useClockMutation('out');
+
+  const columns = useMemo<DataGridColumn<TimeStampEvent>[]>(
+    () => [
+      { id: 'type', header: 'Type', cell: (row) => <TableStatusBadge status={row.type} />, sortValue: (row) => row.type, searchableText: (row) => row.type, sortable: true },
+      { id: 'timestamp', header: 'Timestamp', cell: (row) => formatDateTime(row.timestamp), sortValue: (row) => row.timestamp, searchableText: (row) => row.timestamp, sortable: true },
+      { id: 'source', header: 'Source', cell: (row) => row.source, sortValue: (row) => row.source, searchableText: (row) => row.source, sortable: true },
+    ],
+    [],
+  );
 
   if (currentStatus.isLoading || dailyAccount.isLoading || events.isLoading) return <LoadingBlock />;
   if (currentStatus.error || dailyAccount.error || events.error) return <ErrorState message="Could not load your time data." />;
@@ -32,22 +45,14 @@ export function MyTimePage() {
         }
       />
       <div className="grid">
-        <SummaryCard title="Current" value={<StatusBadge status={currentStatus.data?.status ?? 'clocked_out'} />} />
+        <SummaryCard title="Current" value={<TableStatusBadge status={currentStatus.data?.status ?? 'clocked_out'} />} />
         <SummaryCard title="Actual" value={formatMinutes(dailyAccount.data?.actual_minutes ?? 0)} />
         <SummaryCard title="Break" value={formatMinutes(dailyAccount.data?.break_minutes ?? 0)} />
         <SummaryCard title="Balance" value={formatMinutes(dailyAccount.data?.balance_minutes ?? 0)} />
       </div>
 
       <DataSection title="Today's Events">
-        <SimpleTable<TimeStampEvent>
-          columns={[
-            { key: 'type', header: 'Type', render: (event) => <StatusBadge status={event.type} /> },
-            { key: 'time', header: 'Timestamp', render: (event) => formatDateTime(event.timestamp) },
-            { key: 'source', header: 'Source', render: (event) => event.source },
-          ]}
-          data={events.data ?? []}
-          rowKey={(event) => event.id.toString()}
-        />
+        <DataGrid columns={columns} data={events.data ?? []} searchPlaceholder="Search today's events…" />
       </DataSection>
     </>
   );
