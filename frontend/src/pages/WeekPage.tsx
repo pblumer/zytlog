@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { DataSection, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
+import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
 import type { DataGridColumn } from '../components/DataGrid';
 import { DataGrid } from '../components/DataGrid';
 import { ReportExportActions } from '../components/ReportExportActions';
@@ -70,7 +70,11 @@ export function WeekPage() {
                 { label: 'Empty', value: query.data.totals.days_empty },
               ]}
             />
-            <DataGrid columns={columns} data={query.data.days} searchPlaceholder="Search daily rows…" />
+            {query.data.days.length ? (
+              <DataGrid columns={columns} data={query.data.days} searchPlaceholder="Search daily rows…" />
+            ) : (
+              <EmptyState title="No rows for this week" description="No time data has been recorded for the selected week." />
+            )}
           </DataSection>
         </>
       ) : null}

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { DataSection, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
+import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
 import type { DataGridColumn } from '../components/DataGrid';
 import { DataGrid } from '../components/DataGrid';
 import { ReportExportActions } from '../components/ReportExportActions';
@@ -60,7 +60,11 @@ export function YearPage() {
                 { label: 'Empty', value: query.data.totals.days_empty },
               ]}
             />
-            <DataGrid columns={columns} data={query.data.months} searchPlaceholder="Search months…" />
+            {query.data.months.length ? (
+              <DataGrid columns={columns} data={query.data.months} searchPlaceholder="Search months…" />
+            ) : (
+              <EmptyState title="No rows for this year" description="No time data has been recorded for the selected year." />
+            )}
           </DataSection>
         </>
       ) : null}

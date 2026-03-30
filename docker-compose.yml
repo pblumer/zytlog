@@ -15,7 +15,9 @@ services:
   backend:
     image: python:3.12-slim
     working_dir: /app
-    command: bash -lc "echo 'Backend container placeholder. Add uvicorn startup later.' && sleep infinity"
+    command: >
+      bash -lc "pip install --no-cache-dir -e /app/backend &&
+      uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload"
     environment:
       DATABASE_URL: postgresql+psycopg://zytlog:zytlog@db:5432/zytlog
       AUTH_ENABLED: "true"
@@ -34,7 +36,9 @@ services:
   frontend:
     image: node:22-alpine
     working_dir: /app
-    command: sh -lc "echo 'Frontend container placeholder. Add Vite startup later.' && sleep infinity"
+    command: sh -lc "cd frontend && npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000/api/v1
     volumes:
       - ./frontend:/app/frontend
     ports:

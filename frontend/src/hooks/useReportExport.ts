@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { useAuth } from '../auth/provider';
 import { downloadDayExport, downloadMonthExport, downloadWeekExport, downloadYearExport } from '../api/endpoints';
+import { ApiError } from '../api/client';
 
 export type ExportFormat = 'csv' | 'pdf';
 
@@ -28,7 +29,11 @@ export function useReportExport() {
       const { blob, filename } = await action();
       triggerBrowserDownload(blob, filename ?? fallbackFilename);
     } catch (exportError) {
-      const message = exportError instanceof Error ? exportError.message : 'Export failed.';
+      let message = exportError instanceof Error ? exportError.message : 'Export failed.';
+      if (exportError instanceof ApiError) {
+        if (exportError.status === 401) message = 'Your session expired. Please sign in again before exporting.';
+        if (exportError.status === 404) message = 'No exportable data found for the selected period.';
+      }
       setError(message);
     } finally {
       setIsExporting(false);

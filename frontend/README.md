@@ -1,6 +1,12 @@
 # Zytlog Frontend
 
-Frontend foundation for Zytlog built with React + TypeScript + Vite.
+React + TypeScript + Vite frontend for the Zytlog MVP.
+
+## Active source tree
+
+Use **`frontend/src/*`** as the source of truth.
+
+Legacy duplicate frontend folders outside `src` were removed during MVP cleanup to keep onboarding clear.
 
 ## Stack
 
@@ -8,30 +14,36 @@ Frontend foundation for Zytlog built with React + TypeScript + Vite.
 - React Router
 - TanStack Query
 - Typed API client layer
-- Nord-inspired theme tokens and app shell
+- DataGrid-first table/report UI
 
-## Run
+## Run locally
 
 ```bash
 cd frontend
+cp .env.example .env
 npm install
 npm run dev
 ```
 
-Configure API endpoint via:
+Default local frontend URL: http://localhost:5173
 
-```bash
+## Environment
+
+`.env.example`:
+
+```env
 VITE_API_BASE_URL=http://localhost:8000/api/v1
+# VITE_DEV_BEARER_TOKEN=<optional_dev_token>
 ```
 
 ## Structure
 
-- `src/app`: app bootstrapping, router, protected routes
-- `src/auth`: auth provider and Keycloak integration seam
-- `src/layout`: shell layout (sidebar, topbar, content region)
-- `src/pages`: route pages (Dashboard, My Time, Day/Week/Month/Year, Employees, Working Time Models)
+- `src/app`: app bootstrap, router, protected route flow
+- `src/auth`: auth provider and auth state
+- `src/layout`: shell layout (sidebar, topbar, content)
+- `src/pages`: route pages (dashboard, day/week/month/year, admin lists)
 - `src/api`: API client + endpoint functions
-- `src/components`: reusable UI blocks and table foundation
-- `src/hooks`: TanStack Query hooks and mutations
-- `src/theme`: theme tokens and global styles
-- `src/types`: API response types
+- `src/components`: reusable page/table UI primitives
+- `src/hooks`: query hooks and mutations
+- `src/theme`: design tokens + global styles
+- `src/types`: API types
