@@ -18,18 +18,12 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    user_role = sa.Enum("EMPLOYEE", "TEAM_LEAD", "ADMIN", name="userrole")
-    tenant_type = sa.Enum("COMPANY", "DEMO", name="tenanttype")
-    timestamp_event_type = sa.Enum(
-        "CLOCK_IN", "CLOCK_OUT", "BREAK_START", "BREAK_END", name="timestampeventtype"
-    )
-    daily_status = sa.Enum("OPEN", "LOCKED", "CORRECTED", name="dailytimeaccountstatus")
+    user_role = sa.Enum("EMPLOYEE", "TEAM_LEAD", "ADMIN", name="userrole", create_type=False)
+    tenant_type = sa.Enum("COMPANY", "DEMO", name="tenanttype", create_type=False)
+    timestamp_event_type = sa.Enum("CLOCK_IN", "CLOCK_OUT", "BREAK_START", "BREAK_END", name="timestampeventtype", create_type=False)
+    daily_status = sa.Enum("OPEN", "LOCKED", "CORRECTED", name="dailytimeaccountstatus", create_type=False)
 
     bind = op.get_bind()
-    user_role.create(bind, checkfirst=True)
-    tenant_type.create(bind, checkfirst=True)
-    timestamp_event_type.create(bind, checkfirst=True)
-    daily_status.create(bind, checkfirst=True)
 
     op.create_table(
         "tenants",
