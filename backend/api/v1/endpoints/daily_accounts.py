@@ -45,10 +45,9 @@ def my_daily_account(
 
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid date range")
 
-    cursor = from_date
-    accounts: list[DailyTimeAccountRead] = []
-    while cursor <= to_date:
-        accounts.append(service.get_daily_account(tenant_id=context.tenant_id, employee=employee, target_date=cursor))
-        cursor = date.fromordinal(cursor.toordinal() + 1)
-
-    return accounts
+    return service.get_daily_accounts_in_range(
+        tenant_id=context.tenant_id,
+        employee=employee,
+        from_date=from_date,
+        to_date=to_date,
+    )

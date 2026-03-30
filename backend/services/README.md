@@ -10,3 +10,5 @@ Examples for next steps:
 - `TimeTrackingService` enforces alternating `CLOCK_IN`/`CLOCK_OUT` events per employee and tenant.
 - `DailyAccountService` computes daily target/actual/break/balance values from same-day clock events.
 - Daily break minutes are currently inferred as gaps between completed work intervals (MVP simplification).
+
+- `ReportingService` builds week/month/year overview payloads from daily account calculations.
