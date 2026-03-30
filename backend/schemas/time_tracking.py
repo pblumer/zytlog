@@ -29,6 +29,11 @@ class TimeStampEventRead(TimestampedSchema):
     comment: str | None
 
 
+class TimeStampEventUpdate(BaseSchema):
+    timestamp: datetime | None = None
+    comment: str | None = Field(default=None, max_length=300)
+
+
 class CurrentClockStatusRead(BaseSchema):
     employee_id: int
     status: ClockStatus

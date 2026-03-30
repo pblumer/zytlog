@@ -50,6 +50,11 @@ Notes:
 - `GET /api/v1/reports/my/week?year=&week=`: authenticated employee week overview with daily rows and totals
 - `GET /api/v1/reports/my/month?year=&month=`: authenticated employee month overview with daily rows and totals
 - `GET /api/v1/reports/my/year?year=`: authenticated employee year overview with month rows and annual totals
+- `PATCH /api/v1/time-stamps/{time_stamp_id}`: correction endpoint for `timestamp` and `comment`
+  - tenant admin can correct any event in their tenant
+  - employees/team leads can only correct their own events
+  - correction is rejected with `409` if clock-in/clock-out sequence would become invalid
+  - daily account/reporting values reflect corrections automatically because accounts are derived from event reads
 
 ## Local Keycloak setup
 
