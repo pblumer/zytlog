@@ -3,11 +3,15 @@ import type { PropsWithChildren, ReactNode } from 'react';
 
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
   return (
-    <div className="page-header">
+    <header className="page-header">
       <h1>{title}</h1>
       {subtitle ? <p>{subtitle}</p> : null}
-      {actions ? <div className="actions" style={{ marginTop: '0.75rem' }}>{actions}</div> : null}
-    </div>
+      {actions ? (
+        <div className="actions page-header-actions" style={{ marginTop: '0.75rem' }} aria-label={`${title} Aktionen`}>
+          {actions}
+        </div>
+      ) : null}
+    </header>
   );
 }
 
@@ -26,11 +30,15 @@ export function StatusBadge({ status }: { status: string }) {
 }
 
 export function LoadingBlock() {
-  return <div className="card">Loading…</div>;
+  return <div className="card" role="status" aria-live="polite">Loading…</div>;
 }
 
 export function ErrorState({ message }: { message?: string }) {
-  return <div className="card">Error: {message ?? 'Something went wrong.'}</div>;
+  return (
+    <div className="card inline-error" role="alert">
+      Error: {message ?? 'Something went wrong.'}
+    </div>
+  );
 }
 
 export function EmptyState({ title, description }: { title: string; description?: string }) {

@@ -42,14 +42,14 @@ export function MyTimePage() {
 
       <QuickStampCard status={activeStatus} lastEventTimestamp={currentStatus.data?.last_event_timestamp} />
 
-      <div className="grid" style={{ marginTop: '1rem' }}>
+      <section className="grid" style={{ marginTop: '1rem' }} aria-label="Zusammenfassung ausgewählter Tag">
         <SummaryCard title="Ausgewählter Tag" value={selectedDate} hint={<TableStatusBadge status={selectedDayAccount.data?.status ?? 'empty'} />} />
         <SummaryCard title="Ist-Zeit" value={formatMinutes(selectedDayAccount.data?.actual_minutes ?? 0)} />
         <SummaryCard title="Pausen" value={formatMinutes(selectedDayAccount.data?.break_minutes ?? 0)} />
         <SummaryCard title="Balance" value={formatMinutes(selectedDayAccount.data?.balance_minutes ?? 0)} />
-      </div>
+      </section>
 
-      <section className="card" style={{ marginTop: '1rem' }}>
+      <section className="card my-time-calendar-section" style={{ marginTop: '1rem' }} aria-label="Monatskalender">
         <div className="actions" style={{ justifyContent: 'space-between' }}>
           <button
             className="btn outline"
@@ -63,7 +63,7 @@ export function MyTimePage() {
           >
             ← Monat zurück
           </button>
-          <p className="meta" style={{ margin: 0 }}>
+          <p className="meta" style={{ margin: 0 }} aria-live="polite">
             {monthCursor.month}.{monthCursor.year}
           </p>
           <button

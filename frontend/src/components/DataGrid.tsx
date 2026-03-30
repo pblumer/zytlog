@@ -84,6 +84,7 @@ export function DataGrid<TData>({
   };
 
   const colSpan = columns.length || 1;
+  const sortDescription = sort ? `${sort.id} ${sort.direction === 'asc' ? 'aufsteigend' : 'absteigend'}` : 'keine Sortierung';
 
   return (
     <div className="data-grid">
@@ -103,17 +104,19 @@ export function DataGrid<TData>({
 
       <div className="table-wrap">
         <table className="table data-grid-table">
+          <caption className="sr-only">Datentabelle, aktuell {sortDescription}</caption>
           <thead>
             <tr>
               {columns.map((column) => {
                 const sortDirection = sort?.id === column.id ? sort.direction : null;
                 return (
-                  <th key={column.id}>
+                  <th key={column.id} aria-sort={sortDirection === 'asc' ? 'ascending' : sortDirection === 'desc' ? 'descending' : 'none'}>
                     <button
                       type="button"
                       className={column.sortable ? 'sort-header' : 'plain-header'}
                       onClick={column.sortable ? () => toggleSort(column.id) : undefined}
                       disabled={!column.sortable}
+                      aria-label={column.sortable ? `${column.header} sortieren` : undefined}
                     >
                       {column.header}
                       {sortDirection === 'asc' ? ' ↑' : sortDirection === 'desc' ? ' ↓' : ''}
@@ -177,6 +180,7 @@ export function DataGrid<TData>({
           </button>
           <select
             value={pageSize}
+            aria-label="Zeilen pro Seite"
             onChange={(event) => {
               setPageSize(Number(event.target.value));
               setPage(0);
