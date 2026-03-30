@@ -51,14 +51,14 @@ def upgrade() -> None:
         sa.Column("tenant_id", sa.Integer(), nullable=False),
         sa.Column("email", sa.String(length=255), nullable=False),
         sa.Column("full_name", sa.String(length=120), nullable=False),
-        sa.Column("keycloak_subject", sa.String(length=120), nullable=False),
+        sa.Column("keycloak_user_id", sa.String(length=120), nullable=False),
         sa.Column("role", user_role, nullable=False, server_default="EMPLOYEE"),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"]),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("email"),
-        sa.UniqueConstraint("keycloak_subject"),
+        sa.UniqueConstraint("keycloak_user_id"),
     )
     op.create_index(op.f("ix_users_email"), "users", ["email"], unique=False)
     op.create_index(op.f("ix_users_tenant_id"), "users", ["tenant_id"], unique=False)
