@@ -122,6 +122,50 @@ class TimeTrackingService:
             comment=payload.comment,
         )
 
+    def delete_event(
+        self,
+        *,
+        tenant_id: int,
+        event_id: int,
+        actor_role: UserRole,
+        actor_employee_id: int | None,
+        actor_user_id: int,
+    ) -> TimeStampEvent:
+        event = self.repository.get_by_id(tenant_id=tenant_id, event_id=event_id)
+        if event is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Time stamp event not found")
+
+        if actor_role != UserRole.ADMIN and actor_employee_id != event.employee_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not allowed to delete this time stamp event",
+            )
+
+        same_day_events = self.repository.list_clock_events_for_day(
+            tenant_id=tenant_id,
+            employee_id=event.employee_id,
+            target_date=event.timestamp.date(),
+        )
+        reordered = [
+            (day_event.timestamp, day_event.id, day_event.type)
+            for day_event in same_day_events
+            if day_event.id != event.id
+        ]
+        try:
+            self._validate_reordered_day_sequence(reordered, day=event.timestamp.date())
+        except HTTPException as exc:
+            if exc.status_code == status.HTTP_409_CONFLICT:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Dieser Eintrag kann nicht gelöscht werden, da die Tagessequenz dadurch ungültig würde.",
+                ) from exc
+            raise
+
+        # TODO(audit): Persist deletion metadata for traceability.
+        _ = actor_user_id
+        self.repository.delete_event(event=event)
+        return event
+
     def _create_event(
         self,
         *,

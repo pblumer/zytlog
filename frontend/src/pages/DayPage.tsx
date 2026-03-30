@@ -8,7 +8,13 @@ import { InlineEditActions } from '../components/InlineEditActions';
 import { ReportExportActions } from '../components/ReportExportActions';
 import { TableStatusBadge } from '../components/TableStatusBadge';
 import { useReportExport } from '../hooks/useReportExport';
-import { useDailyAccount, useManualTimeStampMutation, useTimeStamps, useUpdateTimeStampMutation } from '../hooks/useZytlogApi';
+import {
+  useDailyAccount,
+  useDeleteTimeStampMutation,
+  useManualTimeStampMutation,
+  useTimeStamps,
+  useUpdateTimeStampMutation,
+} from '../hooks/useZytlogApi';
 import type { TimeStampEvent } from '../types/api';
 import { formatDateTime, formatMinutes, isoDate } from '../utils/date';
 import { getSuggestedNextStampType } from '../utils/timeStampSuggestions';
@@ -41,10 +47,13 @@ export function DayPage() {
   const [editingRowId, setEditingRowId] = useState<number | null>(null);
   const [draft, setDraft] = useState<EditDraft | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deletingRowId, setDeletingRowId] = useState<number | null>(null);
 
   const dailyAccount = useDailyAccount(date);
   const events = useTimeStamps(date, date);
   const updateMutation = useUpdateTimeStampMutation();
+  const deleteMutation = useDeleteTimeStampMutation();
   const manualMutation = useManualTimeStampMutation();
   const exporter = useReportExport();
 
@@ -89,11 +98,30 @@ export function DayPage() {
     }
   };
 
+  const deleteEvent = async (event: TimeStampEvent) => {
+    const confirmed = window.confirm('Wirklich löschen?');
+    if (!confirmed) return;
+
+    setDeleteError(null);
+    setDeletingRowId(event.id);
+    try {
+      await deleteMutation.mutateAsync(event.id);
+      if (editingRowId === event.id) {
+        cancelEdit();
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Löschen fehlgeschlagen.';
+      setDeleteError(message);
+    } finally {
+      setDeletingRowId(null);
+    }
+  };
+
   const columns = useMemo<DataGridColumn<TimeStampEvent>[]>(
     () => [
       {
         id: 'type',
-        header: 'Type',
+        header: 'Typ',
         cell: (row) => <TableStatusBadge status={row.type} />,
         sortValue: (row) => row.type,
         searchableText: (row) => row.type,
@@ -101,7 +129,7 @@ export function DayPage() {
       },
       {
         id: 'timestamp',
-        header: 'Timestamp',
+        header: 'Zeitpunkt',
         cell: (row) => {
           if (editingRowId === row.id && draft) {
             return (
@@ -120,7 +148,7 @@ export function DayPage() {
       },
       {
         id: 'comment',
-        header: 'Comment',
+        header: 'Kommentar',
         cell: (row) => {
           if (editingRowId === row.id && draft) {
             return (
@@ -138,15 +166,15 @@ export function DayPage() {
       },
       {
         id: 'corrected',
-        header: 'Corrected',
-        cell: (row) => (new Date(row.updated_at).getTime() > new Date(row.created_at).getTime() ? 'Yes' : 'No'),
+        header: 'Korrigiert',
+        cell: (row) => (new Date(row.updated_at).getTime() > new Date(row.created_at).getTime() ? 'Ja' : 'Nein'),
         sortValue: (row) => row.updated_at,
         searchableText: (row) => row.updated_at,
         sortable: true,
       },
       {
         id: 'actions',
-        header: 'Actions',
+        header: 'Aktionen',
         cell: (row) => {
           if (editingRowId === row.id) {
             return (
@@ -162,14 +190,26 @@ export function DayPage() {
           }
 
           return (
-            <button type="button" className="btn outline" onClick={() => startEdit(row)}>
-              Edit
-            </button>
+            <div className="actions">
+              <button type="button" className="btn outline" onClick={() => startEdit(row)} disabled={deletingRowId === row.id}>
+                Bearbeiten
+              </button>
+              <button
+                type="button"
+                className="btn danger"
+                onClick={() => {
+                  void deleteEvent(row);
+                }}
+                disabled={deletingRowId === row.id || deleteMutation.isPending}
+              >
+                {deletingRowId === row.id ? 'Lösche…' : 'Löschen'}
+              </button>
+            </div>
           );
         },
       },
     ],
-    [draft, editingRowId, updateMutation.isPending],
+    [deleteMutation.isPending, deletingRowId, draft, editingRowId, updateMutation.isPending],
   );
 
   const resetManualForm = () => {
@@ -321,6 +361,8 @@ export function DayPage() {
 
         {editError ? <p className="inline-error">{editError}</p> : null}
         {updateMutation.error ? <p className="inline-error">{String(updateMutation.error.message)}</p> : null}
+        {deleteError ? <p className="inline-error">{deleteError}</p> : null}
+        {deleteMutation.error ? <p className="inline-error">{String(deleteMutation.error.message)}</p> : null}
         {manualError ? <p className="inline-error">{manualError}</p> : null}
         {manualMutation.error ? <p className="inline-error">{String(manualMutation.error.message)}</p> : null}
 
@@ -330,9 +372,9 @@ export function DayPage() {
           <DataGrid
             columns={columns}
             data={events.data}
-            searchPlaceholder="Search events…"
+            searchPlaceholder="Zeitereignisse durchsuchen…"
             initialPageSize={20}
-            getRowClassName={(row) => (row.id === editingRowId ? 'is-editing' : undefined)}
+            getRowClassName={(row) => (row.id === editingRowId || row.id === deletingRowId ? 'is-editing' : undefined)}
           />
         )}
       </DataSection>

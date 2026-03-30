@@ -111,3 +111,7 @@ class TimeStampEventRepository:
         self.db.commit()
         self.db.refresh(event)
         return event
+
+    def delete_event(self, *, event: TimeStampEvent) -> None:
+        self.db.delete(event)
+        self.db.commit()

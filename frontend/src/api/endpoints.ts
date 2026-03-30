@@ -1,4 +1,4 @@
-import { apiDownload, apiGet, apiPatch, apiPost } from './client';
+import { apiDelete, apiDownload, apiGet, apiPatch, apiPost } from './client';
 import type {
   CurrentClockStatus,
   CalendarMonth,
@@ -71,3 +71,6 @@ export type UpdateTimeStampPayload = {
 
 export const updateTimeStamp = (eventId: number, payload: UpdateTimeStampPayload, token?: string | null) =>
   apiPatch<TimeStampEvent>(`/time-stamps/${eventId}`, payload, token);
+
+export const deleteTimeStamp = (eventId: number, token?: string | null) =>
+  apiDelete<TimeStampEvent>(`/time-stamps/${eventId}`, token);

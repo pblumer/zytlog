@@ -401,6 +401,88 @@ def test_patch_time_stamp_cross_tenant_not_found(client: TestClient) -> None:
     assert response.status_code == 404
 
 
+def test_delete_single_clock_in_makes_day_empty(client: TestClient) -> None:
+    created = client.post("/api/v1/time-stamps/clock-in", headers=_auth_headers())
+    assert created.status_code == 200
+    event_id = created.json()["id"]
+
+    deleted = client.delete(f"/api/v1/time-stamps/{event_id}", headers=_auth_headers())
+    assert deleted.status_code == 200
+    assert deleted.json()["id"] == event_id
+
+    events = client.get("/api/v1/time-stamps/my?from=2026-03-30&to=2026-03-30", headers=_auth_headers())
+    assert events.status_code == 200
+    assert events.json() == []
+
+    account = client.get("/api/v1/daily-accounts/my?date=2026-03-30", headers=_auth_headers())
+    assert account.status_code == 200
+    assert account.json()["status"] == "empty"
+    assert account.json()["event_count"] == 0
+
+
+def test_delete_clock_out_leaves_day_incomplete_but_valid(client: TestClient) -> None:
+    in_event = client.post("/api/v1/time-stamps/clock-in", headers=_auth_headers())
+    assert in_event.status_code == 200
+    out_event = client.post("/api/v1/time-stamps/clock-out", headers=_auth_headers())
+    assert out_event.status_code == 200
+
+    deleted = client.delete(f"/api/v1/time-stamps/{out_event.json()['id']}", headers=_auth_headers())
+    assert deleted.status_code == 200
+
+    events = client.get("/api/v1/time-stamps/my?from=2026-03-30&to=2026-03-30", headers=_auth_headers())
+    assert events.status_code == 200
+    payload = events.json()
+    assert len(payload) == 1
+    assert payload[0]["id"] == in_event.json()["id"]
+    assert payload[0]["type"] == "clock_in"
+
+    account = client.get("/api/v1/daily-accounts/my?date=2026-03-30", headers=_auth_headers())
+    assert account.status_code == 200
+    assert account.json()["status"] == "incomplete"
+    assert account.json()["event_count"] == 1
+
+
+def test_delete_rejected_when_resulting_same_day_sequence_invalid(client: TestClient) -> None:
+    first = client.post(
+        "/api/v1/time-stamps/manual",
+        json={"timestamp": "2026-03-30T08:00:00Z", "type": "clock_in"},
+        headers=_auth_headers(),
+    )
+    assert first.status_code == 200
+    middle = client.post(
+        "/api/v1/time-stamps/manual",
+        json={"timestamp": "2026-03-30T12:00:00Z", "type": "clock_out"},
+        headers=_auth_headers(),
+    )
+    assert middle.status_code == 200
+    third = client.post(
+        "/api/v1/time-stamps/manual",
+        json={"timestamp": "2026-03-30T12:30:00Z", "type": "clock_in"},
+        headers=_auth_headers(),
+    )
+    assert third.status_code == 200
+
+    response = client.delete(f"/api/v1/time-stamps/{middle.json()['id']}", headers=_auth_headers())
+    assert response.status_code == 409
+    assert "Tagessequenz" in response.json()["detail"]
+
+
+def test_delete_time_stamp_forbidden_for_unauthorized_user(client: TestClient) -> None:
+    events = _seed_event_timestamps(client)
+    event_id = events[0]["id"]
+
+    response = client.delete(f"/api/v1/time-stamps/{event_id}", headers=_auth_headers("valid-team-lead-token"))
+    assert response.status_code == 403
+
+
+def test_delete_time_stamp_cross_tenant_not_found(client: TestClient) -> None:
+    events = _seed_event_timestamps(client)
+    event_id = events[0]["id"]
+
+    response = client.delete(f"/api/v1/time-stamps/{event_id}", headers=_auth_headers("other-tenant-admin-token"))
+    assert response.status_code == 404
+
+
 def test_manual_clock_in_in_past_success(client: TestClient) -> None:
     response = client.post(
         "/api/v1/time-stamps/manual",
