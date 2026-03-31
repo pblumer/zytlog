@@ -68,6 +68,9 @@ export type CreateEmployeePayload = {
 };
 export const createEmployee = (payload: CreateEmployeePayload, token?: string | null) =>
   apiPost<Employee>('/employees', payload, token);
+export type UpdateEmployeePayload = Partial<Omit<CreateEmployeePayload, 'user_id'>>;
+export const updateEmployee = (employeeId: number, payload: UpdateEmployeePayload, token?: string | null) =>
+  apiPatch<Employee>(`/employees/${employeeId}`, payload, token);
 
 export const getWorkingTimeModels = (token?: string | null) => apiGet<WorkingTimeModel[]>('/working-time-models', token);
 export type CreateWorkingTimeModelPayload = {
