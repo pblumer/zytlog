@@ -32,6 +32,10 @@ export type CurrentClockStatus = {
 
 export type DailyAccountStatus = 'empty' | 'complete' | 'incomplete' | 'invalid';
 export type CalendarDayStatus = 'no_data' | 'complete' | 'incomplete' | 'invalid';
+export type DayAbsenceContext = {
+  type: string;
+  label: string;
+};
 
 export type DailyTimeAccount = {
   date: string;
@@ -44,6 +48,7 @@ export type DailyTimeAccount = {
   is_holiday: boolean;
   holiday_name: string | null;
   is_workday: boolean;
+  absence: DayAbsenceContext | null;
 };
 
 export type DailyOverviewRow = DailyTimeAccount;

@@ -46,6 +46,7 @@ class DailyAccountService:
             holiday_name=holiday_name,
             is_holiday=holiday_name is not None,
             is_workday=is_workday,
+            absence=None,
         )
 
     def get_daily_accounts_in_range(
