@@ -41,6 +41,8 @@ export type DailyTimeAccount = {
   balance_minutes: number;
   status: DailyAccountStatus;
   event_count: number;
+  is_holiday: boolean;
+  holiday_name: string | null;
 };
 
 export type DailyOverviewRow = DailyTimeAccount;
@@ -144,6 +146,16 @@ export type WorkingTimeModel = {
   default_workday_friday: boolean;
   default_workday_saturday: boolean;
   default_workday_sunday: boolean;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Holiday = {
+  id: number;
+  tenant_id: number;
+  date: string;
+  name: string;
   active: boolean;
   created_at: string;
   updated_at: string;

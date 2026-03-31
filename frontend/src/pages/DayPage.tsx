@@ -345,6 +345,9 @@ export function DayPage() {
             }
           />
           <SummaryCard title="Soll" value={<span className="time-value">{formatMinutes(dailyAccount.data.target_minutes)}</span>} />
+          {dailyAccount.data.is_holiday ? (
+            <SummaryCard title="Feiertag" value={dailyAccount.data.holiday_name ?? 'Ja'} hint="Sollzeit am Feiertag ist immer 0." />
+          ) : null}
           <SummaryCard title="Ist" value={<span className="time-value">{formatMinutes(dailyAccount.data.actual_minutes)}</span>} />
           <SummaryCard
             title="Saldo"

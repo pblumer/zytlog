@@ -20,3 +20,4 @@ class Tenant(TimestampMixin, Base):
     working_time_models: Mapped[list["WorkingTimeModel"]] = relationship(back_populates="tenant")
     time_stamp_events: Mapped[list["TimeStampEvent"]] = relationship(back_populates="tenant")
     daily_time_accounts: Mapped[list["DailyTimeAccount"]] = relationship(back_populates="tenant")
+    holidays: Mapped[list["Holiday"]] = relationship(back_populates="tenant")

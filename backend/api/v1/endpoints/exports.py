@@ -8,8 +8,10 @@ from backend.api.deps import get_db
 from backend.core.auth import AuthContext, require_authenticated_user
 from backend.models.employee import Employee
 from backend.repositories.employee_repository import EmployeeRepository
+from backend.repositories.holiday_repository import HolidayRepository
 from backend.repositories.time_stamp_event_repository import TimeStampEventRepository
 from backend.services.daily_account_service import DailyAccountService
+from backend.services.holiday_service import HolidayService
 from backend.services.export_service import ExportService
 from backend.services.reporting_service import ReportingService
 
@@ -24,7 +26,7 @@ def _resolve_employee(db: Session, context: AuthContext) -> Employee:
 
 
 def _reporting_service(db: Session) -> ReportingService:
-    return ReportingService(DailyAccountService(TimeStampEventRepository(db)))
+    return ReportingService(DailyAccountService(TimeStampEventRepository(db), HolidayService(HolidayRepository(db))))
 
 
 def _content_disposition(filename: str) -> str:
@@ -38,7 +40,7 @@ def export_my_day_csv(
     context: AuthContext = Depends(require_authenticated_user),
 ):
     employee = _resolve_employee(db, context)
-    account = DailyAccountService(TimeStampEventRepository(db)).get_daily_account(
+    account = DailyAccountService(TimeStampEventRepository(db), HolidayService(HolidayRepository(db))).get_daily_account(
         tenant_id=context.tenant_id,
         employee=employee,
         target_date=date_value,
@@ -126,7 +128,7 @@ def export_my_day_pdf(
     context: AuthContext = Depends(require_authenticated_user),
 ):
     employee = _resolve_employee(db, context)
-    account = DailyAccountService(TimeStampEventRepository(db)).get_daily_account(
+    account = DailyAccountService(TimeStampEventRepository(db), HolidayService(HolidayRepository(db))).get_daily_account(
         tenant_id=context.tenant_id,
         employee=employee,
         target_date=date_value,
