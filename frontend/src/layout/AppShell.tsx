@@ -1,37 +1,46 @@
 import { NavLink, Outlet, type NavLinkRenderProps } from 'react-router-dom';
 
 import { useAuth } from '../auth/provider';
+import type { UserRole } from '../types/api';
 
-type NavItem = { to: string; label: string; admin?: boolean };
+type NavItem = { to: string; label: string };
 
-const navItems: NavItem[] = [
+const employeeNavItems: NavItem[] = [
   { to: '/', label: 'Dashboard' },
   { to: '/my-time', label: 'My Time' },
   { to: '/day', label: 'Day' },
   { to: '/week', label: 'Week' },
   { to: '/month', label: 'Month' },
   { to: '/year', label: 'Year' },
-  { to: '/employees', label: 'Employees', admin: true },
-  { to: '/working-time-models', label: 'Working Time Models', admin: true },
 ];
 
+const adminNavItems: NavItem[] = [
+  { to: '/employees', label: 'Employees' },
+  { to: '/working-time-models', label: 'Working Time Models' },
+];
+
+function getNavItemsByRole(role?: UserRole): NavItem[] {
+  if (role === 'admin') return adminNavItems;
+  return employeeNavItems;
+}
+
 export function AppShell() {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout } = useAuth();
+  const navItems = getNavItemsByRole(user?.role);
 
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">Zytlog</div>
         <ul className="nav-list">
-          {navItems
-            .filter((item) => !item.admin || isAdmin)
-            .map((item) => (
-              <li key={item.to}>
-                <NavLink to={item.to} end={item.to === '/'} className={({ isActive }: NavLinkRenderProps) => `nav-link${isActive ? ' active' : ''}`}>
-                  {item.label}
-                </NavLink>
-              </li>
-            ))}
+          {user?.role === 'admin' ? <li className="meta">Verwaltung</li> : null}
+          {navItems.map((item) => (
+            <li key={item.to}>
+              <NavLink to={item.to} end={item.to === '/'} className={({ isActive }: NavLinkRenderProps) => `nav-link${isActive ? ' active' : ''}`}>
+                {item.label}
+              </NavLink>
+            </li>
+          ))}
         </ul>
       </aside>
 

@@ -6,6 +6,7 @@ import {
   createEmployee,
   createManualTimeStamp,
   createWorkingTimeModel,
+  deleteWorkingTimeModel,
   deleteTimeStamp,
   getCalendarMonth,
   getCurrentStatus,
@@ -16,9 +17,11 @@ import {
   getWeekReport,
   getWorkingTimeModels,
   updateTimeStamp,
+  updateWorkingTimeModel,
   getYearReport,
   type CreateEmployeePayload,
   type CreateWorkingTimeModelPayload,
+  type UpdateWorkingTimeModelPayload,
 } from '../api/endpoints';
 import { useAuth } from '../auth/provider';
 
@@ -101,6 +104,29 @@ export function useCreateWorkingTimeModelMutation() {
   const { token } = useAuth();
   return useMutation({
     mutationFn: (payload: CreateWorkingTimeModelPayload) => createWorkingTimeModel(payload, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['working-time-models'] });
+    },
+  });
+}
+
+export function useUpdateWorkingTimeModelMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: ({ modelId, payload }: { modelId: number; payload: UpdateWorkingTimeModelPayload }) =>
+      updateWorkingTimeModel(modelId, payload, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['working-time-models'] });
+    },
+  });
+}
+
+export function useDeleteWorkingTimeModelMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: (modelId: number) => deleteWorkingTimeModel(modelId, token),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['working-time-models'] });
     },

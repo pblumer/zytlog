@@ -16,6 +16,8 @@ Included:
 - Correction endpoint for timestamp/comment updates with sequence validation.
 - React + Vite frontend app shell with DataGrid-based reporting pages.
 - Annual/weekly working-time foundations with weekday work-pattern logic.
+- Admin management for working-time models (create, edit, safe delete with assignment protection).
+- Role-aware primary navigation (admin-focused menu vs employee self-service menu).
 
 Out of scope (not implemented here):
 - Approval workflows.
@@ -74,6 +76,7 @@ Tenant behavior:
 - Every internal user belongs to exactly one tenant.
 - API access is scoped by tenant from auth context.
 - Admin-only operations (e.g., employee/model create) require `admin`.
+- Working time models can be edited by admins and deleted only when unassigned; otherwise the API returns a conflict message.
 - Time-stamp correction allows tenant admins for all tenant events, while employees/team leads can only edit their own events.
 
 ## Key API flows
@@ -99,6 +102,12 @@ Exports:
 - Week: `GET /api/v1/exports/my/week` + `/pdf`
 - Month: `GET /api/v1/exports/my/month` + `/pdf`
 - Year: `GET /api/v1/exports/my/year` + `/pdf`
+
+Working time models (admin):
+- `GET /api/v1/working-time-models`
+- `POST /api/v1/working-time-models`
+- `PATCH /api/v1/working-time-models/{model_id}`
+- `DELETE /api/v1/working-time-models/{model_id}` (blocked with `409` if still assigned to employees)
 
 ## Local development setup
 
@@ -209,6 +218,7 @@ Current frontend hardening includes:
 - consistent report export action placement in page headers
 - clearer export and correction failure messages
 - DataGrid-first table usage
+- admin navigation intentionally reduced to admin-relevant items (`Employees`, `Working Time Models`) while self-service pages remain employee-focused in the current MVP
 
 ## Demo startup sequence (quick)
 
