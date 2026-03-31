@@ -120,5 +120,25 @@ class HolidayRepository:
     def delete_without_commit(self, holiday: Holiday) -> None:
         self.db.delete(holiday)
 
+    def delete_active_by_holiday_set_and_date_range_without_commit(
+        self,
+        tenant_id: int,
+        *,
+        holiday_set_id: int,
+        from_date: date,
+        to_date: date,
+    ) -> int:
+        stmt = select(Holiday).where(
+            Holiday.tenant_id == tenant_id,
+            Holiday.holiday_set_id == holiday_set_id,
+            Holiday.active.is_(True),
+            Holiday.date >= from_date,
+            Holiday.date <= to_date,
+        )
+        rows = list(self.db.scalars(stmt).all())
+        for holiday in rows:
+            self.db.delete(holiday)
+        return len(rows)
+
     def commit(self) -> None:
         self.db.commit()

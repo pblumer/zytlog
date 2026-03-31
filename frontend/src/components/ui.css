@@ -229,6 +229,22 @@ a:focus-visible,
 .inline-error {
   color: var(--danger);
 }
+.inline-warning {
+  color: #8a6a21;
+  margin: 0;
+}
+
+.import-config-grid {
+  grid-template-columns: 1fr;
+}
+
+.import-config-card,
+.import-preview-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.8rem;
+  background: var(--surface-alt);
+}
 
 .totals-bar {
   display: grid;

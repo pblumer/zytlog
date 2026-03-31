@@ -147,6 +147,10 @@ Public holidays (admin):
   - `POST /api/v1/admin/holiday-sets/{holiday_set_id}/import/openholidays/commit`
 
 The OpenHolidays integration is import-only: holidays are persisted in Zytlog's own database and remain available for daily target calculations without runtime dependency on OpenHolidays.
+Import behavior notes:
+- Uniqueness remains `holiday_set_id + date` (one holiday per date per holiday set).
+- OpenHolidays rows are deduplicated by date before preview and commit.
+- If subdivisions cannot be loaded, admins can continue with “Keine regionale Einschränkung”.
 Employees (admin):
 - `GET /api/v1/employees`
 - `POST /api/v1/employees`
