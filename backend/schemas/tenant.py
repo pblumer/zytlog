@@ -9,3 +9,4 @@ class TenantRead(TimestampedSchema):
     active: bool
     type: TenantType
     timezone: str
+    default_holiday_set_id: int | None

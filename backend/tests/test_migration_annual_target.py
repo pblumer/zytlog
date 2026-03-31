@@ -60,3 +60,12 @@ def test_migration_script_removes_legacy_weekly_fields() -> None:
 
     assert 'drop_column("working_time_models", "weekly_target_hours")' in migration_source
     assert 'drop_column("working_time_models", "default_workdays_per_week")' in migration_source
+
+
+def test_migration_script_creates_default_holiday_sets_for_existing_holidays() -> None:
+    migration_file = Path("backend/migrations/versions/20260331_0005_holiday_sets.py")
+    migration_source = migration_file.read_text()
+
+    assert "SELECT DISTINCT tenant_id FROM holidays" in migration_source
+    assert "UPDATE holidays SET holiday_set_id = :holiday_set_id WHERE tenant_id = :tenant_id" in migration_source
+    assert "UPDATE tenants SET default_holiday_set_id = :holiday_set_id WHERE id = :tenant_id" in migration_source

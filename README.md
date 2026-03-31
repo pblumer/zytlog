@@ -30,7 +30,7 @@ Out of scope (not implemented here):
 The core Fachlichkeit for annual target-time logic is documented in:
 
 - `docs/business-working-time-model.md`
-- `docs/business-holidays.md`
+- `docs/business-holiday-sets.md`
 
 This includes:
 - meaning of `WorkingTimeModel` and `employment_percentage`
@@ -126,8 +126,14 @@ Working time models (admin):
 - `DELETE /api/v1/working-time-models/{model_id}` (blocked with `409` if still assigned to employees)
 
 
+Holiday sets (admin):
+- `GET /api/v1/holiday-sets`
+- `POST /api/v1/holiday-sets`
+- `PATCH /api/v1/holiday-sets/{holiday_set_id}`
+- `DELETE /api/v1/holiday-sets/{holiday_set_id}`
+
 Public holidays (admin):
-- `GET /api/v1/holidays?year=YYYY`
+- `GET /api/v1/holidays?year=YYYY&holiday_set_id=ID`
 - `POST /api/v1/holidays`
 - `PATCH /api/v1/holidays/{holiday_id}`
 - `DELETE /api/v1/holidays/{holiday_id}`
@@ -245,7 +251,7 @@ Current frontend hardening includes:
 - consistent report export action placement in page headers
 - clearer export and correction failure messages
 - DataGrid-first table usage
-- admin navigation includes management pages for `Employees`, `Working Time Models`, and `Feiertage` while self-service pages remain employee-focused in the current MVP
+- admin navigation includes management pages for `Employees`, `Working Time Models`, `Feiertagssätze`, and `Feiertage` while self-service pages remain employee-focused in the current MVP
 
 ## Demo startup sequence (quick)
 

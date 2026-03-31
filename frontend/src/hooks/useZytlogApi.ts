@@ -6,7 +6,9 @@ import {
   createEmployee,
   createManualTimeStamp,
   createWorkingTimeModel,
+  createHolidaySet,
   createHoliday,
+  deleteHolidaySet,
   deleteHoliday,
   deleteWorkingTimeModel,
   deleteTimeStamp,
@@ -19,15 +21,19 @@ import {
   getWeekReport,
   getWorkingTimeModels,
   getHolidays,
+  getHolidaySets,
   updateEmployee,
   updateHoliday,
+  updateHolidaySet,
   updateTimeStamp,
   updateWorkingTimeModel,
   getYearReport,
   type CreateEmployeePayload,
   type CreateHolidayPayload,
+  type CreateHolidaySetPayload,
   type CreateWorkingTimeModelPayload,
   type UpdateHolidayPayload,
+  type UpdateHolidaySetPayload,
   type UpdateWorkingTimeModelPayload,
   type UpdateEmployeePayload,
 } from '../api/endpoints';
@@ -108,11 +114,19 @@ export function useWorkingTimeModels(enabled: boolean) {
 }
 
 
-export function useHolidays(enabled: boolean, year?: number) {
+export function useHolidays(enabled: boolean, year?: number, holidaySetId?: number) {
   const { token } = useAuth();
   return useQuery({
-    queryKey: ['holidays', year ?? null],
-    queryFn: () => getHolidays(token, year),
+    queryKey: ['holidays', year ?? null, holidaySetId ?? null],
+    queryFn: () => getHolidays(token, year, holidaySetId),
+    enabled,
+  });
+}
+export function useHolidaySets(enabled: boolean) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['holiday-sets'],
+    queryFn: () => getHolidaySets(token),
     enabled,
   });
 }
@@ -147,6 +161,43 @@ export function useDeleteHolidayMutation() {
     mutationFn: (holidayId: number) => deleteHoliday(holidayId, token),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['holidays'] });
+    },
+  });
+}
+
+export function useCreateHolidaySetMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: (payload: CreateHolidaySetPayload) => createHolidaySet(payload, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['holiday-sets'] });
+    },
+  });
+}
+
+export function useUpdateHolidaySetMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: ({ holidaySetId, payload }: { holidaySetId: number; payload: UpdateHolidaySetPayload }) =>
+      updateHolidaySet(holidaySetId, payload, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['holiday-sets'] });
+    },
+  });
+}
+
+export function useDeleteHolidaySetMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: (holidaySetId: number) => deleteHolidaySet(holidaySetId, token),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['holiday-sets'] }),
+        queryClient.invalidateQueries({ queryKey: ['holidays'] }),
+      ]);
     },
   });
 }

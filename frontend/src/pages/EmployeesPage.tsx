@@ -7,6 +7,7 @@ import { useAuth } from '../auth/provider';
 import {
   useCreateEmployeeMutation,
   useEmployees,
+  useHolidaySets,
   useUpdateEmployeeMutation,
   useWorkingTimeModels,
 } from '../hooks/useZytlogApi';
@@ -34,6 +35,7 @@ type EmployeeFormState = {
   exitDate: string;
   employmentPercentage: string;
   workingTimeModelId: string;
+  holidaySetId: string;
   overridesEnabled: boolean;
   overrideValues: Record<WeekdayKey, boolean>;
 };
@@ -58,6 +60,7 @@ const createInitialFormState = (): EmployeeFormState => ({
   exitDate: '',
   employmentPercentage: '100',
   workingTimeModelId: '',
+  holidaySetId: '',
   overridesEnabled: false,
   overrideValues: defaultOverrideValues,
 });
@@ -86,6 +89,7 @@ function createEditState(employee: Employee): EmployeeFormState {
     exitDate: employee.exit_date ?? '',
     employmentPercentage: String(employee.employment_percentage),
     workingTimeModelId: employee.working_time_model_id ? String(employee.working_time_model_id) : '',
+    holidaySetId: employee.holiday_set_id ? String(employee.holiday_set_id) : '',
     overridesEnabled: hasOverride,
     overrideValues: {
       workday_monday: employee.workday_monday ?? true,
@@ -103,6 +107,7 @@ export function EmployeesPage() {
   const { isAdmin } = useAuth();
   const query = useEmployees(isAdmin);
   const modelsQuery = useWorkingTimeModels(isAdmin);
+  const holidaySetsQuery = useHolidaySets(isAdmin);
   const createMutation = useCreateEmployeeMutation();
   const updateMutation = useUpdateEmployeeMutation();
 
@@ -112,6 +117,10 @@ export function EmployeesPage() {
   const modelsById = useMemo(
     () => new Map((modelsQuery.data ?? []).map((model) => [model.id, model.name])),
     [modelsQuery.data],
+  );
+  const holidaySetsById = useMemo(
+    () => new Map((holidaySetsQuery.data ?? []).map((item) => [item.id, item.name])),
+    [holidaySetsQuery.data],
   );
 
   const columns = useMemo<DataGridColumn<Employee>[]>(
@@ -152,6 +161,11 @@ export function EmployeesPage() {
         searchableText: (row) => formatOverridePattern(row),
       },
       {
+        id: 'holiday_set',
+        header: 'Feiertagssatz',
+        cell: (row) => (row.holiday_set_id ? holidaySetsById.get(row.holiday_set_id) ?? `#${row.holiday_set_id}` : 'Standard des Tenants verwenden'),
+      },
+      {
         id: 'actions',
         header: 'Aktion',
         cell: (row) => (
@@ -168,7 +182,7 @@ export function EmployeesPage() {
         ),
       },
     ],
-    [modelsById],
+    [modelsById, holidaySetsById],
   );
 
   const onSubmit = async (event: FormEvent) => {
@@ -182,6 +196,7 @@ export function EmployeesPage() {
       entry_date: form.entryDate,
       exit_date: form.exitDate || null,
       working_time_model_id: form.workingTimeModelId ? Number(form.workingTimeModelId) : null,
+      holiday_set_id: form.holidaySetId ? Number(form.holidaySetId) : null,
       workday_monday: form.overridesEnabled ? form.overrideValues.workday_monday : null,
       workday_tuesday: form.overridesEnabled ? form.overrideValues.workday_tuesday : null,
       workday_wednesday: form.overridesEnabled ? form.overrideValues.workday_wednesday : null,
@@ -277,6 +292,20 @@ export function EmployeesPage() {
               {(modelsQuery.data ?? []).map((model) => (
                 <option key={model.id} value={model.id}>
                   {model.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Feiertagssatz
+            <select
+              value={form.holidaySetId}
+              onChange={(event) => setForm((prev) => ({ ...prev, holidaySetId: event.target.value }))}
+            >
+              <option value="">Standard des Tenants verwenden</option>
+              {(holidaySetsQuery.data ?? []).map((holidaySet) => (
+                <option key={holidaySet.id} value={holidaySet.id}>
+                  {holidaySet.name}
                 </option>
               ))}
             </select>

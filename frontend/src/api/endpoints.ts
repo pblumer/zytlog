@@ -11,6 +11,7 @@ import type {
   WorkingTimeModel,
   YearlyOverview,
   Holiday,
+  HolidaySet,
 } from '../types/api';
 
 export const getMe = (token?: string | null) => apiGet<Me>('/me', token);
@@ -58,6 +59,7 @@ export type CreateEmployeePayload = {
   entry_date: string;
   exit_date: string | null;
   working_time_model_id: number | null;
+  holiday_set_id: number | null;
   workday_monday: boolean | null;
   workday_tuesday: boolean | null;
   workday_wednesday: boolean | null;
@@ -95,10 +97,17 @@ export const deleteWorkingTimeModel = (modelId: number, token?: string | null) =
   apiDelete<void>(`/working-time-models/${modelId}`, token);
 
 
-export const getHolidays = (token?: string | null, year?: number) =>
-  apiGet<Holiday[]>(`/holidays${year ? `?year=${year}` : ""}`, token);
+export const getHolidays = (token?: string | null, year?: number, holidaySetId?: number) =>
+  apiGet<Holiday[]>(
+    `/holidays?${new URLSearchParams({
+      ...(year ? { year: String(year) } : {}),
+      ...(holidaySetId ? { holiday_set_id: String(holidaySetId) } : {}),
+    }).toString()}`,
+    token,
+  );
 
 export type CreateHolidayPayload = {
+  holiday_set_id: number;
   date: string;
   name: string;
   active: boolean;
@@ -114,6 +123,25 @@ export const updateHoliday = (holidayId: number, payload: UpdateHolidayPayload, 
 
 export const deleteHoliday = (holidayId: number, token?: string | null) =>
   apiDelete<void>(`/holidays/${holidayId}`, token);
+
+export const getHolidaySets = (token?: string | null) => apiGet<HolidaySet[]>('/holiday-sets', token);
+
+export type CreateHolidaySetPayload = {
+  name: string;
+  description: string | null;
+  source: string | null;
+  country_code: string | null;
+  region_code: string | null;
+  active: boolean;
+};
+export type UpdateHolidaySetPayload = Partial<CreateHolidaySetPayload>;
+
+export const createHolidaySet = (payload: CreateHolidaySetPayload, token?: string | null) =>
+  apiPost<HolidaySet>('/holiday-sets', payload, token);
+export const updateHolidaySet = (holidaySetId: number, payload: UpdateHolidaySetPayload, token?: string | null) =>
+  apiPatch<HolidaySet>(`/holiday-sets/${holidaySetId}`, payload, token);
+export const deleteHolidaySet = (holidaySetId: number, token?: string | null) =>
+  apiDelete<void>(`/holiday-sets/${holidaySetId}`, token);
 
 export const clockIn = (token?: string | null) => apiPost<TimeStampEvent>('/time-stamps/clock-in', undefined, token);
 

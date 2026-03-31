@@ -13,7 +13,7 @@ class EmployeeRepository:
         stmt = (
             select(Employee)
             .where(Employee.tenant_id == tenant_id)
-            .options(joinedload(Employee.working_time_model))
+            .options(joinedload(Employee.working_time_model), joinedload(Employee.tenant))
             .order_by(Employee.id)
         )
         return list(self.db.scalars(stmt).all())
@@ -29,7 +29,7 @@ class EmployeeRepository:
         stmt = (
             select(Employee)
             .where(Employee.tenant_id == tenant_id, Employee.id == employee_id)
-            .options(joinedload(Employee.working_time_model))
+            .options(joinedload(Employee.working_time_model), joinedload(Employee.tenant))
         )
         return self.db.scalar(stmt)
 
@@ -44,6 +44,6 @@ class EmployeeRepository:
         stmt = (
             select(Employee)
             .where(Employee.tenant_id == tenant_id, Employee.user_id == user_id)
-            .options(joinedload(Employee.working_time_model))
+            .options(joinedload(Employee.working_time_model), joinedload(Employee.tenant))
         )
         return self.db.scalar(stmt)
