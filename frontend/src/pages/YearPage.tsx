@@ -35,6 +35,13 @@ function formatAbsenceLabel(day: CalendarMonthDay): string | null {
   return `${day.absence.label}${durationHint}`;
 }
 
+function getAbsenceLayers(day: CalendarMonthDay): Array<'left' | 'right'> {
+  if (!day.absence) return [];
+  if (day.absence.duration_type === 'half_day_am') return ['left'];
+  if (day.absence.duration_type === 'half_day_pm') return ['right'];
+  return ['left', 'right'];
+}
+
 export function YearPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
@@ -145,12 +152,20 @@ export function YearPage() {
                           {monthDays.map((day) => {
                             const dotStatus = getDayDotStatus(day);
                             const absenceLabel = formatAbsenceLabel(day);
+                            const absenceLayers = getAbsenceLayers(day);
                             return (
                               <span
                                 key={day.date}
-                                className={`year-mini-dot year-mini-dot-${dotStatus} ${day.absence ? `year-mini-dot-absence year-mini-dot-absence-${day.absence.type}` : ''}`.trim()}
+                                className={`year-mini-dot year-mini-dot-${dotStatus}`}
                                 title={`${day.date}: ${dotStatus}${absenceLabel ? ` · ${absenceLabel}` : ''}`}
-                              />
+                              >
+                                {absenceLayers.map((side) => (
+                                  <span
+                                    key={side}
+                                    className={`year-mini-dot-absence-layer year-mini-dot-absence-${side} year-mini-dot-absence-${day.absence?.type}`}
+                                  />
+                                ))}
+                              </span>
                             );
                           })}
                         </div>
