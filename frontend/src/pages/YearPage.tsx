@@ -161,6 +161,9 @@ export function YearPage() {
                             const absenceLabel = formatAbsenceLabel(day);
                             const absenceLayers = getAbsenceLayers(day);
                             const nonWorkingPeriodLabel = formatNonWorkingPeriodLabel(day);
+                            const hasAbsence = absenceLayers.length > 0;
+                            const showNonWorkingPeriodStyle = !hasAbsence && day.is_in_non_working_period;
+                            const visualStatusClass = showNonWorkingPeriodStyle ? 'year-mini-dot-non-working-period' : `year-mini-dot-${dotStatus}`;
                             const contextParts = [dotStatus, absenceLabel, nonWorkingPeriodLabel].filter(Boolean);
                             const contextLabel = contextParts.join(' · ');
                             return (
@@ -168,7 +171,7 @@ export function YearPage() {
                                 key={day.date}
                                 role="img"
                                 aria-label={`${day.date}: ${contextLabel}`}
-                                className={`year-mini-dot year-mini-dot-${dotStatus} ${day.is_in_non_working_period ? 'year-mini-dot-non-working-period' : ''}`}
+                                className={`year-mini-dot ${visualStatusClass}`}
                                 title={`${day.date}: ${contextLabel}`}
                               >
                                 {absenceLayers.map((side) => (
@@ -177,7 +180,6 @@ export function YearPage() {
                                     className={`year-mini-dot-absence-layer year-mini-dot-absence-${side} year-mini-dot-absence-${day.absence?.type}`}
                                   />
                                 ))}
-                                {day.is_in_non_working_period ? <span className="year-mini-dot-non-working-marker" aria-hidden="true" /> : null}
                               </span>
                             );
                           })}
