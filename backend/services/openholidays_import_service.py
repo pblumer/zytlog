@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+import logging
 
 from fastapi import HTTPException, status
 
@@ -9,6 +10,8 @@ from backend.models.holiday import Holiday
 from backend.repositories.holiday_repository import HolidayRepository
 from backend.repositories.holiday_set_repository import HolidaySetRepository
 from backend.services.openholidays_service import OpenHolidayItem
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -96,7 +99,7 @@ class OpenHolidaysImportService:
         replaced = 0
 
         if import_mode == "replace_existing_in_range":
-            replaced = self.holiday_repository.delete_active_by_holiday_set_and_date_range_without_commit(
+            replaced = self.holiday_repository.delete_by_holiday_set_and_date_range_without_commit(
                 tenant_id,
                 holiday_set_id=holiday_set_id,
                 from_date=prepared_rows[0].date,
@@ -110,6 +113,19 @@ class OpenHolidaysImportService:
                     skipped += 1
                     continue
                 rows_to_create.append(row)
+
+        logger.info(
+            "OpenHolidays commit rows prepared for insert.",
+            extra={
+                "tenant_id": tenant_id,
+                "holiday_set_id": holiday_set_id,
+                "import_mode": import_mode,
+                "prepared_rows_count": len(prepared_rows),
+                "existing_dates_count": sum(1 for row in prepared_rows if row.exists_in_holiday_set),
+                "rows_to_create_count": len(rows_to_create),
+                "dates_to_create": [row.date.isoformat() for row in rows_to_create],
+            },
+        )
 
         for row in rows_to_create:
             self.holiday_repository.add_without_commit(
@@ -138,7 +154,7 @@ class OpenHolidaysImportService:
         unique_rows = self._deduplicate_open_holidays(open_holidays)
         if not unique_rows:
             return []
-        existing_by_date = self.holiday_repository.list_active_by_holiday_set_and_date_range(
+        existing_by_date = self.holiday_repository.list_by_holiday_set_and_date_range(
             tenant_id,
             holiday_set_id=holiday_set_id,
             from_date=unique_rows[0].date,
