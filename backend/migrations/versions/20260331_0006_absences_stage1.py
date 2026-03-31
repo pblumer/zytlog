@@ -9,6 +9,7 @@ from typing import Sequence
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 revision: str = "20260331_0006"
@@ -17,8 +18,14 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
-absence_type = sa.Enum("vacation", "sickness", name="absencetype")
-duration_type = sa.Enum("full_day", "half_day_am", "half_day_pm", name="absencedurationtype")
+absence_type = postgresql.ENUM("vacation", "sickness", name="absencetype", create_type=False)
+duration_type = postgresql.ENUM(
+    "full_day",
+    "half_day_am",
+    "half_day_pm",
+    name="absencedurationtype",
+    create_type=False,
+)
 
 
 def upgrade() -> None:
