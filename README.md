@@ -30,6 +30,7 @@ Out of scope (not implemented here):
 The core Fachlichkeit for annual target-time logic is documented in:
 
 - `docs/business-working-time-model.md`
+- `docs/business-holidays.md`
 
 This includes:
 - meaning of `WorkingTimeModel` and `employment_percentage`
@@ -38,7 +39,7 @@ This includes:
 - behavior before `entry_date` / after `exit_date`
 - why `annual_target_hours` is the leading quantity
 - annual target distribution to daily target minutes
-- explicit non-scope (vacation/sickness/holidays, etc.)
+- explicit non-scope and extension points (vacation/sickness, etc.)
 
 ## Architecture overview
 
@@ -124,6 +125,12 @@ Working time models (admin):
 - `PATCH /api/v1/working-time-models/{model_id}`
 - `DELETE /api/v1/working-time-models/{model_id}` (blocked with `409` if still assigned to employees)
 
+
+Public holidays (admin):
+- `GET /api/v1/holidays?year=YYYY`
+- `POST /api/v1/holidays`
+- `PATCH /api/v1/holidays/{holiday_id}`
+- `DELETE /api/v1/holidays/{holiday_id}`
 Employees (admin):
 - `GET /api/v1/employees`
 - `POST /api/v1/employees`
@@ -238,7 +245,7 @@ Current frontend hardening includes:
 - consistent report export action placement in page headers
 - clearer export and correction failure messages
 - DataGrid-first table usage
-- admin navigation intentionally reduced to admin-relevant items (`Employees`, `Working Time Models`) while self-service pages remain employee-focused in the current MVP
+- admin navigation includes management pages for `Employees`, `Working Time Models`, and `Feiertage` while self-service pages remain employee-focused in the current MVP
 
 ## Demo startup sequence (quick)
 

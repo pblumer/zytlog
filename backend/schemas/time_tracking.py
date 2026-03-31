@@ -62,6 +62,8 @@ class DailyTimeAccountRead(BaseSchema):
     balance_minutes: int
     status: DailyAccountStatus
     event_count: int = Field(ge=0)
+    is_holiday: bool = False
+    holiday_name: str | None = None
 
 
 class DailyOverviewRow(BaseSchema):
@@ -72,6 +74,8 @@ class DailyOverviewRow(BaseSchema):
     balance_minutes: int
     status: DailyAccountStatus
     event_count: int = Field(ge=0)
+    is_holiday: bool = False
+    holiday_name: str | None = None
 
 
 class OverviewTotals(BaseSchema):

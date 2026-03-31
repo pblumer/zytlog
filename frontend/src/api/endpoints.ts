@@ -10,6 +10,7 @@ import type {
   WeeklyOverview,
   WorkingTimeModel,
   YearlyOverview,
+  Holiday,
 } from '../types/api';
 
 export const getMe = (token?: string | null) => apiGet<Me>('/me', token);
@@ -92,6 +93,27 @@ export const updateWorkingTimeModel = (modelId: number, payload: UpdateWorkingTi
   apiPatch<WorkingTimeModel>(`/working-time-models/${modelId}`, payload, token);
 export const deleteWorkingTimeModel = (modelId: number, token?: string | null) =>
   apiDelete<void>(`/working-time-models/${modelId}`, token);
+
+
+export const getHolidays = (token?: string | null, year?: number) =>
+  apiGet<Holiday[]>(`/holidays${year ? `?year=${year}` : ""}`, token);
+
+export type CreateHolidayPayload = {
+  date: string;
+  name: string;
+  active: boolean;
+};
+
+export type UpdateHolidayPayload = Partial<CreateHolidayPayload>;
+
+export const createHoliday = (payload: CreateHolidayPayload, token?: string | null) =>
+  apiPost<Holiday>('/holidays', payload, token);
+
+export const updateHoliday = (holidayId: number, payload: UpdateHolidayPayload, token?: string | null) =>
+  apiPatch<Holiday>(`/holidays/${holidayId}`, payload, token);
+
+export const deleteHoliday = (holidayId: number, token?: string | null) =>
+  apiDelete<void>(`/holidays/${holidayId}`, token);
 
 export const clockIn = (token?: string | null) => apiPost<TimeStampEvent>('/time-stamps/clock-in', undefined, token);
 

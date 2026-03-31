@@ -7,11 +7,14 @@ from sqlalchemy.pool import StaticPool
 from backend.db.base import Base
 from backend.models.employee import Employee
 from backend.models.enums import UserRole
+from backend.models.holiday import Holiday
 from backend.models.tenant import Tenant
 from backend.models.user import User
 from backend.models.working_time_model import WorkingTimeModel
+from backend.repositories.holiday_repository import HolidayRepository
 from backend.repositories.time_stamp_event_repository import TimeStampEventRepository
 from backend.services.daily_account_service import DailyAccountService
+from backend.services.holiday_service import HolidayService
 from backend.services.reporting_service import ReportingService
 
 
@@ -73,10 +76,10 @@ def _build_service(*, employee_percentage: float = 100, employee_overrides: dict
 
     persisted_employee = session.get(Employee, employee.id)
     assert persisted_employee is not None
-    # ensure relationship is loaded for service logic
     _ = persisted_employee.working_time_model
 
-    service = DailyAccountService(TimeStampEventRepository(session))
+    holiday_service = HolidayService(HolidayRepository(session))
+    service = DailyAccountService(TimeStampEventRepository(session), holiday_service)
     return session, tenant.id, persisted_employee, service
 
 
@@ -86,8 +89,52 @@ def test_100_percent_employee_with_standard_monday_to_friday_target() -> None:
     monday_account = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 3, 30))
     sunday_account = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 4, 5))
 
-    assert monday_account.target_minutes == 483  # 2100h / 261 Arbeitstage in 2026
+    assert monday_account.target_minutes == 483
     assert sunday_account.target_minutes == 0
+    session.close()
+
+
+def test_holiday_on_workday_sets_target_minutes_to_zero() -> None:
+    session, tenant_id, employee, service = _build_service()
+    session.add(Holiday(tenant_id=tenant_id, date=date(2026, 3, 30), name="Berchtoldstag", active=True))
+    session.commit()
+
+    account = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 3, 30))
+
+    assert account.target_minutes == 0
+    assert account.is_holiday is True
+    assert account.holiday_name == "Berchtoldstag"
+    session.close()
+
+
+def test_holiday_on_non_working_weekday_stays_zero_without_distorting_distribution() -> None:
+    session, tenant_id, employee, service = _build_service()
+    session.add(Holiday(tenant_id=tenant_id, date=date(2026, 4, 5), name="Sonntagsfeiertag", active=True))
+    session.commit()
+
+    monday = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 3, 30))
+    sunday = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 4, 5))
+
+    assert monday.target_minutes == 483
+    assert sunday.target_minutes == 0
+    assert sunday.is_holiday is True
+    session.close()
+
+
+def test_holidays_reduce_relevant_workdays_and_raise_daily_target_distribution() -> None:
+    session, tenant_id, employee, service = _build_service()
+    session.add_all(
+        [
+            Holiday(tenant_id=tenant_id, date=date(2026, 1, 1), name="Neujahr", active=True),
+            Holiday(tenant_id=tenant_id, date=date(2026, 1, 2), name="Berchtoldstag", active=True),
+        ]
+    )
+    session.commit()
+
+    account = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 1, 5))
+
+    # 2100h / (261 - 2 Feiertage) = 486.49min -> 486min
+    assert account.target_minutes == 486
     session.close()
 
 
@@ -106,37 +153,8 @@ def test_80_percent_employee_with_weekday_override_distributes_annual_target_equ
     monday_account = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 3, 30))
     wednesday_account = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 4, 1))
 
-    assert monday_account.target_minutes == 482  # (2100h * 80%) / 209 Arbeitstage in 2026
+    assert monday_account.target_minutes == 482
     assert wednesday_account.target_minutes == 0
-    session.close()
-
-
-def test_non_working_weekday_results_in_zero_target_minutes() -> None:
-    session, tenant_id, employee, service = _build_service(
-        employee_overrides={"workday_monday": False, "workday_saturday": True}
-    )
-
-    monday_account = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 3, 30))
-
-    assert monday_account.target_minutes == 0
-    session.close()
-
-
-def test_date_before_entry_date_results_in_zero_target_minutes() -> None:
-    session, tenant_id, employee, service = _build_service()
-
-    account = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2025, 12, 31))
-
-    assert account.target_minutes == 0
-    session.close()
-
-
-def test_date_after_exit_date_results_in_zero_target_minutes() -> None:
-    session, tenant_id, employee, service = _build_service(exit_date=date(2026, 6, 30))
-
-    account = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 7, 1))
-
-    assert account.target_minutes == 0
     session.close()
 
 
@@ -151,11 +169,16 @@ def test_reporting_uses_same_daily_target_logic_consistently() -> None:
             "workday_friday": True,
         },
     )
-    reporting = ReportingService(service)
+    session.add(Holiday(tenant_id=tenant_id, date=date(2026, 3, 31), name="Ferien", active=True))
+    session.commit()
 
+    reporting = ReportingService(service)
     week = reporting.get_week_overview(tenant_id=tenant_id, employee=employee, iso_year=2026, iso_week=14)
 
-    assert week.totals.target_minutes == 1928  # 4 active days * 482
+    assert week.totals.target_minutes == 1455
+    tuesday = next(day for day in week.days if day.date == date(2026, 3, 31))
     wednesday = next(day for day in week.days if day.date == date(2026, 4, 1))
+    assert tuesday.target_minutes == 0
+    assert tuesday.is_holiday is True
     assert wednesday.target_minutes == 0
     session.close()

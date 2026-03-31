@@ -17,6 +17,7 @@ const employeeNavItems: NavItem[] = [
 const adminNavItems: NavItem[] = [
   { to: '/employees', label: 'Employees' },
   { to: '/working-time-models', label: 'Working Time Models' },
+  { to: '/holidays', label: 'Feiertage' },
 ];
 
 function getNavItemsByRole(role?: UserRole): NavItem[] {

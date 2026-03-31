@@ -6,6 +6,8 @@ import {
   createEmployee,
   createManualTimeStamp,
   createWorkingTimeModel,
+  createHoliday,
+  deleteHoliday,
   deleteWorkingTimeModel,
   deleteTimeStamp,
   getCalendarMonth,
@@ -16,12 +18,16 @@ import {
   getTimeStamps,
   getWeekReport,
   getWorkingTimeModels,
+  getHolidays,
   updateEmployee,
+  updateHoliday,
   updateTimeStamp,
   updateWorkingTimeModel,
   getYearReport,
   type CreateEmployeePayload,
+  type CreateHolidayPayload,
   type CreateWorkingTimeModelPayload,
+  type UpdateHolidayPayload,
   type UpdateWorkingTimeModelPayload,
   type UpdateEmployeePayload,
 } from '../api/endpoints';
@@ -101,6 +107,49 @@ export function useWorkingTimeModels(enabled: boolean) {
   });
 }
 
+
+export function useHolidays(enabled: boolean, year?: number) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['holidays', year ?? null],
+    queryFn: () => getHolidays(token, year),
+    enabled,
+  });
+}
+
+export function useCreateHolidayMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: (payload: CreateHolidayPayload) => createHoliday(payload, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['holidays'] });
+    },
+  });
+}
+
+export function useUpdateHolidayMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: ({ holidayId, payload }: { holidayId: number; payload: UpdateHolidayPayload }) =>
+      updateHoliday(holidayId, payload, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['holidays'] });
+    },
+  });
+}
+
+export function useDeleteHolidayMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: (holidayId: number) => deleteHoliday(holidayId, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['holidays'] });
+    },
+  });
+}
 export function useCreateWorkingTimeModelMutation() {
   const queryClient = useQueryClient();
   const { token } = useAuth();

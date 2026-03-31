@@ -48,7 +48,7 @@ Die Tageszielzeit wird zentral im Backend berechnet und von Tagesansicht, Kalend
 2. **Relevante Arbeitstage des Kalenderjahres bestimmen**
    - Nur Tage innerhalb `entry_date`/`exit_date`.
    - Nur Tage, deren Wochentag aktiv ist.
-   - Noch ohne Feiertags-/Ferien-/Krankheitsabzug.
+   - Nur aktive Feiertage des Tenants werden abgezogen; Ferien/Krankheit folgen später.
 
 3. **Effektive Jahreszielzeit berechnen**
    - `effective_annual_target_hours = annual_target_hours * employment_percentage / 100`
@@ -67,8 +67,9 @@ Für Tage ohne reguläre Arbeitspflicht gilt `target_minutes = 0`:
 ## 6) Zukunftssemantik (noch nicht implementiert)
 
 ### Feiertage
-- Feiertage sind später **keine target-bearing workdays**.
-- Sie reduzieren also die Anzahl relevanter Jahres-Arbeitstage.
+- Feiertage sind tenant-spezifisch und **keine target-bearing workdays**.
+- Für Feiertage gilt immer `target_minutes = 0`.
+- Die Jahresarbeitszeit schrumpft nicht; sie verteilt sich auf weniger target-bearing Tage.
 
 ### Ferien/Urlaub
 - Ferien reduzieren **nicht** die Jahresarbeitszeit.

@@ -8,14 +8,22 @@ from backend.models.enums import TimeStampEventType
 from backend.models.time_stamp_event import TimeStampEvent
 from backend.repositories.time_stamp_event_repository import TimeStampEventRepository
 from backend.schemas.time_tracking import DailyAccountStatus, DailyTimeAccountRead
+from backend.services.holiday_service import HolidayService
 
 
 class DailyAccountService:
-    def __init__(self, repository: TimeStampEventRepository) -> None:
+    def __init__(self, repository: TimeStampEventRepository, holiday_service: HolidayService) -> None:
         self.repository = repository
+        self.holiday_service = holiday_service
 
     def get_daily_account(self, *, tenant_id: int, employee: Employee, target_date: date) -> DailyTimeAccountRead:
-        target_minutes = self._calculate_target_minutes(employee=employee, target_date=target_date)
+        holiday_name = self.holiday_service.get_holiday_name_for_date(tenant_id, target_date)
+        target_minutes = self._calculate_target_minutes(
+            tenant_id=tenant_id,
+            employee=employee,
+            target_date=target_date,
+            holiday_name=holiday_name,
+        )
         events = self.repository.list_clock_events_for_day(
             tenant_id=tenant_id,
             employee_id=employee.id,
@@ -31,6 +39,8 @@ class DailyAccountService:
             balance_minutes=actual_minutes - target_minutes,
             status=status,
             event_count=len(events),
+            holiday_name=holiday_name,
+            is_holiday=holiday_name is not None,
         )
 
     def get_daily_accounts_in_range(
@@ -52,7 +62,14 @@ class DailyAccountService:
 
         return accounts
 
-    def _calculate_target_minutes(self, *, employee: Employee, target_date: date) -> int:
+    def _calculate_target_minutes(
+        self,
+        *,
+        tenant_id: int,
+        employee: Employee,
+        target_date: date,
+        holiday_name: str | None = None,
+    ) -> int:
         model = employee.working_time_model
         if model is None:
             raise HTTPException(
@@ -63,6 +80,8 @@ class DailyAccountService:
             return 0
         if employee.exit_date is not None and target_date > employee.exit_date:
             return 0
+        if holiday_name is not None:
+            return 0
 
         workday_pattern = self._resolve_employee_workday_pattern(employee=employee)
         weekday_is_active = workday_pattern[target_date.weekday()]
@@ -70,6 +89,7 @@ class DailyAccountService:
             return 0
 
         relevant_workdays = self._count_relevant_workdays_for_year(
+            tenant_id=tenant_id,
             employee=employee,
             year=target_date.year,
             workday_pattern=workday_pattern,
@@ -87,6 +107,7 @@ class DailyAccountService:
     def _count_relevant_workdays_for_year(
         self,
         *,
+        tenant_id: int,
         employee: Employee,
         year: int,
         workday_pattern: list[bool],
@@ -99,10 +120,16 @@ class DailyAccountService:
         if period_start > period_end:
             return 0
 
+        holiday_dates = self.holiday_service.get_active_holiday_dates(
+            tenant_id,
+            from_date=period_start,
+            to_date=period_end,
+        )
+
         total = 0
         cursor = period_start
         while cursor <= period_end:
-            if workday_pattern[cursor.weekday()]:
+            if workday_pattern[cursor.weekday()] and cursor not in holiday_dates:
                 total += 1
             cursor += timedelta(days=1)
 

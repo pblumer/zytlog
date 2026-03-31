@@ -4,10 +4,12 @@ from sqlalchemy.orm import Session
 from backend.api.deps import get_db
 from backend.core.auth import AuthContext, require_authenticated_user
 from backend.repositories.employee_repository import EmployeeRepository
+from backend.repositories.holiday_repository import HolidayRepository
 from backend.repositories.time_stamp_event_repository import TimeStampEventRepository
 from backend.schemas.time_tracking import CalendarMonthRead
 from backend.services.calendar_service import CalendarService
 from backend.services.daily_account_service import DailyAccountService
+from backend.services.holiday_service import HolidayService
 from backend.services.reporting_service import ReportingService
 
 router = APIRouter(prefix="/calendar", tags=["calendar"])
@@ -27,7 +29,7 @@ def my_month_calendar(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Employee profile not found")
 
     repository = TimeStampEventRepository(db)
-    daily_service = DailyAccountService(repository)
+    daily_service = DailyAccountService(repository, HolidayService(HolidayRepository(db)))
     reporting_service = ReportingService(daily_service)
     calendar_service = CalendarService(reporting_service)
     return calendar_service.get_month_calendar(
