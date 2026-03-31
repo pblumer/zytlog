@@ -1,15 +1,38 @@
+from fastapi import HTTPException, status
+
 from backend.models.employee import Employee
 from backend.repositories.employee_repository import EmployeeRepository
-from backend.schemas.employee import EmployeeCreate
+from backend.repositories.working_time_model_repository import WorkingTimeModelRepository
+from backend.schemas.employee import EmployeeCreate, EmployeeUpdate
 
 
 class EmployeeService:
-    def __init__(self, repository: EmployeeRepository) -> None:
+    def __init__(
+        self,
+        repository: EmployeeRepository,
+        working_time_model_repository: WorkingTimeModelRepository,
+    ) -> None:
         self.repository = repository
+        self.working_time_model_repository = working_time_model_repository
 
     def list_employees(self, tenant_id: int) -> list[Employee]:
         return self.repository.list_by_tenant(tenant_id)
 
     def create_employee(self, tenant_id: int, payload: EmployeeCreate) -> Employee:
-        # TODO: enforce role checks and tenant/user membership via real auth context.
+        if payload.working_time_model_id is not None:
+            model = self.working_time_model_repository.get_by_id_for_tenant(tenant_id, payload.working_time_model_id)
+            if model is None:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ungültiges Arbeitszeitmodell")
         return self.repository.create_for_tenant(tenant_id, payload)
+
+    def update_employee(self, tenant_id: int, employee_id: int, payload: EmployeeUpdate) -> Employee:
+        employee = self.repository.get_by_id_for_tenant(tenant_id, employee_id)
+        if employee is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mitarbeiter nicht gefunden")
+
+        if payload.working_time_model_id is not None:
+            model = self.working_time_model_repository.get_by_id_for_tenant(tenant_id, payload.working_time_model_id)
+            if model is None:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ungültiges Arbeitszeitmodell")
+
+        return self.repository.update(employee, payload)

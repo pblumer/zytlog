@@ -16,12 +16,14 @@ import {
   getTimeStamps,
   getWeekReport,
   getWorkingTimeModels,
+  updateEmployee,
   updateTimeStamp,
   updateWorkingTimeModel,
   getYearReport,
   type CreateEmployeePayload,
   type CreateWorkingTimeModelPayload,
   type UpdateWorkingTimeModelPayload,
+  type UpdateEmployeePayload,
 } from '../api/endpoints';
 import { useAuth } from '../auth/provider';
 
@@ -138,6 +140,18 @@ export function useCreateEmployeeMutation() {
   const { token } = useAuth();
   return useMutation({
     mutationFn: (payload: CreateEmployeePayload) => createEmployee(payload, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['employees'] });
+    },
+  });
+}
+
+export function useUpdateEmployeeMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: ({ employeeId, payload }: { employeeId: number; payload: UpdateEmployeePayload }) =>
+      updateEmployee(employeeId, payload, token),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['employees'] });
     },

@@ -76,8 +76,22 @@ Tenant behavior:
 - Every internal user belongs to exactly one tenant.
 - API access is scoped by tenant from auth context.
 - Admin-only operations (e.g., employee/model create) require `admin`.
+- Employee management in Zytlog is business-profile management (employment data), not direct identity administration in Keycloak.
 - Working time models can be edited by admins and deleted only when unassigned; otherwise the API returns a conflict message.
 - Time-stamp correction allows tenant admins for all tenant events, while employees/team leads can only edit their own events.
+
+## User onboarding model (current MVP)
+
+Zytlog currently keeps identity and business profile responsibilities separated:
+
+1. Create the person as a user in **Keycloak**.
+2. Let the person log in to Zytlog once.
+3. Zytlog performs **JIT provisioning** and creates the internal app user mapping.
+4. An admin completes or updates the **Employee profile** in Zytlog (employee number, workload, work model, entry/exit, weekday overrides, team).
+
+Important:
+- Zytlog does **not** currently manage Keycloak users directly.
+- No invitation flow, password management, or bidirectional user synchronization is implemented in this MVP.
 
 ## Key API flows
 
@@ -108,6 +122,11 @@ Working time models (admin):
 - `POST /api/v1/working-time-models`
 - `PATCH /api/v1/working-time-models/{model_id}`
 - `DELETE /api/v1/working-time-models/{model_id}` (blocked with `409` if still assigned to employees)
+
+Employees (admin):
+- `GET /api/v1/employees`
+- `POST /api/v1/employees`
+- `PATCH /api/v1/employees/{employee_id}`
 
 ## Local development setup
 
