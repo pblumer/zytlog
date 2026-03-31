@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     keycloak_jwks_url: str | None = None
     keycloak_audience: str | None = None
     keycloak_verify_audience: bool = False
+    openholidays_base_url: str = "https://openholidaysapi.org"
 
     @computed_field
     @property

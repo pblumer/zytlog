@@ -185,6 +185,54 @@ export type HolidaySet = {
   updated_at: string;
 };
 
+export type OpenHolidaysCountry = {
+  iso_code: string;
+  name: string | null;
+};
+
+export type OpenHolidaysLanguage = {
+  language_code: string;
+  name: string | null;
+};
+
+export type OpenHolidaysSubdivision = {
+  code: string;
+  name: string | null;
+};
+
+export type OpenHolidaysImportMode = 'skip_existing' | 'replace_existing_in_range';
+
+export type OpenHolidaysImportPayload = {
+  country_iso_code: string;
+  subdivision_code: string | null;
+  language_code: string;
+  valid_from: string;
+  valid_to: string;
+  import_mode: OpenHolidaysImportMode;
+};
+
+export type OpenHolidaysImportPreviewRow = {
+  date: string;
+  name: string;
+  country_iso_code: string;
+  subdivision_code: string | null;
+  language_code: string;
+  source: string;
+  exists_in_holiday_set: boolean;
+  existing_holiday_id: number | null;
+  action_hint: 'create' | 'skip' | 'replace';
+};
+
+export type OpenHolidaysImportPreview = {
+  rows: OpenHolidaysImportPreviewRow[];
+};
+
+export type OpenHolidaysImportCommitResult = {
+  created: number;
+  skipped: number;
+  replaced: number;
+};
+
 export type AbsenceType = 'vacation' | 'sickness';
 export type AbsenceDurationType = 'full_day' | 'half_day_am' | 'half_day_pm';
 

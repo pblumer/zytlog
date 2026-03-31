@@ -7,6 +7,7 @@ import {
   createManualTimeStamp,
   createWorkingTimeModel,
   createHolidaySet,
+  commitOpenHolidaysImport,
   createHoliday,
   deleteHolidaySet,
   deleteHoliday,
@@ -22,11 +23,15 @@ import {
   getWorkingTimeModels,
   getHolidays,
   getHolidaySets,
+  getOpenHolidaysCountries,
+  getOpenHolidaysLanguages,
+  getOpenHolidaysSubdivisions,
   updateEmployee,
   updateHoliday,
   updateHolidaySet,
   updateTimeStamp,
   updateWorkingTimeModel,
+  previewOpenHolidaysImport,
   getYearReport,
   getMyAbsences,
   createMyAbsence,
@@ -44,6 +49,7 @@ import {
   type UpdateEmployeePayload,
   type CreateAbsencePayload,
   type UpdateAbsencePayload,
+  type OpenHolidaysImportPayload,
 } from '../api/endpoints';
 import { useAuth } from '../auth/provider';
 
@@ -205,6 +211,56 @@ export function useDeleteHolidaySetMutation() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['holiday-sets'] }),
         queryClient.invalidateQueries({ queryKey: ['holidays'] }),
+      ]);
+    },
+  });
+}
+
+export function useOpenHolidaysCountries(enabled: boolean) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['openholidays', 'countries'],
+    queryFn: () => getOpenHolidaysCountries(token),
+    enabled,
+  });
+}
+
+export function useOpenHolidaysLanguages(enabled: boolean) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['openholidays', 'languages'],
+    queryFn: () => getOpenHolidaysLanguages(token),
+    enabled,
+  });
+}
+
+export function useOpenHolidaysSubdivisions(countryIsoCode: string | null, enabled: boolean) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['openholidays', 'subdivisions', countryIsoCode],
+    queryFn: () => getOpenHolidaysSubdivisions(countryIsoCode ?? '', token),
+    enabled: enabled && Boolean(countryIsoCode),
+  });
+}
+
+export function usePreviewOpenHolidaysImportMutation() {
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: ({ holidaySetId, payload }: { holidaySetId: number; payload: OpenHolidaysImportPayload }) =>
+      previewOpenHolidaysImport(holidaySetId, payload, token),
+  });
+}
+
+export function useCommitOpenHolidaysImportMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: ({ holidaySetId, payload }: { holidaySetId: number; payload: OpenHolidaysImportPayload }) =>
+      commitOpenHolidaysImport(holidaySetId, payload, token),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['holidays'] }),
+        queryClient.invalidateQueries({ queryKey: ['holiday-sets'] }),
       ]);
     },
   });

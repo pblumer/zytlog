@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '../auth/provider';
 import { ApiError } from '../api/client';
@@ -7,18 +7,32 @@ import { DataGrid } from '../components/DataGrid';
 import type { DataGridColumn } from '../components/DataGrid';
 import { TableStatusBadge } from '../components/TableStatusBadge';
 import {
+  useCommitOpenHolidaysImportMutation,
   useCreateHolidaySetMutation,
   useDeleteHolidaySetMutation,
   useHolidaySets,
+  useOpenHolidaysCountries,
+  useOpenHolidaysLanguages,
+  useOpenHolidaysSubdivisions,
+  usePreviewOpenHolidaysImportMutation,
   useUpdateHolidaySetMutation,
 } from '../hooks/useZytlogApi';
-import type { HolidaySet } from '../types/api';
+import type { HolidaySet, OpenHolidaysImportMode, OpenHolidaysImportPreviewRow } from '../types/api';
 
 type HolidaySetFormState = {
   name: string;
   description: string;
   source: string;
   active: boolean;
+};
+
+type ImportFormState = {
+  countryIsoCode: string;
+  subdivisionCode: string;
+  languageCode: string;
+  validFrom: string;
+  validTo: string;
+  importMode: OpenHolidaysImportMode;
 };
 
 const defaultFormState: HolidaySetFormState = {
@@ -28,16 +42,46 @@ const defaultFormState: HolidaySetFormState = {
   active: true,
 };
 
+const today = new Date();
+const startOfYear = `${today.getUTCFullYear()}-01-01`;
+const endOfYear = `${today.getUTCFullYear()}-12-31`;
+
+const defaultImportState: ImportFormState = {
+  countryIsoCode: 'CH',
+  subdivisionCode: '',
+  languageCode: 'DE',
+  validFrom: startOfYear,
+  validTo: endOfYear,
+  importMode: 'skip_existing',
+};
+
 export function HolidaySetsPage() {
   const { isAdmin } = useAuth();
   const [editingHolidaySetId, setEditingHolidaySetId] = useState<number | null>(null);
   const [formState, setFormState] = useState<HolidaySetFormState>(defaultFormState);
   const [mutationError, setMutationError] = useState<string | null>(null);
 
+  const [selectedImportHolidaySet, setSelectedImportHolidaySet] = useState<HolidaySet | null>(null);
+  const [importFormState, setImportFormState] = useState<ImportFormState>(defaultImportState);
+  const [previewRows, setPreviewRows] = useState<OpenHolidaysImportPreviewRow[]>([]);
+  const [importFeedback, setImportFeedback] = useState<string | null>(null);
+
   const query = useHolidaySets(isAdmin);
   const createMutation = useCreateHolidaySetMutation();
   const updateMutation = useUpdateHolidaySetMutation();
   const deleteMutation = useDeleteHolidaySetMutation();
+
+  const countriesQuery = useOpenHolidaysCountries(isAdmin);
+  const languagesQuery = useOpenHolidaysLanguages(isAdmin);
+  const subdivisionsQuery = useOpenHolidaysSubdivisions(importFormState.countryIsoCode || null, isAdmin);
+  const previewMutation = usePreviewOpenHolidaysImportMutation();
+  const commitMutation = useCommitOpenHolidaysImportMutation();
+
+  useEffect(() => {
+    if (countriesQuery.data?.length && !countriesQuery.data.find((item) => item.iso_code === importFormState.countryIsoCode)) {
+      setImportFormState((prev) => ({ ...prev, countryIsoCode: countriesQuery.data[0].iso_code }));
+    }
+  }, [countriesQuery.data, importFormState.countryIsoCode]);
 
   const columns = useMemo<DataGridColumn<HolidaySet>[]>(
     () => [
@@ -56,6 +100,17 @@ export function HolidaySetsPage() {
         header: 'Aktionen',
         cell: (row) => (
           <div className="actions">
+            <button
+              type="button"
+              className="btn outline"
+              onClick={() => {
+                setSelectedImportHolidaySet(row);
+                setPreviewRows([]);
+                setImportFeedback(null);
+              }}
+            >
+              Import aus OpenHolidays
+            </button>
             <button
               type="button"
               className="btn outline"
@@ -122,6 +177,59 @@ export function HolidaySetsPage() {
     }
   };
 
+  const onPreviewImport = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!selectedImportHolidaySet) return;
+    setImportFeedback(null);
+    try {
+      const response = await previewMutation.mutateAsync({
+        holidaySetId: selectedImportHolidaySet.id,
+        payload: {
+          country_iso_code: importFormState.countryIsoCode,
+          subdivision_code: importFormState.subdivisionCode || null,
+          language_code: importFormState.languageCode,
+          valid_from: importFormState.validFrom,
+          valid_to: importFormState.validTo,
+          import_mode: importFormState.importMode,
+        },
+      });
+      setPreviewRows(response.rows);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setImportFeedback(error.message);
+      } else {
+        setImportFeedback('Import-Vorschau konnte nicht geladen werden.');
+      }
+      setPreviewRows([]);
+    }
+  };
+
+  const onCommitImport = async () => {
+    if (!selectedImportHolidaySet) return;
+    setImportFeedback(null);
+    try {
+      const response = await commitMutation.mutateAsync({
+        holidaySetId: selectedImportHolidaySet.id,
+        payload: {
+          country_iso_code: importFormState.countryIsoCode,
+          subdivision_code: importFormState.subdivisionCode || null,
+          language_code: importFormState.languageCode,
+          valid_from: importFormState.validFrom,
+          valid_to: importFormState.validTo,
+          import_mode: importFormState.importMode,
+        },
+      });
+      setImportFeedback(`Import abgeschlossen: erstellt ${response.created}, übersprungen ${response.skipped}, ersetzt ${response.replaced}.`);
+      setPreviewRows([]);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setImportFeedback(error.message);
+      } else {
+        setImportFeedback('Import konnte nicht durchgeführt werden.');
+      }
+    }
+  };
+
   if (!isAdmin) {
     return <EmptyState title="Nicht verfügbar" description="Feiertagssätze sind nur für Administratoren sichtbar." />;
   }
@@ -152,6 +260,108 @@ export function HolidaySetsPage() {
           {mutationError ? <p className="inline-error">{mutationError}</p> : null}
         </form>
       </DataSection>
+      {selectedImportHolidaySet ? (
+        <DataSection title={`OpenHolidays-Import für „${selectedImportHolidaySet.name}“`}>
+          <form className="grid" onSubmit={onPreviewImport}>
+            <label>
+              Land
+              <select
+                value={importFormState.countryIsoCode}
+                onChange={(event) => setImportFormState((prev) => ({ ...prev, countryIsoCode: event.target.value, subdivisionCode: '' }))}
+              >
+                {(countriesQuery.data ?? []).map((country) => (
+                  <option key={country.iso_code} value={country.iso_code}>
+                    {country.iso_code} {country.name ? `— ${country.name}` : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Region / Subdivision
+              <select
+                value={importFormState.subdivisionCode}
+                onChange={(event) => setImportFormState((prev) => ({ ...prev, subdivisionCode: event.target.value }))}
+              >
+                <option value="">Keine regionale Einschränkung</option>
+                {(subdivisionsQuery.data ?? []).map((subdivision) => (
+                  <option key={subdivision.code} value={subdivision.code}>
+                    {subdivision.code} {subdivision.name ? `— ${subdivision.name}` : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Sprache
+              <select
+                value={importFormState.languageCode}
+                onChange={(event) => setImportFormState((prev) => ({ ...prev, languageCode: event.target.value }))}
+              >
+                {(languagesQuery.data ?? []).map((language) => (
+                  <option key={language.language_code} value={language.language_code}>
+                    {language.language_code.toUpperCase()} {language.name ? `— ${language.name}` : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Gültig von
+              <input type="date" value={importFormState.validFrom} onChange={(event) => setImportFormState((prev) => ({ ...prev, validFrom: event.target.value }))} required />
+            </label>
+            <label>
+              Gültig bis
+              <input type="date" value={importFormState.validTo} onChange={(event) => setImportFormState((prev) => ({ ...prev, validTo: event.target.value }))} required />
+            </label>
+            <label>
+              Importmodus
+              <select
+                value={importFormState.importMode}
+                onChange={(event) => setImportFormState((prev) => ({ ...prev, importMode: event.target.value as OpenHolidaysImportMode }))}
+              >
+                <option value="skip_existing">Bestehende Feiertage überspringen</option>
+                <option value="replace_existing_in_range">Bestehende Feiertage im Zeitraum ersetzen</option>
+              </select>
+            </label>
+            <div className="actions">
+              <button type="submit" className="btn outline" disabled={previewMutation.isPending || countriesQuery.isLoading || languagesQuery.isLoading}>
+                Vorschau laden
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                disabled={commitMutation.isPending || previewRows.length === 0}
+                onClick={onCommitImport}
+              >
+                Import bestätigen
+              </button>
+            </div>
+          </form>
+          {importFeedback ? <p className="inline-error">{importFeedback}</p> : null}
+          {previewRows.length > 0 ? (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Datum</th>
+                    <th>Name</th>
+                    <th>Bereits vorhanden</th>
+                    <th>Aktion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {previewRows.map((row) => (
+                    <tr key={`${row.date}-${row.name}`}>
+                      <td>{row.date}</td>
+                      <td>{row.name}</td>
+                      <td>{row.exists_in_holiday_set ? 'Ja' : 'Nein'}</td>
+                      <td>{row.action_hint}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </DataSection>
+      ) : null}
       <DataSection title="Feiertagssätze">
         {query.isLoading ? <LoadingBlock /> : null}
         {query.error ? <ErrorState message="Feiertagssätze konnten nicht geladen werden." /> : null}
