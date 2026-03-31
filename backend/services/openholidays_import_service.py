@@ -105,6 +105,7 @@ class OpenHolidaysImportService:
                 from_date=prepared_rows[0].date,
                 to_date=prepared_rows[-1].date,
             )
+            self.holiday_repository.flush()
             rows_to_create = prepared_rows
         else:
             rows_to_create = []

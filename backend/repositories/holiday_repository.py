@@ -177,3 +177,6 @@ class HolidayRepository:
 
     def commit(self) -> None:
         self.db.commit()
+
+    def flush(self) -> None:
+        self.db.flush()
