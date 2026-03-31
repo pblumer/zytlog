@@ -59,3 +59,13 @@ Folge: Die verbleibenden target-bearing Tage tragen anteilig mehr Sollminuten.
 ## Ergebnis
 
 Das Modell passt deutlich besser zu realen Schweizer Standort-/Kanton-Szenarien, bleibt tenant-sicher und ist kompatibel mit zukünftigen Importquellen (z. B. kantonale Datensätze).
+
+## OpenHolidays als Importquelle
+
+Für Admins steht ein manueller Import-Workflow mit Vorschau/Commit zur Verfügung, der OpenHolidays-Daten in einen ausgewählten Feiertagssatz übernimmt.
+
+- Importquelle: OpenHolidays (Land, Sprache, optionale Subdivision, Zeitraum).
+- Ziel: bestehender Feiertagssatz im Tenant.
+- Konfliktstrategie: `skip_existing` oder `replace_existing_in_range` (Matching primär über Datum innerhalb des Feiertagssatzes).
+
+Wichtig: Die Laufzeitlogik für Zielzeitberechnung bleibt unverändert und nutzt weiterhin nur Zytlog-interne Feiertagsdaten.

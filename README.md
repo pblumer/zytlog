@@ -139,6 +139,14 @@ Public holidays (admin):
 - `POST /api/v1/holidays`
 - `PATCH /api/v1/holidays/{holiday_id}`
 - `DELETE /api/v1/holidays/{holiday_id}`
+- Manual OpenHolidays import into a selected holiday set:
+  - `GET /api/v1/admin/openholidays/countries`
+  - `GET /api/v1/admin/openholidays/languages`
+  - `GET /api/v1/admin/openholidays/subdivisions?countryIsoCode=CH`
+  - `POST /api/v1/admin/holiday-sets/{holiday_set_id}/import/openholidays/preview`
+  - `POST /api/v1/admin/holiday-sets/{holiday_set_id}/import/openholidays/commit`
+
+The OpenHolidays integration is import-only: holidays are persisted in Zytlog's own database and remain available for daily target calculations without runtime dependency on OpenHolidays.
 Employees (admin):
 - `GET /api/v1/employees`
 - `POST /api/v1/employees`

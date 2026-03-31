@@ -42,6 +42,7 @@ VITE_API_BASE_URL=http://localhost:8000/api/v1
 - `src/auth`: auth provider and auth state
 - `src/layout`: shell layout (sidebar, topbar, content)
 - `src/pages`: route pages (dashboard, day/week/month/year, admin lists)
+- Holiday set admin page includes manual OpenHolidays import with preview + commit into a selected Feiertagssatz.
 - `src/api`: API client + endpoint functions
 - `src/components`: reusable page/table UI primitives
 - `src/hooks`: query hooks and mutations

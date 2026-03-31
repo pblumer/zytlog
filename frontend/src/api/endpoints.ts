@@ -13,7 +13,15 @@ import type {
   Holiday,
   HolidaySet,
   Absence,
+  OpenHolidaysCountry,
+  OpenHolidaysImportCommitResult,
+  OpenHolidaysImportPayload,
+  OpenHolidaysImportPreview,
+  OpenHolidaysLanguage,
+  OpenHolidaysSubdivision,
 } from '../types/api';
+
+export type { OpenHolidaysImportPayload } from '../types/api';
 
 export const getMe = (token?: string | null) => apiGet<Me>('/me', token);
 
@@ -143,6 +151,40 @@ export const updateHolidaySet = (holidaySetId: number, payload: UpdateHolidaySet
   apiPatch<HolidaySet>(`/holiday-sets/${holidaySetId}`, payload, token);
 export const deleteHolidaySet = (holidaySetId: number, token?: string | null) =>
   apiDelete<void>(`/holiday-sets/${holidaySetId}`, token);
+
+export const getOpenHolidaysCountries = (token?: string | null) =>
+  apiGet<OpenHolidaysCountry[]>('/admin/openholidays/countries', token);
+
+export const getOpenHolidaysLanguages = (token?: string | null) =>
+  apiGet<OpenHolidaysLanguage[]>('/admin/openholidays/languages', token);
+
+export const getOpenHolidaysSubdivisions = (countryIsoCode: string, token?: string | null) =>
+  apiGet<OpenHolidaysSubdivision[]>(
+    `/admin/openholidays/subdivisions?countryIsoCode=${encodeURIComponent(countryIsoCode)}`,
+    token,
+  );
+
+export const previewOpenHolidaysImport = (
+  holidaySetId: number,
+  payload: OpenHolidaysImportPayload,
+  token?: string | null,
+) =>
+  apiPost<OpenHolidaysImportPreview>(
+    `/admin/holiday-sets/${holidaySetId}/import/openholidays/preview`,
+    payload,
+    token,
+  );
+
+export const commitOpenHolidaysImport = (
+  holidaySetId: number,
+  payload: OpenHolidaysImportPayload,
+  token?: string | null,
+) =>
+  apiPost<OpenHolidaysImportCommitResult>(
+    `/admin/holiday-sets/${holidaySetId}/import/openholidays/commit`,
+    payload,
+    token,
+  );
 
 export const clockIn = (token?: string | null) => apiPost<TimeStampEvent>('/time-stamps/clock-in', undefined, token);
 
