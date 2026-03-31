@@ -17,9 +17,12 @@ class DailyAccountService:
         self.holiday_service = holiday_service
 
     def get_daily_account(self, *, tenant_id: int, employee: Employee, target_date: date) -> DailyTimeAccountRead:
-        holiday_name = self.holiday_service.get_holiday_name_for_date(tenant_id, target_date)
+        holiday_name = self.holiday_service.get_holiday_name_for_employee_date(
+            employee=employee,
+            tenant=employee.tenant,
+            target_date=target_date,
+        )
         target_minutes = self._calculate_target_minutes(
-            tenant_id=tenant_id,
             employee=employee,
             target_date=target_date,
             holiday_name=holiday_name,
@@ -65,7 +68,6 @@ class DailyAccountService:
     def _calculate_target_minutes(
         self,
         *,
-        tenant_id: int,
         employee: Employee,
         target_date: date,
         holiday_name: str | None = None,
@@ -89,7 +91,6 @@ class DailyAccountService:
             return 0
 
         relevant_workdays = self._count_relevant_workdays_for_year(
-            tenant_id=tenant_id,
             employee=employee,
             year=target_date.year,
             workday_pattern=workday_pattern,
@@ -107,7 +108,6 @@ class DailyAccountService:
     def _count_relevant_workdays_for_year(
         self,
         *,
-        tenant_id: int,
         employee: Employee,
         year: int,
         workday_pattern: list[bool],
@@ -120,8 +120,9 @@ class DailyAccountService:
         if period_start > period_end:
             return 0
 
-        holiday_dates = self.holiday_service.get_active_holiday_dates(
-            tenant_id,
+        holiday_dates = self.holiday_service.get_active_holiday_dates_for_employee(
+            employee=employee,
+            tenant=employee.tenant,
             from_date=period_start,
             to_date=period_end,
         )

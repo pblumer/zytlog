@@ -21,6 +21,7 @@ class Employee(TimestampMixin, Base):
     working_time_model_id: Mapped[int | None] = mapped_column(
         ForeignKey("working_time_models.id"), nullable=True
     )
+    holiday_set_id: Mapped[int | None] = mapped_column(ForeignKey("holiday_sets.id"), nullable=True)
     workday_monday: Mapped[bool | None] = mapped_column(default=None, nullable=True)
     workday_tuesday: Mapped[bool | None] = mapped_column(default=None, nullable=True)
     workday_wednesday: Mapped[bool | None] = mapped_column(default=None, nullable=True)
@@ -33,5 +34,6 @@ class Employee(TimestampMixin, Base):
     tenant: Mapped["Tenant"] = relationship(back_populates="employees")
     user: Mapped["User"] = relationship(back_populates="employee")
     working_time_model: Mapped["WorkingTimeModel"] = relationship(back_populates="employees")
+    holiday_set: Mapped["HolidaySet | None"] = relationship(back_populates="employees")
     time_stamp_events: Mapped[list["TimeStampEvent"]] = relationship(back_populates="employee")
     daily_time_accounts: Mapped[list["DailyTimeAccount"]] = relationship(back_populates="employee")

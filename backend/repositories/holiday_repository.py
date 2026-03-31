@@ -18,6 +18,15 @@ class HolidayRepository:
         stmt = stmt.order_by(Holiday.date.asc(), Holiday.id.asc())
         return list(self.db.scalars(stmt).all())
 
+    def list_by_holiday_set(
+        self, tenant_id: int, *, holiday_set_id: int, year: int | None = None
+    ) -> list[Holiday]:
+        stmt = select(Holiday).where(Holiday.tenant_id == tenant_id, Holiday.holiday_set_id == holiday_set_id)
+        if year is not None:
+            stmt = stmt.where(extract("year", Holiday.date) == year)
+        stmt = stmt.order_by(Holiday.date.asc(), Holiday.id.asc())
+        return list(self.db.scalars(stmt).all())
+
     def create_for_tenant(self, tenant_id: int, payload: HolidayCreate) -> Holiday:
         holiday = Holiday(tenant_id=tenant_id, **payload.model_dump())
         self.db.add(holiday)
@@ -37,10 +46,38 @@ class HolidayRepository:
         )
         return self.db.scalar(stmt)
 
+    def get_by_holiday_set_and_date(self, tenant_id: int, holiday_set_id: int, target_date: date) -> Holiday | None:
+        stmt = select(Holiday).where(
+            Holiday.tenant_id == tenant_id,
+            Holiday.holiday_set_id == holiday_set_id,
+            Holiday.date == target_date,
+            Holiday.active.is_(True),
+        )
+        return self.db.scalar(stmt)
+
     def list_active_dates_in_range(self, tenant_id: int, *, from_date: date, to_date: date) -> set[date]:
         stmt = select(Holiday.date).where(
             and_(
                 Holiday.tenant_id == tenant_id,
+                Holiday.active.is_(True),
+                Holiday.date >= from_date,
+                Holiday.date <= to_date,
+            )
+        )
+        return set(self.db.scalars(stmt).all())
+
+    def list_active_dates_in_range_for_holiday_set(
+        self,
+        tenant_id: int,
+        *,
+        holiday_set_id: int,
+        from_date: date,
+        to_date: date,
+    ) -> set[date]:
+        stmt = select(Holiday.date).where(
+            and_(
+                Holiday.tenant_id == tenant_id,
+                Holiday.holiday_set_id == holiday_set_id,
                 Holiday.active.is_(True),
                 Holiday.date >= from_date,
                 Holiday.date <= to_date,

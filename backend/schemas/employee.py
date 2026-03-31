@@ -14,6 +14,7 @@ class EmployeeCreate(BaseSchema):
     entry_date: date
     exit_date: date | None = None
     working_time_model_id: int | None = None
+    holiday_set_id: int | None = None
     workday_monday: bool | None = None
     workday_tuesday: bool | None = None
     workday_wednesday: bool | None = None
@@ -32,6 +33,7 @@ class EmployeeUpdate(BaseSchema):
     entry_date: date | None = None
     exit_date: date | None = None
     working_time_model_id: int | None = None
+    holiday_set_id: int | None = None
     workday_monday: bool | None = None
     workday_tuesday: bool | None = None
     workday_wednesday: bool | None = None
@@ -53,6 +55,7 @@ class EmployeeRead(TimestampedSchema):
     entry_date: date
     exit_date: date | None
     working_time_model_id: int | None
+    holiday_set_id: int | None
     workday_monday: bool | None
     workday_tuesday: bool | None
     workday_wednesday: bool | None

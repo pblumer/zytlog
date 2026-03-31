@@ -14,6 +14,7 @@ from backend.db.base import Base
 from backend.main import create_app
 from backend.models.enums import UserRole
 from backend.models.holiday import Holiday
+from backend.models.holiday_set import HolidaySet
 from backend.models.tenant import Tenant
 from backend.models.user import User
 
@@ -75,6 +76,13 @@ def test_session_local() -> sessionmaker:
         session.add_all([demo_tenant, other_tenant])
         session.flush()
 
+        demo_set = HolidaySet(tenant_id=demo_tenant.id, name="Standard", source="manual", active=True)
+        other_set = HolidaySet(tenant_id=other_tenant.id, name="Other Standard", source="manual", active=True)
+        session.add_all([demo_set, other_set])
+        session.flush()
+        demo_tenant.default_holiday_set_id = demo_set.id
+        other_tenant.default_holiday_set_id = other_set.id
+
         session.add_all(
             [
                 User(
@@ -104,8 +112,8 @@ def test_session_local() -> sessionmaker:
 
         session.add_all(
             [
-                Holiday(tenant_id=demo_tenant.id, date=date(2026, 1, 1), name="Neujahr", active=True),
-                Holiday(tenant_id=other_tenant.id, date=date(2026, 1, 1), name="Other Neujahr", active=True),
+                Holiday(tenant_id=demo_tenant.id, holiday_set_id=demo_set.id, date=date(2026, 1, 1), name="Neujahr", active=True),
+                Holiday(tenant_id=other_tenant.id, holiday_set_id=other_set.id, date=date(2026, 1, 1), name="Other Neujahr", active=True),
             ]
         )
         session.commit()
@@ -142,7 +150,9 @@ def test_list_holidays_admin_only(client: TestClient) -> None:
 
 
 def test_list_holidays_scoped_by_tenant(client: TestClient) -> None:
-    response = client.get('/api/v1/holidays?year=2026', headers={'Authorization': 'Bearer valid-admin-token'})
+    set_response = client.get('/api/v1/holiday-sets', headers={'Authorization': 'Bearer valid-admin-token'})
+    holiday_set_id = set_response.json()[0]['id']
+    response = client.get(f'/api/v1/holidays?year=2026&holiday_set_id={holiday_set_id}', headers={'Authorization': 'Bearer valid-admin-token'})
     assert response.status_code == 200
     payload = response.json()
     assert len(payload) == 1
@@ -150,10 +160,13 @@ def test_list_holidays_scoped_by_tenant(client: TestClient) -> None:
 
 
 def test_create_update_delete_holiday(client: TestClient) -> None:
+    set_response = client.get('/api/v1/holiday-sets', headers={'Authorization': 'Bearer valid-admin-token'})
+    holiday_set_id = set_response.json()[0]['id']
+
     create_response = client.post(
         '/api/v1/holidays',
         headers={'Authorization': 'Bearer valid-admin-token'},
-        json={'date': '2026-12-25', 'name': 'Weihnachten', 'active': True},
+        json={'holiday_set_id': holiday_set_id, 'date': '2026-12-25', 'name': 'Weihnachten', 'active': True},
     )
     assert create_response.status_code == 200
     holiday_id = create_response.json()['id']
@@ -174,19 +187,36 @@ def test_create_update_delete_holiday(client: TestClient) -> None:
     assert delete_response.status_code == 204
 
 
-def test_holiday_date_unique_per_tenant(client: TestClient) -> None:
+def test_holiday_date_unique_within_holiday_set(client: TestClient) -> None:
+    set_response = client.get('/api/v1/holiday-sets', headers={'Authorization': 'Bearer valid-admin-token'})
+    holiday_set_id = set_response.json()[0]['id']
     response = client.post(
         '/api/v1/holidays',
         headers={'Authorization': 'Bearer valid-admin-token'},
-        json={'date': '2026-01-01', 'name': 'Neujahr 2', 'active': True},
+        json={'holiday_set_id': holiday_set_id, 'date': '2026-01-01', 'name': 'Neujahr 2', 'active': True},
     )
     assert response.status_code == 409
 
 
 def test_same_date_allowed_for_another_tenant(client: TestClient) -> None:
+    set_response = client.get('/api/v1/holiday-sets', headers={'Authorization': 'Bearer valid-admin-other-tenant-token'})
+    holiday_set_id = set_response.json()[0]['id']
     response = client.post(
         '/api/v1/holidays',
         headers={'Authorization': 'Bearer valid-admin-other-tenant-token'},
-        json={'date': '2026-05-01', 'name': 'Tag der Arbeit', 'active': True},
+        json={'holiday_set_id': holiday_set_id, 'date': '2026-05-01', 'name': 'Tag der Arbeit', 'active': True},
     )
     assert response.status_code == 200
+
+
+def test_holiday_set_delete_blocked_when_holidays_present(client: TestClient) -> None:
+    set_response = client.get('/api/v1/holiday-sets', headers={'Authorization': 'Bearer valid-admin-token'})
+    holiday_set_id = set_response.json()[0]['id']
+
+    response = client.delete(f'/api/v1/holiday-sets/{holiday_set_id}', headers={'Authorization': 'Bearer valid-admin-token'})
+    assert response.status_code == 409
+
+
+def test_holiday_sets_admin_only(client: TestClient) -> None:
+    response = client.get('/api/v1/holiday-sets', headers={'Authorization': 'Bearer valid-employee-token'})
+    assert response.status_code == 403

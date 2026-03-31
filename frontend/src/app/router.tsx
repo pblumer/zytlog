@@ -5,6 +5,7 @@ import { AppShell } from '../layout/AppShell';
 import { DashboardPage } from '../pages/DashboardPage';
 import { DayPage } from '../pages/DayPage';
 import { EmployeesPage } from '../pages/EmployeesPage';
+import { HolidaySetsPage } from '../pages/HolidaySetsPage';
 import { HolidaysPage } from '../pages/HolidaysPage';
 import { MonthPage } from '../pages/MonthPage';
 import { MyTimePage } from '../pages/MyTimePage';
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
           { path: 'year', element: <YearPage /> },
           { path: 'employees', element: <EmployeesPage /> },
           { path: 'working-time-models', element: <WorkingTimeModelsPage /> },
+          { path: 'holiday-sets', element: <HolidaySetsPage /> },
           { path: 'holidays', element: <HolidaysPage /> },
           { path: '*', element: <NotFoundPage /> },
         ],

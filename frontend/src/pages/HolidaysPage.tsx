@@ -10,6 +10,7 @@ import {
   useCreateHolidayMutation,
   useDeleteHolidayMutation,
   useHolidays,
+  useHolidaySets,
   useUpdateHolidayMutation,
 } from '../hooks/useZytlogApi';
 import type { Holiday } from '../types/api';
@@ -31,14 +32,18 @@ const defaultFormState: HolidayFormState = {
 export function HolidaysPage() {
   const { isAdmin } = useAuth();
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [selectedHolidaySetId, setSelectedHolidaySetId] = useState<number | null>(null);
   const [editingHolidayId, setEditingHolidayId] = useState<number | null>(null);
   const [formState, setFormState] = useState<HolidayFormState>(defaultFormState);
   const [mutationError, setMutationError] = useState<string | null>(null);
 
-  const query = useHolidays(isAdmin, selectedYear);
+  const holidaySetsQuery = useHolidaySets(isAdmin);
+  const query = useHolidays(isAdmin && selectedHolidaySetId !== null, selectedYear, selectedHolidaySetId ?? undefined);
   const createMutation = useCreateHolidayMutation();
   const updateMutation = useUpdateHolidayMutation();
   const deleteMutation = useDeleteHolidayMutation();
+
+  const selectedHolidaySet = (holidaySetsQuery.data ?? []).find((item) => item.id === selectedHolidaySetId);
 
   const columns = useMemo<DataGridColumn<Holiday>[]>(
     () => [
@@ -108,8 +113,13 @@ export function HolidaysPage() {
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (selectedHolidaySetId === null) {
+      setMutationError('Bitte zuerst einen Feiertagssatz auswählen.');
+      return;
+    }
     setMutationError(null);
-    const payload = { ...formState };
+
+    const payload = { ...formState, holiday_set_id: selectedHolidaySetId };
 
     try {
       if (editingHolidayId != null) {
@@ -134,7 +144,25 @@ export function HolidaysPage() {
 
   return (
     <>
-      <PageHeader title="Feiertage" subtitle="Tenant-spezifischer Feiertagskalender" />
+      <PageHeader title="Feiertage" subtitle="Feiertage innerhalb eines Feiertagssatzes verwalten" />
+      <DataSection title="Feiertagssatz auswählen">
+        <label>
+          Feiertagssatz
+          <select
+            value={selectedHolidaySetId ?? ''}
+            onChange={(event) => setSelectedHolidaySetId(event.target.value ? Number(event.target.value) : null)}
+          >
+            <option value="">Bitte wählen</option>
+            {(holidaySetsQuery.data ?? []).map((holidaySet) => (
+              <option key={holidaySet.id} value={holidaySet.id}>
+                {holidaySet.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        {selectedHolidaySet ? <p className="meta">Quelle: {selectedHolidaySet.source ?? 'manuell'}</p> : null}
+      </DataSection>
+
       <DataSection title={editingHolidayId ? 'Feiertag bearbeiten' : 'Feiertag anlegen'}>
         <form className="grid" onSubmit={onSubmit}>
           <label>
@@ -165,8 +193,9 @@ export function HolidaysPage() {
           Jahr
           <input type="number" min={1970} max={2100} value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} aria-label="Jahr filtern" />
         </label>
-        {query.isLoading ? <LoadingBlock /> : null}
-        {query.error ? <ErrorState message="Feiertage konnten nicht geladen werden." /> : null}
+        {holidaySetsQuery.isLoading || query.isLoading ? <LoadingBlock /> : null}
+        {holidaySetsQuery.error || query.error ? <ErrorState message="Feiertage konnten nicht geladen werden." /> : null}
+        {selectedHolidaySetId === null ? <EmptyState title="Kein Feiertagssatz ausgewählt" description="Wählen Sie einen Feiertagssatz, um Feiertage zu verwalten." /> : null}
         {query.data ? <DataGrid columns={columns} data={query.data} searchPlaceholder="Feiertage suchen…" /> : null}
       </DataSection>
     </>

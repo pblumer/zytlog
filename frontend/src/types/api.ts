@@ -122,6 +122,7 @@ export type Employee = {
   entry_date: string;
   exit_date: string | null;
   working_time_model_id: number | null;
+  holiday_set_id: number | null;
   workday_monday: boolean | null;
   workday_tuesday: boolean | null;
   workday_wednesday: boolean | null;
@@ -154,9 +155,24 @@ export type WorkingTimeModel = {
 export type Holiday = {
   id: number;
   tenant_id: number;
+  holiday_set_id: number;
   date: string;
   name: string;
   active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type HolidaySet = {
+  id: number;
+  tenant_id: number;
+  name: string;
+  description: string | null;
+  country_code: string | null;
+  region_code: string | null;
+  source: string | null;
+  active: boolean;
+  holiday_count: number;
   created_at: string;
   updated_at: string;
 };
