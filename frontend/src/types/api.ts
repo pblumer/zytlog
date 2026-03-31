@@ -33,8 +33,9 @@ export type CurrentClockStatus = {
 export type DailyAccountStatus = 'empty' | 'complete' | 'incomplete' | 'invalid';
 export type CalendarDayStatus = 'no_data' | 'complete' | 'incomplete' | 'invalid';
 export type DayAbsenceContext = {
-  type: string;
+  type: 'vacation' | 'sickness';
   label: string;
+  duration_type: 'full_day' | 'half_day_am' | 'half_day_pm';
 };
 
 export type DailyTimeAccount = {
@@ -179,6 +180,22 @@ export type HolidaySet = {
   source: string | null;
   active: boolean;
   holiday_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AbsenceType = 'vacation' | 'sickness';
+export type AbsenceDurationType = 'full_day' | 'half_day_am' | 'half_day_pm';
+
+export type Absence = {
+  id: number;
+  tenant_id: number;
+  employee_id: number;
+  absence_type: AbsenceType;
+  start_date: string;
+  end_date: string;
+  duration_type: AbsenceDurationType;
+  note: string | null;
   created_at: string;
   updated_at: string;
 };

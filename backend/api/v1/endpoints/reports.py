@@ -4,10 +4,12 @@ from sqlalchemy.orm import Session
 from backend.api.deps import get_db
 from backend.core.auth import AuthContext, require_authenticated_user
 from backend.models.employee import Employee
+from backend.repositories.absence_repository import AbsenceRepository
 from backend.repositories.employee_repository import EmployeeRepository
 from backend.repositories.holiday_repository import HolidayRepository
 from backend.repositories.time_stamp_event_repository import TimeStampEventRepository
 from backend.schemas.time_tracking import MonthlyOverviewRead, WeeklyOverviewRead, YearlyOverviewRead
+from backend.services.absence_service import AbsenceService
 from backend.services.daily_account_service import DailyAccountService
 from backend.services.holiday_service import HolidayService
 from backend.services.reporting_service import ReportingService
@@ -22,6 +24,16 @@ def _resolve_employee(db: Session, context: AuthContext) -> Employee:
     return employee
 
 
+def _reporting_service(db: Session) -> ReportingService:
+    return ReportingService(
+        DailyAccountService(
+            TimeStampEventRepository(db),
+            HolidayService(HolidayRepository(db)),
+            AbsenceService(AbsenceRepository(db), EmployeeRepository(db)),
+        )
+    )
+
+
 @router.get("/my/week", response_model=WeeklyOverviewRead)
 def my_week_overview(
     year: int = Query(ge=1970, le=2100),
@@ -30,7 +42,7 @@ def my_week_overview(
     context: AuthContext = Depends(require_authenticated_user),
 ):
     employee = _resolve_employee(db, context)
-    service = ReportingService(DailyAccountService(TimeStampEventRepository(db), HolidayService(HolidayRepository(db))))
+    service = _reporting_service(db)
     return service.get_week_overview(
         tenant_id=context.tenant_id,
         employee=employee,
@@ -47,7 +59,7 @@ def my_month_overview(
     context: AuthContext = Depends(require_authenticated_user),
 ):
     employee = _resolve_employee(db, context)
-    service = ReportingService(DailyAccountService(TimeStampEventRepository(db), HolidayService(HolidayRepository(db))))
+    service = _reporting_service(db)
     return service.get_month_overview(
         tenant_id=context.tenant_id,
         employee=employee,
@@ -63,7 +75,7 @@ def my_year_overview(
     context: AuthContext = Depends(require_authenticated_user),
 ):
     employee = _resolve_employee(db, context)
-    service = ReportingService(DailyAccountService(TimeStampEventRepository(db), HolidayService(HolidayRepository(db))))
+    service = _reporting_service(db)
     return service.get_year_overview(
         tenant_id=context.tenant_id,
         employee=employee,

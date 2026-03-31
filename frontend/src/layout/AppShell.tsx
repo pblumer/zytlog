@@ -12,6 +12,7 @@ const employeeNavItems: NavItem[] = [
   { to: '/week', label: 'Week' },
   { to: '/month', label: 'Month' },
   { to: '/year', label: 'Year' },
+  { to: '/my-absences', label: 'My Absences' },
 ];
 
 const adminNavItems: NavItem[] = [
@@ -19,6 +20,7 @@ const adminNavItems: NavItem[] = [
   { to: '/working-time-models', label: 'Working Time Models' },
   { to: '/holiday-sets', label: 'Feiertagssätze' },
   { to: '/holidays', label: 'Feiertage' },
+  { to: '/admin-absences', label: 'Abwesenheiten' },
 ];
 
 function getNavItemsByRole(role?: UserRole): NavItem[] {

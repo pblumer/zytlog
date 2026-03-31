@@ -29,6 +29,7 @@ class CalendarDayStatus(str, enum.Enum):
 class DayAbsenceContext(BaseSchema):
     type: str
     label: str
+    duration_type: str
 
 
 class TimeStampEventRead(TimestampedSchema):

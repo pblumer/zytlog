@@ -344,6 +344,14 @@ export function DayPage() {
               ) : undefined
             }
           />
+
+          {dailyAccount.data.absence ? (
+            <SummaryCard
+              title="Absence"
+              value={`${dailyAccount.data.absence.label}${dailyAccount.data.absence.duration_type === 'half_day_am' ? ' (AM)' : dailyAccount.data.absence.duration_type === 'half_day_pm' ? ' (PM)' : ''}`}
+              hint="Abwesenheitskontext ist separat vom Erfassungsstatus."
+            />
+          ) : null}
           <SummaryCard title="Soll" value={<span className="time-value">{formatMinutes(dailyAccount.data.target_minutes)}</span>} />
           {dailyAccount.data.is_holiday ? (
             <SummaryCard title="Feiertag" value={dailyAccount.data.holiday_name ?? 'Ja'} hint="Sollzeit am Feiertag ist immer 0." />

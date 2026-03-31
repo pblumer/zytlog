@@ -1,3 +1,4 @@
+from backend.models.absence import Absence
 from backend.models.daily_time_account import DailyTimeAccount
 from backend.models.employee import Employee
 from backend.models.holiday import Holiday
@@ -8,6 +9,7 @@ from backend.models.user import User
 from backend.models.working_time_model import WorkingTimeModel
 
 __all__ = [
+    "Absence",
     "Tenant",
     "User",
     "Employee",

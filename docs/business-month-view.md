@@ -79,3 +79,11 @@ Future absence integration should:
 Important boundary:
 
 - Holidays remain their own context (holiday-set driven) and are **not** absences.
+
+
+## Absence context in Month view (Stage 1)
+
+- Month tiles can display an absence badge (`Vacation`, `Sickness`).
+- Half-day absences are shown with restrained AM/PM hint.
+- Holidays remain independently visible and are not mapped to absence.
+- Capture quality status dots remain unchanged and separate from context badges.
