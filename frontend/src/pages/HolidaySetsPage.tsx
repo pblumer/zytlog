@@ -65,6 +65,7 @@ export function HolidaySetsPage() {
   const [importFormState, setImportFormState] = useState<ImportFormState>(defaultImportState);
   const [previewRows, setPreviewRows] = useState<OpenHolidaysImportPreviewRow[]>([]);
   const [importFeedback, setImportFeedback] = useState<string | null>(null);
+  const [importSummary, setImportSummary] = useState<{ created: number; skipped: number; replaced: number } | null>(null);
 
   const query = useHolidaySets(isAdmin);
   const createMutation = useCreateHolidaySetMutation();
@@ -181,6 +182,7 @@ export function HolidaySetsPage() {
     event.preventDefault();
     if (!selectedImportHolidaySet) return;
     setImportFeedback(null);
+    setImportSummary(null);
     try {
       const response = await previewMutation.mutateAsync({
         holidaySetId: selectedImportHolidaySet.id,
@@ -196,7 +198,13 @@ export function HolidaySetsPage() {
       setPreviewRows(response.rows);
     } catch (error) {
       if (error instanceof ApiError) {
-        setImportFeedback(error.message);
+        if (error.message.includes('Keine Feiertage')) {
+          setImportFeedback('Für den gewählten Zeitraum wurden keine Feiertage gefunden.');
+        } else if (error.message.includes('doppelte')) {
+          setImportFeedback('Der Import enthielt doppelte Feiertage pro Datum und wurde nicht verarbeitet.');
+        } else {
+          setImportFeedback(error.message);
+        }
       } else {
         setImportFeedback('Import-Vorschau konnte nicht geladen werden.');
       }
@@ -219,11 +227,16 @@ export function HolidaySetsPage() {
           import_mode: importFormState.importMode,
         },
       });
-      setImportFeedback(`Import abgeschlossen: erstellt ${response.created}, übersprungen ${response.skipped}, ersetzt ${response.replaced}.`);
+      setImportSummary(response);
+      setImportFeedback(null);
       setPreviewRows([]);
     } catch (error) {
       if (error instanceof ApiError) {
-        setImportFeedback(error.message);
+        if (error.status === 409) {
+          setImportFeedback('Beim Import sind Konflikte mit bereits vorhandenen Feiertagen aufgetreten.');
+        } else {
+          setImportFeedback(error.message);
+        }
       } else {
         setImportFeedback('Import konnte nicht durchgeführt werden.');
       }
@@ -262,103 +275,121 @@ export function HolidaySetsPage() {
       </DataSection>
       {selectedImportHolidaySet ? (
         <DataSection title={`OpenHolidays-Import für „${selectedImportHolidaySet.name}“`}>
-          <form className="grid" onSubmit={onPreviewImport}>
-            <label>
-              Land
-              <select
-                value={importFormState.countryIsoCode}
-                onChange={(event) => setImportFormState((prev) => ({ ...prev, countryIsoCode: event.target.value, subdivisionCode: '' }))}
-              >
-                {(countriesQuery.data ?? []).map((country) => (
-                  <option key={country.iso_code} value={country.iso_code}>
-                    {country.iso_code} {country.name ? `— ${country.name}` : ''}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Region / Subdivision
-              <select
-                value={importFormState.subdivisionCode}
-                onChange={(event) => setImportFormState((prev) => ({ ...prev, subdivisionCode: event.target.value }))}
-              >
-                <option value="">Keine regionale Einschränkung</option>
-                {(subdivisionsQuery.data ?? []).map((subdivision) => (
-                  <option key={subdivision.code} value={subdivision.code}>
-                    {subdivision.code} {subdivision.name ? `— ${subdivision.name}` : ''}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Sprache
-              <select
-                value={importFormState.languageCode}
-                onChange={(event) => setImportFormState((prev) => ({ ...prev, languageCode: event.target.value }))}
-              >
-                {(languagesQuery.data ?? []).map((language) => (
-                  <option key={language.language_code} value={language.language_code}>
-                    {language.language_code.toUpperCase()} {language.name ? `— ${language.name}` : ''}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Gültig von
-              <input type="date" value={importFormState.validFrom} onChange={(event) => setImportFormState((prev) => ({ ...prev, validFrom: event.target.value }))} required />
-            </label>
-            <label>
-              Gültig bis
-              <input type="date" value={importFormState.validTo} onChange={(event) => setImportFormState((prev) => ({ ...prev, validTo: event.target.value }))} required />
-            </label>
-            <label>
-              Importmodus
-              <select
-                value={importFormState.importMode}
-                onChange={(event) => setImportFormState((prev) => ({ ...prev, importMode: event.target.value as OpenHolidaysImportMode }))}
-              >
-                <option value="skip_existing">Bestehende Feiertage überspringen</option>
-                <option value="replace_existing_in_range">Bestehende Feiertage im Zeitraum ersetzen</option>
-              </select>
-            </label>
-            <div className="actions">
-              <button type="submit" className="btn outline" disabled={previewMutation.isPending || countriesQuery.isLoading || languagesQuery.isLoading}>
-                Vorschau laden
-              </button>
-              <button
-                type="button"
-                className="btn primary"
-                disabled={commitMutation.isPending || previewRows.length === 0}
-                onClick={onCommitImport}
-              >
-                Import bestätigen
-              </button>
+          <form className="grid import-config-grid" onSubmit={onPreviewImport}>
+            <div className="import-config-card">
+              <p className="meta">1) Parameter auswählen</p>
+              <div className="grid">
+                <label>
+                  Land
+                  <select
+                    value={importFormState.countryIsoCode}
+                    onChange={(event) => setImportFormState((prev) => ({ ...prev, countryIsoCode: event.target.value, subdivisionCode: '' }))}
+                  >
+                    {(countriesQuery.data ?? []).map((country) => (
+                      <option key={country.iso_code} value={country.iso_code}>
+                        {country.iso_code} {country.name ? `— ${country.name}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Region / Subdivision
+                  <select
+                    value={importFormState.subdivisionCode}
+                    onChange={(event) => setImportFormState((prev) => ({ ...prev, subdivisionCode: event.target.value }))}
+                  >
+                    <option value="">Keine regionale Einschränkung</option>
+                    {(subdivisionsQuery.data ?? []).map((subdivision) => (
+                      <option key={subdivision.code} value={subdivision.code}>
+                        {subdivision.code} {subdivision.name ? `— ${subdivision.name}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Sprache
+                  <select
+                    value={importFormState.languageCode}
+                    onChange={(event) => setImportFormState((prev) => ({ ...prev, languageCode: event.target.value }))}
+                  >
+                    {(languagesQuery.data ?? []).map((language) => (
+                      <option key={language.language_code} value={language.language_code}>
+                        {language.language_code.toUpperCase()} {language.name ? `— ${language.name}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Gültig von
+                  <input type="date" value={importFormState.validFrom} onChange={(event) => setImportFormState((prev) => ({ ...prev, validFrom: event.target.value }))} required />
+                </label>
+                <label>
+                  Gültig bis
+                  <input type="date" value={importFormState.validTo} onChange={(event) => setImportFormState((prev) => ({ ...prev, validTo: event.target.value }))} required />
+                </label>
+                <label>
+                  Importmodus
+                  <select
+                    value={importFormState.importMode}
+                    onChange={(event) => setImportFormState((prev) => ({ ...prev, importMode: event.target.value as OpenHolidaysImportMode }))}
+                  >
+                    <option value="skip_existing">Bestehende Feiertage überspringen</option>
+                    <option value="replace_existing_in_range">Bestehende Feiertage im Zeitraum ersetzen</option>
+                  </select>
+                </label>
+              </div>
+              {subdivisionsQuery.error ? (
+                <p className="inline-warning">Regionen/Subdivisions konnten nicht geladen werden. Sie können den Import ohne regionale Einschränkung fortsetzen.</p>
+              ) : null}
+              <div className="actions">
+                <button type="submit" className="btn primary" disabled={previewMutation.isPending || countriesQuery.isLoading || languagesQuery.isLoading}>
+                  Vorschau laden
+                </button>
+              </div>
             </div>
           </form>
-          {importFeedback ? <p className="inline-error">{importFeedback}</p> : null}
           {previewRows.length > 0 ? (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Datum</th>
-                    <th>Name</th>
-                    <th>Bereits vorhanden</th>
-                    <th>Aktion</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {previewRows.map((row) => (
-                    <tr key={`${row.date}-${row.name}`}>
-                      <td>{row.date}</td>
-                      <td>{row.name}</td>
-                      <td>{row.exists_in_holiday_set ? 'Ja' : 'Nein'}</td>
-                      <td>{row.action_hint}</td>
+            <div className="import-preview-card">
+              <p className="meta">2) Vorschau prüfen</p>
+              <div className="table-wrap">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Datum</th>
+                      <th>Name</th>
+                      <th>Bereits vorhanden</th>
+                      <th>Geplante Aktion</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {previewRows.map((row) => (
+                      <tr key={row.date}>
+                        <td>{row.date}</td>
+                        <td>{row.name}</td>
+                        <td>{row.exists_in_holiday_set ? 'Ja' : 'Nein'}</td>
+                        <td>{row.action_hint}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="actions">
+                <button
+                  type="button"
+                  className="btn primary"
+                  disabled={commitMutation.isPending || previewRows.length === 0}
+                  onClick={onCommitImport}
+                >
+                  Import bestätigen
+                </button>
+              </div>
             </div>
+          ) : null}
+          {importFeedback ? <p className="inline-error">{importFeedback}</p> : null}
+          {importSummary ? (
+            <p className="meta">
+              Import abgeschlossen — Erstellt: {importSummary.created}, Übersprungen: {importSummary.skipped}, Ersetzt: {importSummary.replaced}
+            </p>
           ) : null}
         </DataSection>
       ) : null}

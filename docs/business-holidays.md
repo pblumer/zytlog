@@ -29,6 +29,8 @@ Die Vorschau zeigt pro Datensatz:
 - Ob im gewählten Feiertagssatz bereits ein Feiertag am Datum existiert
 - Aktion (`create`, `skip`, `replace`)
 
+Wichtig: Upstream-Duplikate aus OpenHolidays werden bereits vor der Vorschau nach `Datum` dedupliziert (ein Feiertag pro Datum im Ziel-Feiertagssatz).
+
 ## Duplicate-/Konfliktstrategie
 
 Abgleichsbasis ist **Feiertagssatz + Datum**.
@@ -36,6 +38,14 @@ Abgleichsbasis ist **Feiertagssatz + Datum**.
 Unterstützte Modi:
 - `skip_existing`: vorhandene Feiertage im Satz bleiben unverändert, neue werden ergänzt.
 - `replace_existing_in_range`: vorhandene Feiertage auf gleichen Daten im Importbereich werden ersetzt.
+
+Commit und Vorschau verwenden dieselbe Vorbereitungslogik. Dadurch sind die in der Vorschau angezeigten Aktionen (`create`, `skip`, `replace`) konsistent mit dem späteren Commit-Ergebnis.
+
+## Subdivision-Fallback
+
+Falls OpenHolidays-Subdivisions temporär nicht erreichbar sind, bleibt der Import-Workflow nutzbar:
+- Die Subdivision-Liste fällt auf „Keine regionale Einschränkung“ zurück.
+- Admins können den Import ohne regionale Einschränkung fortsetzen.
 
 ## Tenant- und Rollenregeln
 

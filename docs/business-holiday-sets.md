@@ -69,3 +69,5 @@ Für Admins steht ein manueller Import-Workflow mit Vorschau/Commit zur Verfügu
 - Konfliktstrategie: `skip_existing` oder `replace_existing_in_range` (Matching primär über Datum innerhalb des Feiertagssatzes).
 
 Wichtig: Die Laufzeitlogik für Zielzeitberechnung bleibt unverändert und nutzt weiterhin nur Zytlog-interne Feiertagsdaten.
+
+Zusätzlich gilt technisch/fachlich weiterhin: pro Feiertagssatz ist genau ein aktiver Feiertag pro Datum zulässig (`holiday_set_id + date`). Importe deduplizieren daher OpenHolidays-Rohdaten vor Vorschau und Commit deterministisch nach Datum.

@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from datetime import date
 from typing import Any
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
 from fastapi import HTTPException, status
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -48,7 +52,10 @@ class OpenHolidaysClient:
         return rows
 
     def list_subdivisions(self, country_code: str) -> list[dict[str, str | None]]:
-        payload = self._fetch_json(f"/Subdivisions/{country_code.upper()}")
+        payload = self._fetch_json(
+            f"/Subdivisions/{country_code.upper()}",
+            error_detail="Regionen/Subdivisions konnten nicht geladen werden.",
+        )
         rows: list[dict[str, str | None]] = []
         for item in payload:
             code = item.get("code")
@@ -102,16 +109,40 @@ class OpenHolidaysClient:
         holidays.sort(key=lambda holiday: holiday.date)
         return holidays
 
-    def _fetch_json(self, path: str) -> Any:
+    def _fetch_json(self, path: str, *, error_detail: str | None = None) -> Any:
         target_url = f"{self.base_url}{path}"
         try:
             with urlopen(target_url, timeout=self.timeout_seconds) as response:  # noqa: S310
                 payload = response.read().decode("utf-8")
                 return json.loads(payload)
-        except Exception as exc:  # noqa: BLE001
+        except HTTPError as exc:
+            response_body = exc.read().decode("utf-8", errors="replace")
+            logger.warning(
+                "OpenHolidays request failed with HTTP status.",
+                extra={
+                    "target_url": target_url,
+                    "status_code": exc.code,
+                    "response_body": response_body[:500],
+                },
+            )
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="OpenHolidays konnte nicht erreicht werden. Bitte später erneut versuchen.",
+                detail=error_detail or "OpenHolidays konnte nicht erreicht werden. Bitte später erneut versuchen.",
+            ) from exc
+        except URLError as exc:
+            logger.warning(
+                "OpenHolidays request failed with network error.",
+                extra={"target_url": target_url, "reason": str(exc.reason)},
+            )
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=error_detail or "OpenHolidays konnte nicht erreicht werden. Bitte später erneut versuchen.",
+            ) from exc
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("OpenHolidays request failed unexpectedly.", extra={"target_url": target_url})
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=error_detail or "OpenHolidays konnte nicht erreicht werden. Bitte später erneut versuchen.",
             ) from exc
 
     @staticmethod

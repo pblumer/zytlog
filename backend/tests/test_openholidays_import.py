@@ -93,6 +93,43 @@ class StubOpenHolidaysClient:
         ]
 
 
+class StubOpenHolidaysDuplicateClient(StubOpenHolidaysClient):
+    def fetch_public_holidays(self, **_kwargs):
+        return [
+            OpenHolidayItem(
+                date=date(2026, 1, 1),
+                name="Neujahr",
+                country_iso_code="CH",
+                subdivision_code="CH-BE",
+                language_code="DE",
+                source_reference="a",
+            ),
+            OpenHolidayItem(
+                date=date(2026, 8, 1),
+                name="Bundesfeier",
+                country_iso_code="CH",
+                subdivision_code="CH-BE",
+                language_code="DE",
+                source_reference="b",
+            ),
+            OpenHolidayItem(
+                date=date(2026, 8, 1),
+                name="Bundesfeier (Duplikat)",
+                country_iso_code="CH",
+                subdivision_code="CH-BE",
+                language_code="DE",
+                source_reference="c",
+            ),
+        ]
+
+
+class StubOpenHolidaysSubdivisionsFailClient(StubOpenHolidaysClient):
+    def list_subdivisions(self, _country_code: str):
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=502, detail="Regionen/Subdivisions konnten nicht geladen werden.")
+
+
 @pytest.fixture
 def test_session_local() -> sessionmaker:
     engine = create_engine(
@@ -245,3 +282,94 @@ def test_openholidays_tenant_isolation(client: TestClient) -> None:
         json=_payload(),
     )
     assert response.status_code == 404
+
+
+def test_openholidays_preview_deduplicates_duplicate_dates(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(openholidays_endpoint, "_client", lambda: StubOpenHolidaysDuplicateClient())
+    set_response = client.get('/api/v1/holiday-sets', headers={'Authorization': 'Bearer valid-admin-token'})
+    holiday_set_id = set_response.json()[0]['id']
+
+    response = client.post(
+        f"/api/v1/admin/holiday-sets/{holiday_set_id}/import/openholidays/preview",
+        headers={"Authorization": "Bearer valid-admin-token"},
+        json=_payload("skip_existing"),
+    )
+    assert response.status_code == 200
+    rows = response.json()["rows"]
+    assert len(rows) == 2
+    assert rows[0]["date"] == "2026-01-01"
+    assert rows[1]["date"] == "2026-08-01"
+
+
+def test_openholidays_commit_skip_existing_avoids_duplicate_insert(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(openholidays_endpoint, "_client", lambda: StubOpenHolidaysDuplicateClient())
+    set_response = client.get('/api/v1/holiday-sets', headers={'Authorization': 'Bearer valid-admin-token'})
+    holiday_set_id = set_response.json()[0]['id']
+
+    response = client.post(
+        f"/api/v1/admin/holiday-sets/{holiday_set_id}/import/openholidays/commit",
+        headers={"Authorization": "Bearer valid-admin-token"},
+        json=_payload("skip_existing"),
+    )
+    assert response.status_code == 200
+    summary = response.json()
+    assert summary == {"created": 1, "skipped": 1, "replaced": 0}
+
+
+def test_openholidays_commit_replace_existing_in_range_with_duplicates(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(openholidays_endpoint, "_client", lambda: StubOpenHolidaysDuplicateClient())
+    set_response = client.get('/api/v1/holiday-sets', headers={'Authorization': 'Bearer valid-admin-token'})
+    holiday_set_id = set_response.json()[0]['id']
+
+    response = client.post(
+        f"/api/v1/admin/holiday-sets/{holiday_set_id}/import/openholidays/commit",
+        headers={"Authorization": "Bearer valid-admin-token"},
+        json=_payload("replace_existing_in_range"),
+    )
+    assert response.status_code == 200
+    assert response.json() == {"created": 2, "skipped": 0, "replaced": 1}
+
+
+def test_openholidays_subdivisions_fallback_on_upstream_failure(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(openholidays_endpoint, "_client", lambda: StubOpenHolidaysSubdivisionsFailClient())
+    response = client.get(
+        "/api/v1/admin/openholidays/subdivisions?countryIsoCode=CH",
+        headers={"Authorization": "Bearer valid-admin-token"},
+    )
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_openholidays_preview_and_commit_are_consistent(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(openholidays_endpoint, "_client", lambda: StubOpenHolidaysDuplicateClient())
+    set_response = client.get('/api/v1/holiday-sets', headers={'Authorization': 'Bearer valid-admin-token'})
+    holiday_set_id = set_response.json()[0]['id']
+
+    preview = client.post(
+        f"/api/v1/admin/holiday-sets/{holiday_set_id}/import/openholidays/preview",
+        headers={"Authorization": "Bearer valid-admin-token"},
+        json=_payload("skip_existing"),
+    )
+    assert preview.status_code == 200
+    rows = preview.json()["rows"]
+    create_rows = [row for row in rows if row["action_hint"] == "create"]
+    skip_rows = [row for row in rows if row["action_hint"] == "skip"]
+
+    commit = client.post(
+        f"/api/v1/admin/holiday-sets/{holiday_set_id}/import/openholidays/commit",
+        headers={"Authorization": "Bearer valid-admin-token"},
+        json=_payload("skip_existing"),
+    )
+    assert commit.status_code == 200
+    assert commit.json()["created"] == len(create_rows)
+    assert commit.json()["skipped"] == len(skip_rows)

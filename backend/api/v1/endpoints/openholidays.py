@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -19,6 +21,7 @@ from backend.services.openholidays_import_service import OpenHolidaysImportServi
 from backend.services.openholidays_service import OpenHolidaysClient
 
 router = APIRouter(prefix="/admin", tags=["admin-openholidays"])
+logger = logging.getLogger(__name__)
 
 
 def _client() -> OpenHolidaysClient:
@@ -44,10 +47,19 @@ def list_openholidays_subdivisions(
     country_iso_code: str = Query(alias="countryIsoCode", min_length=2, max_length=2),
     _: AuthContext = Depends(require_admin),
 ) -> list[OpenHolidaysSubdivisionRead]:
-    return [
-        OpenHolidaysSubdivisionRead.model_validate(item)
-        for item in _client().list_subdivisions(country_iso_code)
-    ]
+    try:
+        return [
+            OpenHolidaysSubdivisionRead.model_validate(item)
+            for item in _client().list_subdivisions(country_iso_code)
+        ]
+    except HTTPException as exc:
+        if exc.status_code != status.HTTP_502_BAD_GATEWAY:
+            raise
+        logger.warning(
+            "OpenHolidays subdivisions unavailable, returning empty list fallback.",
+            extra={"country_iso_code": country_iso_code, "detail": exc.detail},
+        )
+        return []
 
 
 @router.post(
