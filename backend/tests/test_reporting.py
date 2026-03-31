@@ -186,6 +186,19 @@ def _auth_headers() -> dict[str, str]:
 
 
 def test_week_overview_valid(client: TestClient) -> None:
+    absence_response = client.post(
+        "/api/v1/absences/my",
+        json={
+            "absence_type": "vacation",
+            "start_date": "2026-03-31",
+            "end_date": "2026-03-31",
+            "duration_type": "half_day_am",
+            "note": "Planned leave",
+        },
+        headers=_auth_headers(),
+    )
+    assert absence_response.status_code == 201
+
     response = client.get("/api/v1/reports/my/week?year=2026&week=14", headers=_auth_headers())
 
     assert response.status_code == 200
@@ -200,6 +213,8 @@ def test_week_overview_valid(client: TestClient) -> None:
     assert payload["totals"]["days_incomplete"] == 1
     assert payload["totals"]["days_invalid"] == 1
     assert payload["totals"]["days_empty"] == 3
+    tuesday = next(day for day in payload["days"] if day["date"] == "2026-03-31")
+    assert tuesday["absence"] == {"type": "vacation", "label": "Vacation", "duration_type": "half_day_am"}
 
 
 def test_month_overview_valid(client: TestClient) -> None:
@@ -295,6 +310,19 @@ def test_calendar_month_valid_response(client: TestClient) -> None:
 
 
 def test_calendar_month_mixed_statuses(client: TestClient) -> None:
+    absence_response = client.post(
+        "/api/v1/absences/my",
+        json={
+            "absence_type": "sickness",
+            "start_date": "2026-04-03",
+            "end_date": "2026-04-03",
+            "duration_type": "full_day",
+            "note": "Sick leave",
+        },
+        headers=_auth_headers(),
+    )
+    assert absence_response.status_code == 201
+
     response = client.get("/api/v1/calendar/my/month?year=2026&month=4", headers=_auth_headers())
 
     assert response.status_code == 200
@@ -303,6 +331,8 @@ def test_calendar_month_mixed_statuses(client: TestClient) -> None:
     assert "incomplete" in statuses
     assert "invalid" in statuses
     assert "no_data" in statuses
+    sick_day = next(day for day in response.json()["days"] if day["date"] == "2026-04-03")
+    assert sick_day["absence"] == {"type": "sickness", "label": "Sickness", "duration_type": "full_day"}
 
 
 def test_calendar_month_invalid_month(client: TestClient) -> None:

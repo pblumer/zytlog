@@ -110,6 +110,7 @@ export type CalendarMonthDay = {
   actual_minutes: number;
   balance_minutes: number;
   event_count: number;
+  absence: DayAbsenceContext | null;
 };
 
 export type CalendarMonth = {

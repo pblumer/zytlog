@@ -24,7 +24,7 @@ Each day tile can display:
 - capture status (`complete`, `incomplete`, `invalid`, `empty`)
 - holiday marker and holiday name (if applicable)
 - workday/non-workday marker (`is_workday`)
-- optional absence context marker (`absence`, currently reserved for future domain wiring)
+- absence context marker (`absence`, e.g. vacation/sickness with optional AM/PM)
 
 Presentation notes:
 
@@ -44,7 +44,7 @@ The Month view keeps two conceptual dimensions separate:
    - `workday`
    - `non-workday`
    - `holiday`
-   - `absence` (future values such as vacation, sickness)
+   - `absence` (vacation, sickness)
 
 2. **Time capture status** (data quality/completeness semantics)
    - `complete`
@@ -62,26 +62,20 @@ Holidays are represented by existing holiday-set logic and shown as explicit hol
 - Holidays produce `target_minutes = 0`.
 - Holidays reduce target-bearing workdays in annual target distribution.
 
-## Forward Compatibility for Absence Integration
+## Absence context contract
 
-Absences are not implemented in the MVP yet, but the API/UI contract is now explicitly prepared via an optional day-context field:
+Month uses the same day-context contract as other overview screens:
 
-- `absence: { type: string, label: string } | null`
+- `absence: { type: string, label: string, duration_type: string } | null`
 
-At this stage, the value can remain `null` for all days when no persistence/business source exists.
-
-Future absence integration should:
-
-- extend day-context markers (not capture status)
-- keep capture status semantics unchanged
-- avoid requiring a Month page redesign
+Absence stays a context layer (not status) and is rendered as badge-level context.
 
 Important boundary:
 
 - Holidays remain their own context (holiday-set driven) and are **not** absences.
 
 
-## Absence context in Month view (Stage 1)
+## Absence context in Month view
 
 - Month tiles can display an absence badge (`Vacation`, `Sickness`).
 - Half-day absences are shown with restrained AM/PM hint.

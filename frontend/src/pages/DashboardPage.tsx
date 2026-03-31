@@ -17,6 +17,10 @@ export function DashboardPage() {
 
   const status = currentStatus.data?.status ?? 'clocked_out';
   const lastEvent = events.data?.[events.data.length - 1];
+  const todayAbsence = dailyAccount.data?.absence;
+  const todayAbsenceLabel = todayAbsence
+    ? `${todayAbsence.label}${todayAbsence.duration_type === 'half_day_am' ? ' (AM)' : todayAbsence.duration_type === 'half_day_pm' ? ' (PM)' : ''}`
+    : null;
 
   return (
     <>
@@ -36,6 +40,7 @@ export function DashboardPage() {
           }
           hint={<StatusBadge status={dailyAccount.data?.status ?? 'empty'} />}
         />
+        {todayAbsenceLabel ? <SummaryCard title="Abwesenheit heute" value={todayAbsenceLabel} /> : null}
       </section>
 
       <QuickStampCard status={status} lastEventTimestamp={lastEvent?.timestamp ?? currentStatus.data?.last_event_timestamp} />

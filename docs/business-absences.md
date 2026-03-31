@@ -23,7 +23,8 @@ Supported duration types:
 - Exposes absences in:
   - daily account API (`absence` context)
   - weekly/monthly/yearly reports (via daily rows)
-  - month/day UI rendering
+  - calendar month API (`absence` per day cell)
+  - overview UI rendering: Dashboard, My Time, Day, Week, Month, Year
 
 ## Separation of concerns
 - **Capture status** (`complete`, `incomplete`, `invalid`, `empty`) remains independent.
@@ -31,6 +32,9 @@ Supported duration types:
 - **Holidays and absences stay separate concepts**:
   - Holiday is calendar/tenant policy context.
   - Absence is employee-specific context.
+- Different overview screens can show absence with different detail density:
+  - compact marker in dense views (calendar/year dots),
+  - badge with AM/PM hint in detailed views (day/week/month).
 
 ## Stage-1 simplification for balance display
 - For full-day vacation/sickness on target-bearing days, daily balance is treated as target-fulfilled.

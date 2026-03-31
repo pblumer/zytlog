@@ -344,6 +344,25 @@ a:focus-visible,
   font-size: 0.75rem;
   color: var(--muted);
 }
+.calendar-absence-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  font-size: 0.68rem;
+  border-radius: 999px;
+  padding: 0.08rem 0.4rem;
+  border: 1px solid;
+}
+.calendar-absence-vacation {
+  color: #1f4f82;
+  background: #eaf2fc;
+  border-color: #b6cdea;
+}
+.calendar-absence-sickness {
+  color: #8d3a3d;
+  background: #fdeef1;
+  border-color: #e8b6bf;
+}
 
 .calendar-status-dot {
   width: 8px;
@@ -465,6 +484,28 @@ a:focus-visible,
 
 .week-strip-cell strong {
   font-size: 1rem;
+}
+
+.absence-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  font-size: 0.72rem;
+  border-radius: 999px;
+  padding: 0.12rem 0.45rem;
+  border: 1px solid;
+}
+
+.absence-badge-vacation {
+  color: #1f4f82;
+  background: #ebf2fc;
+  border-color: #b6cdea;
+}
+
+.absence-badge-sickness {
+  color: #8d3a3d;
+  background: #fdeef1;
+  border-color: #e8b6bf;
 }
 
 .week-strip-complete {
@@ -776,6 +817,14 @@ a:focus-visible,
 
 .year-mini-dot-empty {
   background: #d4d9e1;
+}
+
+.year-mini-dot-absence {
+  box-shadow: inset 0 -2px 0 0 #5e81ac;
+}
+
+.year-mini-dot-absence-sickness {
+  box-shadow: inset 0 -2px 0 0 #bf616a;
 }
 
 .year-month-meta {
