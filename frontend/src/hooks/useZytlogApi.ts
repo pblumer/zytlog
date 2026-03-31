@@ -3,7 +3,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   clockIn,
   clockOut,
+  createEmployee,
   createManualTimeStamp,
+  createWorkingTimeModel,
   deleteTimeStamp,
   getCalendarMonth,
   getCurrentStatus,
@@ -15,6 +17,8 @@ import {
   getWorkingTimeModels,
   updateTimeStamp,
   getYearReport,
+  type CreateEmployeePayload,
+  type CreateWorkingTimeModelPayload,
 } from '../api/endpoints';
 import { useAuth } from '../auth/provider';
 
@@ -89,6 +93,28 @@ export function useWorkingTimeModels(enabled: boolean) {
     queryKey: ['working-time-models'],
     queryFn: () => getWorkingTimeModels(token),
     enabled,
+  });
+}
+
+export function useCreateWorkingTimeModelMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: (payload: CreateWorkingTimeModelPayload) => createWorkingTimeModel(payload, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['working-time-models'] });
+    },
+  });
+}
+
+export function useCreateEmployeeMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: (payload: CreateEmployeePayload) => createEmployee(payload, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['employees'] });
+    },
   });
 }
 

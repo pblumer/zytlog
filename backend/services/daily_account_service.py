@@ -15,7 +15,7 @@ class DailyAccountService:
         self.repository = repository
 
     def get_daily_account(self, *, tenant_id: int, employee: Employee, target_date: date) -> DailyTimeAccountRead:
-        target_minutes = self._calculate_target_minutes(employee)
+        target_minutes = self._calculate_target_minutes(employee=employee, target_date=target_date)
         events = self.repository.list_clock_events_for_day(
             tenant_id=tenant_id,
             employee_id=employee.id,
@@ -52,20 +52,64 @@ class DailyAccountService:
 
         return accounts
 
-    def _calculate_target_minutes(self, employee: Employee) -> int:
+    def _calculate_target_minutes(self, *, employee: Employee, target_date: date) -> int:
         model = employee.working_time_model
         if model is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Missing working time model for employee",
             )
-        if model.workdays_per_week <= 0:
+        if model.default_workdays_per_week <= 0:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid working time model")
+        if target_date < employee.entry_date:
+            return 0
+        if employee.exit_date is not None and target_date > employee.exit_date:
+            return 0
+
+        weekday_is_active = self._resolve_employee_workday_pattern(employee=employee)[target_date.weekday()]
+        if not weekday_is_active:
+            return 0
 
         weekly_minutes = Decimal(str(model.weekly_target_hours)) * Decimal("60")
-        daily_minutes = weekly_minutes / Decimal(str(model.workdays_per_week))
         percentage = Decimal(str(employee.employment_percentage)) / Decimal("100")
-        return int((daily_minutes * percentage).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+        effective_weekly_minutes = weekly_minutes * percentage
+        active_days = self._count_active_weekdays(employee=employee)
+        if active_days <= 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid working day configuration")
+
+        daily_minutes = effective_weekly_minutes / Decimal(str(active_days))
+        return int(daily_minutes.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+
+    def _count_active_weekdays(self, *, employee: Employee) -> int:
+        return sum(1 for weekday_active in self._resolve_employee_workday_pattern(employee=employee) if weekday_active)
+
+    def _resolve_employee_workday_pattern(self, *, employee: Employee) -> list[bool]:
+        model = employee.working_time_model
+        if model is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Missing working time model for employee",
+            )
+
+        defaults = [
+            model.default_workday_monday,
+            model.default_workday_tuesday,
+            model.default_workday_wednesday,
+            model.default_workday_thursday,
+            model.default_workday_friday,
+            model.default_workday_saturday,
+            model.default_workday_sunday,
+        ]
+        overrides = [
+            employee.workday_monday,
+            employee.workday_tuesday,
+            employee.workday_wednesday,
+            employee.workday_thursday,
+            employee.workday_friday,
+            employee.workday_saturday,
+            employee.workday_sunday,
+        ]
+        return [override if override is not None else defaults[idx] for idx, override in enumerate(overrides)]
 
     def _calculate_minutes_and_status(
         self, events: list[TimeStampEvent]
