@@ -64,6 +64,7 @@ class DailyTimeAccountRead(BaseSchema):
     event_count: int = Field(ge=0)
     is_holiday: bool = False
     holiday_name: str | None = None
+    is_workday: bool = False
 
 
 class DailyOverviewRow(BaseSchema):
@@ -76,6 +77,7 @@ class DailyOverviewRow(BaseSchema):
     event_count: int = Field(ge=0)
     is_holiday: bool = False
     holiday_name: str | None = None
+    is_workday: bool = False
 
 
 class OverviewTotals(BaseSchema):

@@ -43,6 +43,7 @@ export type DailyTimeAccount = {
   event_count: number;
   is_holiday: boolean;
   holiday_name: string | null;
+  is_workday: boolean;
 };
 
 export type DailyOverviewRow = DailyTimeAccount;

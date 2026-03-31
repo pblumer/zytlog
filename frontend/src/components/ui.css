@@ -801,3 +801,173 @@ a:focus-visible,
     grid-template-columns: 1fr;
   }
 }
+
+.month-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.month-calendar-weekday {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.month-calendar-empty {
+  min-height: 150px;
+}
+
+.month-day-tile {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 0.5rem;
+  min-height: 150px;
+  display: grid;
+  gap: 0.3rem;
+  text-align: left;
+  align-content: start;
+}
+
+.month-day-tile-empty {
+  background: #f7f8fb;
+}
+
+.month-day-tile-complete {
+  background: #eff7ea;
+  border-color: #c8dbbc;
+}
+
+.month-day-tile-incomplete {
+  background: #fff8e8;
+  border-color: #efdfb5;
+}
+
+.month-day-tile-invalid {
+  background: #fceef0;
+  border-color: #ebc4ca;
+}
+
+.month-day-tile-today {
+  box-shadow: inset 0 0 0 1px #7ea0c4;
+}
+
+.month-day-tile-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.month-day-tile-main {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.month-day-tile-secondary,
+.month-day-tile-balance {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.month-day-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #b8c1d1;
+  display: inline-block;
+}
+
+.month-day-status-dot-complete {
+  background: #4f8f44;
+}
+
+.month-day-status-dot-incomplete {
+  background: #d48a00;
+}
+
+.month-day-status-dot-invalid {
+  background: #bf616a;
+}
+
+.month-day-status-dot-empty {
+  background: #b8c1d1;
+}
+
+.month-day-context-row {
+  margin-top: auto;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.month-day-context {
+  width: fit-content;
+  font-size: 0.72rem;
+  border-radius: 999px;
+  padding: 0.08rem 0.45rem;
+  border: 1px solid var(--border);
+}
+
+.month-day-context-holiday {
+  background: #f3e8ff;
+  border-color: #d7c1ef;
+}
+
+.month-day-context-workday {
+  background: #e9f3e1;
+  border-color: #c8dbbc;
+}
+
+.month-day-context-non_workday {
+  background: #f0f3f8;
+  border-color: #d2d9e5;
+}
+
+.month-day-context-absence {
+  background: #e7effa;
+  border-color: #bbcee8;
+}
+
+.month-day-holiday-name {
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.month-legend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.45rem 0.8rem;
+}
+
+.month-legend-grid span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+@media (max-width: 900px) {
+  .month-calendar-empty,
+  .month-day-tile {
+    min-height: 120px;
+  }
+}
+
+@media (max-width: 640px) {
+  .month-calendar-grid {
+    gap: 0.3rem;
+  }
+
+  .month-day-tile {
+    min-height: 104px;
+    padding: 0.35rem;
+  }
+
+  .month-day-tile-secondary,
+  .month-day-tile-balance,
+  .month-day-holiday-name {
+    font-size: 0.72rem;
+  }
+}

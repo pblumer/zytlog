@@ -22,6 +22,7 @@ class DailyAccountService:
             tenant=employee.tenant,
             target_date=target_date,
         )
+        is_workday = self._is_employee_workday(employee=employee, target_date=target_date)
         target_minutes = self._calculate_target_minutes(
             employee=employee,
             target_date=target_date,
@@ -44,6 +45,7 @@ class DailyAccountService:
             event_count=len(events),
             holiday_name=holiday_name,
             is_holiday=holiday_name is not None,
+            is_workday=is_workday,
         )
 
     def get_daily_accounts_in_range(
@@ -64,6 +66,15 @@ class DailyAccountService:
             cursor += timedelta(days=1)
 
         return accounts
+
+    def _is_employee_workday(self, *, employee: Employee, target_date: date) -> bool:
+        if target_date < employee.entry_date:
+            return False
+        if employee.exit_date is not None and target_date > employee.exit_date:
+            return False
+
+        workday_pattern = self._resolve_employee_workday_pattern(employee=employee)
+        return workday_pattern[target_date.weekday()]
 
     def _calculate_target_minutes(
         self,
