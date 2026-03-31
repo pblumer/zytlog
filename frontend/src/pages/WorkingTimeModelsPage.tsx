@@ -28,7 +28,6 @@ type WeekdayKey = (typeof weekdays)[number]['key'];
 
 type ModelFormState = {
   name: string;
-  weeklyTargetHours: string;
   annualTargetHours: string;
   active: boolean;
   selectedWeekdays: Record<WeekdayKey, boolean>;
@@ -36,8 +35,7 @@ type ModelFormState = {
 
 const defaultFormState: ModelFormState = {
   name: 'Standard 42h',
-  weeklyTargetHours: '42',
-  annualTargetHours: '',
+  annualTargetHours: '2080',
   active: true,
   selectedWeekdays: {
     default_workday_monday: true,
@@ -53,8 +51,7 @@ const defaultFormState: ModelFormState = {
 function mapModelToForm(model: WorkingTimeModel): ModelFormState {
   return {
     name: model.name,
-    weeklyTargetHours: String(model.weekly_target_hours),
-    annualTargetHours: model.annual_target_hours == null ? '' : String(model.annual_target_hours),
+    annualTargetHours: String(model.annual_target_hours),
     active: model.active,
     selectedWeekdays: {
       default_workday_monday: model.default_workday_monday,
@@ -99,17 +96,10 @@ export function WorkingTimeModelsPage() {
         sortable: true,
       },
       {
-        id: 'weekly',
-        header: 'Wochenzielstunden',
-        cell: (row) => row.weekly_target_hours,
-        sortValue: (row) => row.weekly_target_hours,
-        sortable: true,
-      },
-      {
         id: 'annual',
         header: 'Jahresarbeitszeit',
-        cell: (row) => row.annual_target_hours ?? '—',
-        sortValue: (row) => row.annual_target_hours ?? 0,
+        cell: (row) => row.annual_target_hours,
+        sortValue: (row) => row.annual_target_hours,
         sortable: true,
       },
       {
@@ -184,12 +174,9 @@ export function WorkingTimeModelsPage() {
     event.preventDefault();
     setMutationError(null);
 
-    const countActive = Object.values(formState.selectedWeekdays).filter(Boolean).length;
     const payload = {
       name: formState.name,
-      weekly_target_hours: Number(formState.weeklyTargetHours),
-      default_workdays_per_week: countActive,
-      annual_target_hours: formState.annualTargetHours.trim() ? Number(formState.annualTargetHours) : null,
+      annual_target_hours: Number(formState.annualTargetHours),
       active: formState.active,
       ...formState.selectedWeekdays,
     };
@@ -219,7 +206,7 @@ export function WorkingTimeModelsPage() {
 
   return (
     <>
-      <PageHeader title="Arbeitszeitmodelle" subtitle="Wochenzielstunden, Jahresarbeitszeit und Standard-Arbeitstage pro Modell" />
+      <PageHeader title="Arbeitszeitmodelle" subtitle="Jahresarbeitszeit und Standard-Arbeitstage pro Modell" />
       <DataSection title={editingModelId ? 'Arbeitszeitmodell bearbeiten' : 'Modell anlegen'}>
         <form className="grid" onSubmit={onSubmit}>
           <label>
@@ -227,26 +214,17 @@ export function WorkingTimeModelsPage() {
             <input value={formState.name} onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))} required />
           </label>
           <label>
-            Wochenzielstunden
-            <input
-              value={formState.weeklyTargetHours}
-              onChange={(event) => setFormState((prev) => ({ ...prev, weeklyTargetHours: event.target.value }))}
-              type="number"
-              min="1"
-              step="0.1"
-              required
-            />
-          </label>
-          <label>
-            Jahresarbeitszeit (optional)
+            Jahresarbeitszeit
             <input
               value={formState.annualTargetHours}
               onChange={(event) => setFormState((prev) => ({ ...prev, annualTargetHours: event.target.value }))}
               type="number"
               min="1"
               step="0.1"
+              required
             />
           </label>
+          <p className="meta">Jahresarbeitszeit ist die führende Sollgrösse des Modells.</p>
           <label>
             <input
               checked={formState.active}

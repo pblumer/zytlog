@@ -15,7 +15,7 @@ Included:
 - Day/week/month/year CSV + PDF export endpoints.
 - Correction endpoint for timestamp/comment updates with sequence validation.
 - React + Vite frontend app shell with DataGrid-based reporting pages.
-- Annual/weekly working-time foundations with weekday work-pattern logic.
+- Annual working-time foundation with weekday work-pattern logic.
 - Admin management for working-time models (create, edit, safe delete with assignment protection).
 - Role-aware primary navigation (admin-focused menu vs employee self-service menu).
 
@@ -27,7 +27,7 @@ Out of scope (not implemented here):
 
 ## Business rules: working time model and daily target time
 
-The core Fachlichkeit for annual/weekly target-time foundations is documented in:
+The core Fachlichkeit for annual target-time logic is documented in:
 
 - `docs/business-working-time-model.md`
 
@@ -36,7 +36,8 @@ This includes:
 - model vs employee weekday resolution
 - day-scoped target-minute calculation
 - behavior before `entry_date` / after `exit_date`
-- current scope of `annual_target_hours`
+- why `annual_target_hours` is the leading quantity
+- annual target distribution to daily target minutes
 - explicit non-scope (vacation/sickness/holidays, etc.)
 
 ## Architecture overview

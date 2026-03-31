@@ -1,100 +1,104 @@
-# Fachlichkeit: Arbeitszeitmodell, Pensum und Tageszielzeit
+# Fachlichkeit: Jahresarbeitszeit als führende Sollgrösse
 
-Dieses Dokument beschreibt die **verbindliche MVP-Berechnungslogik** für Zytlog (Stand: 31.03.2026).
+Dieses Dokument beschreibt die verbindliche Zielzeit-Logik für Zytlog (Stand: 31.03.2026).
 
-## 1) WorkingTimeModel (Standardmuster)
+## 1) Fachliche Korrektur: Eine einzige führende Sollgrösse
 
-Ein `WorkingTimeModel` beschreibt die Standard-Arbeitslogik eines Teams/einer Firma:
+Das Modell mit gleichzeitig pflegbaren `weekly_target_hours` und `annual_target_hours` wurde entfernt.
 
-- `weekly_target_hours` = Wochenzielstunden bei **100% Arbeitspensum**
-- `annual_target_hours` (optional) = Jahresarbeitszeit für spätere Reports
-- `default_workday_monday` ... `default_workday_sunday` = Standard-Arbeitstage
-- `default_workdays_per_week` = Anzahl Standard-Arbeitstage (aus UI-Sicht informativ)
-- `active` = Modell ist aktiv/inaktiv
+**Neue Regel:**
+- `annual_target_hours` ist die **führende Sollgrösse** des `WorkingTimeModel`.
+- Wochenzielstunden werden nicht mehr gespeichert und nicht mehr in der UI gepflegt.
 
-## 2) Employee (individuelle Zuordnung)
+Begründung:
+- Zwei unabhängige Zielgrössen erzeugen Widersprüche.
+- Die Jahresarbeitszeit ist die stabilere Basis für spätere Feiertag-/Abwesenheitslogik.
 
-Ein `Employee` erweitert das Modell um persönliche Parameter:
+## 2) WorkingTimeModel (Standardmuster)
 
-- `employment_percentage` = Arbeitspensum (z. B. 80)
-- `working_time_model_id` = verknüpftes Standardmodell
-- `entry_date` / `exit_date` = aktiver Beschäftigungszeitraum
-- optionale Overrides `workday_monday` ... `workday_sunday`
+Ein `WorkingTimeModel` enthält:
+- `name`
+- `annual_target_hours` (verpflichtend)
+- `default_workday_monday` ... `default_workday_sunday`
+- `active`
 
-### Override-Regel
+Die Anzahl Standard-Arbeitstage pro Woche wird **nicht separat gespeichert**, sondern bei Bedarf aus den Wochentag-Flags abgeleitet.
 
-- Wenn `workday_<weekday>` beim Employee **gesetzt** ist (`true`/`false`), überschreibt dieser Wert den Modell-Standard.
-- Wenn `workday_<weekday>` beim Employee **null** ist, gilt der entsprechende `default_workday_<weekday>` aus dem Modell.
+## 3) Employee (individuelle Zuordnung)
 
-Damit sind Muster wie „80% mit Mittwoch frei“ sauber abbildbar.
+Ein `Employee` erweitert das Modell mit:
+- `employment_percentage` (Arbeitspensum)
+- `working_time_model_id`
+- `entry_date` / `exit_date`
+- optionalen Overrides `workday_monday` ... `workday_sunday`
 
-## 3) Autoritative Tagesziel-Berechnung
+Override-Regel:
+- Employee-Override gesetzt (`true`/`false`) -> überschreibt Modellwert.
+- Override `null` -> Standard-Arbeitstag aus Modell gilt.
 
-Die Tageszielzeit wird zentral in der Backend-Service-Logik berechnet und von Tagesansicht, Kalender und Reports gemeinsam genutzt.
+## 4) Autoritative Berechnung der Tageszielzeit
+
+Die Tageszielzeit wird zentral im Backend berechnet und von Tagesansicht, Kalender sowie Woche/Monat/Jahr-Reports identisch verwendet.
 
 ### Schrittfolge
 
-1. **Aktive Beschäftigung prüfen**
-   - vor `entry_date` => `target_minutes = 0`
-   - nach `exit_date` (falls gesetzt) => `target_minutes = 0`
-2. **Effektives Wochenziel berechnen**
-   - `effective_weekly_target_hours = weekly_target_hours * employment_percentage / 100`
-3. **Aktive Arbeitstage ermitteln**
-   - Employee-Override falls gesetzt, sonst Modell-Standard
-4. **Ist der Kalendertag kein aktiver Arbeitstag?**
-   - `target_minutes = 0`
-5. **Wenn aktiver Arbeitstag:**
-   - gleichmäßige Verteilung auf alle aktiven Arbeitstage
-   - `daily_target_hours = effective_weekly_target_hours / number_of_active_workdays`
-   - Umrechnung in Minuten (gerundet auf ganze Minuten)
+1. **Aktive Arbeitstage für Mitarbeitende bestimmen**
+   - Wochentag-Override des Mitarbeitenden, sonst Modellstandard.
 
-## 4) Verhalten für Nicht-Arbeitstage
+2. **Relevante Arbeitstage des Kalenderjahres bestimmen**
+   - Nur Tage innerhalb `entry_date`/`exit_date`.
+   - Nur Tage, deren Wochentag aktiv ist.
+   - Noch ohne Feiertags-/Ferien-/Krankheitsabzug.
 
-Für reguläre Nicht-Arbeitstage (z. B. Samstag/Sonntag bei Mo-Fr-Modell oder ein individuell freier Mittwoch) gilt:
+3. **Effektive Jahreszielzeit berechnen**
+   - `effective_annual_target_hours = annual_target_hours * employment_percentage / 100`
 
-- `target_minutes = 0`
-- Der Tag ist im Sinne der Zielzeit kein regulärer Arbeitstag.
+4. **Gleichmässig über relevante Arbeitstage verteilen**
+   - `daily_target_hours = effective_annual_target_hours / number_of_relevant_workdays_in_year`
+   - Umrechnung in Minuten, Rundung auf ganze Minuten.
 
-## 5) Bedeutung von annual_target_hours (MVP)
+## 5) Nicht-Arbeitstage
 
-`annual_target_hours` ist in diesem Schritt **optional** und dient derzeit primär für Transparenz/kommende Auswertungen.
+Für Tage ohne reguläre Arbeitspflicht gilt `target_minutes = 0`:
+- Wochentag inaktiv,
+- vor `entry_date`,
+- nach `exit_date`.
 
-Wichtig:
-- Die tägliche Sollzeit basiert in diesem Schritt ausschließlich auf `weekly_target_hours` + Pensum + Arbeitstage.
-- Es gibt **noch keine** Jahresausgleichslogik.
+## 6) Zukunftssemantik (noch nicht implementiert)
 
-## 6) Beispiele
+### Feiertage
+- Feiertage sind später **keine target-bearing workdays**.
+- Sie reduzieren also die Anzahl relevanter Jahres-Arbeitstage.
 
-### Beispiel A
+### Ferien/Urlaub
+- Ferien reduzieren **nicht** die Jahresarbeitszeit.
+- Der Tag bleibt target-bearing workday; Zielzeit gilt fachlich als durch Abwesenheit erfüllt.
 
-- Modell: 42h/Woche, Arbeitstage Mo-Fr
-- Mitarbeiter: 100%
-- Ergebnis:
-  - Effektives Wochenziel = 42h
-  - Aktive Arbeitstage = 5
-  - Tagesziel = 8.4h = 504 Minuten auf Mo-Fr
-  - Sa/So = 0 Minuten
+### Krankheit
+- Gleiche Richtung wie Ferien (vorläufig): kein „verlorener Solltag“ per Default.
+- Exakte HR-Details können später verfeinert werden.
 
-### Beispiel B
+## 7) Beispiele
 
-- Modell: 42h/Woche, Arbeitstage Mo-Fr
-- Mitarbeiter: 80%
-- Employee-Override: Mo, Di, Do, Fr aktiv; Mi inaktiv
-- Ergebnis:
-  - Effektives Wochenziel = 33.6h
-  - Aktive Arbeitstage = 4
-  - Tagesziel = 8.4h = 504 Minuten auf Mo/Di/Do/Fr
-  - Mi/Sa/So = 0 Minuten
+### Beispiel A: 100%
+- Modell: `annual_target_hours = 2080`
+- Aktive Arbeitstage: Mo–Fr
+- Mitarbeitender: 100%
+- Relevante Arbeitstage im Jahr: z. B. 260 (ohne spätere Feiertagslogik)
+- Tagesziel: `2080 / 260 = 8h` -> `480` Minuten
 
-## 7) Bewusst noch nicht implementiert
+### Beispiel B: 80% mit Override
+- Modell: `annual_target_hours = 2080`
+- Mitarbeitender: 80%
+- Override-Arbeitstage: Mo, Di, Do, Fr
+- Effektive Jahreszielzeit: `1664h`
+- Relevante Arbeitstage: Anzahl Mo/Di/Do/Fr im aktiven Beschäftigungszeitraum
+- Tagesziel: `1664 / relevante_arbeitstage`
 
-Nicht Teil dieses Schritts:
+## 8) Warum diese Richtung fachlich korrekt ist
 
-- Ferien/Urlaub
-- Krankheit
-- Feiertagskalender
-- halbe Ausfalltage
-- variable Verteilung der Tageszielstunden pro Wochentag
-- zusätzliche Überstundenregeln/Approval-Flows
-
-Die aktuelle Struktur ist bewusst so umgesetzt, dass diese Themen später auf die bestehende Zielzeitlogik aufbauen können.
+Diese Korrektur schafft eine klare, erweiterbare Basis:
+- exakt **eine** führende Sollgrösse,
+- saubere Pensum-Logik auf Jahressicht,
+- konsistente Tagesziele für alle Auswertungen,
+- vorbereitet für Feiertag/Ferien/Krankheit ohne Modellbruch.

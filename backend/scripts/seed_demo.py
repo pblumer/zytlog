@@ -81,7 +81,7 @@ def _find_or_create_model(tenant_id: int) -> WorkingTimeModel:
         model = session.scalar(
             select(WorkingTimeModel).where(
                 WorkingTimeModel.tenant_id == tenant_id,
-                WorkingTimeModel.name == "Full Time 40h",
+                WorkingTimeModel.name == "Vollzeit 2080h",
             )
         )
         if model:
@@ -89,9 +89,7 @@ def _find_or_create_model(tenant_id: int) -> WorkingTimeModel:
 
         model = WorkingTimeModel(
             tenant_id=tenant_id,
-            name="Full Time 40h",
-            weekly_target_hours=40,
-            default_workdays_per_week=5,
+            name="Vollzeit 2080h",
             default_workday_monday=True,
             default_workday_tuesday=True,
             default_workday_wednesday=True,

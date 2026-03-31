@@ -136,8 +136,7 @@ export type WorkingTimeModel = {
   id: number;
   tenant_id: number;
   name: string;
-  weekly_target_hours: number;
-  default_workdays_per_week: number;
+  annual_target_hours: number;
   default_workday_monday: boolean;
   default_workday_tuesday: boolean;
   default_workday_wednesday: boolean;
@@ -145,7 +144,6 @@ export type WorkingTimeModel = {
   default_workday_friday: boolean;
   default_workday_saturday: boolean;
   default_workday_sunday: boolean;
-  annual_target_hours: number | null;
   active: boolean;
   created_at: string;
   updated_at: string;

@@ -10,8 +10,7 @@ class WorkingTimeModel(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id"), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    weekly_target_hours: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False)
-    default_workdays_per_week: Mapped[int] = mapped_column(default=5, nullable=False)
+    annual_target_hours: Mapped[float] = mapped_column(Numeric(7, 2), nullable=False)
     default_workday_monday: Mapped[bool] = mapped_column(default=True, nullable=False)
     default_workday_tuesday: Mapped[bool] = mapped_column(default=True, nullable=False)
     default_workday_wednesday: Mapped[bool] = mapped_column(default=True, nullable=False)
@@ -19,7 +18,6 @@ class WorkingTimeModel(TimestampMixin, Base):
     default_workday_friday: Mapped[bool] = mapped_column(default=True, nullable=False)
     default_workday_saturday: Mapped[bool] = mapped_column(default=False, nullable=False)
     default_workday_sunday: Mapped[bool] = mapped_column(default=False, nullable=False)
-    annual_target_hours: Mapped[float | None] = mapped_column(Numeric(7, 2), nullable=True)
     active: Mapped[bool] = mapped_column(default=True, nullable=False)
 
     tenant: Mapped["Tenant"] = relationship(back_populates="working_time_models")

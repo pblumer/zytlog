@@ -59,29 +59,54 @@ class DailyAccountService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Missing working time model for employee",
             )
-        if model.default_workdays_per_week <= 0:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid working time model")
         if target_date < employee.entry_date:
             return 0
         if employee.exit_date is not None and target_date > employee.exit_date:
             return 0
 
-        weekday_is_active = self._resolve_employee_workday_pattern(employee=employee)[target_date.weekday()]
+        workday_pattern = self._resolve_employee_workday_pattern(employee=employee)
+        weekday_is_active = workday_pattern[target_date.weekday()]
         if not weekday_is_active:
             return 0
 
-        weekly_minutes = Decimal(str(model.weekly_target_hours)) * Decimal("60")
-        percentage = Decimal(str(employee.employment_percentage)) / Decimal("100")
-        effective_weekly_minutes = weekly_minutes * percentage
-        active_days = self._count_active_weekdays(employee=employee)
-        if active_days <= 0:
+        relevant_workdays = self._count_relevant_workdays_for_year(
+            employee=employee,
+            year=target_date.year,
+            workday_pattern=workday_pattern,
+        )
+        if relevant_workdays <= 0:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid working day configuration")
 
-        daily_minutes = effective_weekly_minutes / Decimal(str(active_days))
+        annual_minutes = Decimal(str(model.annual_target_hours)) * Decimal("60")
+        percentage = Decimal(str(employee.employment_percentage)) / Decimal("100")
+        effective_annual_minutes = annual_minutes * percentage
+
+        daily_minutes = effective_annual_minutes / Decimal(str(relevant_workdays))
         return int(daily_minutes.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
-    def _count_active_weekdays(self, *, employee: Employee) -> int:
-        return sum(1 for weekday_active in self._resolve_employee_workday_pattern(employee=employee) if weekday_active)
+    def _count_relevant_workdays_for_year(
+        self,
+        *,
+        employee: Employee,
+        year: int,
+        workday_pattern: list[bool],
+    ) -> int:
+        period_start = max(employee.entry_date, date(year, 1, 1))
+        period_end = date(year, 12, 31)
+        if employee.exit_date is not None:
+            period_end = min(employee.exit_date, period_end)
+
+        if period_start > period_end:
+            return 0
+
+        total = 0
+        cursor = period_start
+        while cursor <= period_end:
+            if workday_pattern[cursor.weekday()]:
+                total += 1
+            cursor += timedelta(days=1)
+
+        return total
 
     def _resolve_employee_workday_pattern(self, *, employee: Employee) -> list[bool]:
         model = employee.working_time_model
