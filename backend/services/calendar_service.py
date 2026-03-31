@@ -40,6 +40,7 @@ class CalendarService:
                     actual_minutes=day.actual_minutes,
                     balance_minutes=day.balance_minutes,
                     event_count=day.event_count,
+                    absence=day.absence,
                 )
                 for day in month_overview.days
             ],

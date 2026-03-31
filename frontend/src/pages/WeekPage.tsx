@@ -39,6 +39,12 @@ function getBalanceClassName(balanceMinutes: number): string {
   return 'balance-neutral';
 }
 
+function formatAbsenceLabel(absence: { label: string; duration_type: 'full_day' | 'half_day_am' | 'half_day_pm' } | null): string | null {
+  if (!absence) return null;
+  const durationHint = absence.duration_type === 'half_day_am' ? ' (AM)' : absence.duration_type === 'half_day_pm' ? ' (PM)' : '';
+  return `${absence.label}${durationHint}`;
+}
+
 export function WeekPage() {
   const navigate = useNavigate();
   const [year, setYear] = useState(nowWeek.year);
@@ -105,11 +111,12 @@ export function WeekPage() {
                     className={`week-strip-cell week-strip-${day.status} ${isToday ? 'is-today' : ''}`.trim()}
                     onClick={() => openDay(day.date)}
                     title={`${formatWeekday(day.date)} ${formatDateLabel(day.date)} öffnen`}
-                    aria-label={`${formatWeekday(day.date)} ${formatDateLabel(day.date)}. Status ${day.status}. Tag öffnen`}
+                    aria-label={`${formatWeekday(day.date)} ${formatDateLabel(day.date)}. Status ${day.status}.${day.absence ? ` Abwesenheit ${formatAbsenceLabel(day.absence)}.` : ''} Tag öffnen`}
                     aria-current={isToday ? 'date' : undefined}
                   >
                     <span>{formatWeekday(day.date)}</span>
                     <strong>{day.date.slice(8, 10)}</strong>
+                    {day.absence ? <span className={`absence-badge absence-badge-${day.absence.type}`}>{formatAbsenceLabel(day.absence)}</span> : null}
                   </button>
                 );
               })}
@@ -125,6 +132,7 @@ export function WeekPage() {
                       <th>Tag</th>
                       <th>Datum</th>
                       <th>Status</th>
+                      <th>Kontext</th>
                       <th>Soll</th>
                       <th>Ist</th>
                       <th>Saldo</th>
@@ -143,6 +151,9 @@ export function WeekPage() {
                           <td data-label="Datum">{formatDateLabel(day.date)}</td>
                           <td data-label="Status">
                             <TableStatusBadge status={day.status} />
+                          </td>
+                          <td data-label="Kontext">
+                            {day.absence ? <span className={`absence-badge absence-badge-${day.absence.type}`}>{formatAbsenceLabel(day.absence)}</span> : '—'}
                           </td>
                           <td className="time-value" data-label="Soll">{formatMinutes(day.target_minutes)}</td>
                           <td className="time-value" data-label="Ist">{formatMinutes(day.actual_minutes)}</td>

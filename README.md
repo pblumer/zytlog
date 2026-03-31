@@ -15,14 +15,14 @@ Included:
 - Day/week/month/year CSV + PDF export endpoints.
 - Correction endpoint for timestamp/comment updates with sequence validation.
 - React + Vite frontend app shell with DataGrid-based reporting pages.
-- Calendar-oriented Month console with per-day target/actual/balance, day-context markers (holiday/non-workday + absence-ready placeholder), and status indicators.
+- Calendar-oriented overviews with per-day target/actual/balance, day-context markers (holiday/non-workday/absence), and status indicators.
 - Annual working-time foundation with weekday work-pattern logic.
 - Admin management for working-time models (create, edit, safe delete with assignment protection).
 - Role-aware primary navigation (admin-focused menu vs employee self-service menu).
 
 Out of scope (not implemented here):
 - Approval workflows.
-- Absence management.
+- Advanced absence workflows (approval/planning).
 - Full audit trail module.
 - Production-grade SSO provisioning automation.
 
@@ -242,7 +242,7 @@ npm run build
 
 - Auth flow is Keycloak-ready but still demo-oriented in local setup.
 - No dedicated approval pipeline for corrections yet.
-- No absence planning/calendar module.
+- No absence planning + approval workflow module.
 - No long-term audit/event sourcing stream.
 - Local compose installs dependencies at container start (optimized for simplicity, not production image performance).
 
@@ -266,4 +266,4 @@ Current frontend hardening includes:
 
 ## Absence domain (Stage 1)
 
-Zytlog now includes a slim absence domain with tenant-aware persistence and basic CRUD APIs for employee self-service and admins (`vacation`, `sickness`; full-day + half-day). Absence context is exposed in daily/monthly reporting while capture status semantics stay unchanged. See `docs/business-absences.md` for detailed business rules.
+Zytlog now includes a slim absence domain with tenant-aware persistence and basic CRUD APIs for employee self-service and admins (`vacation`, `sickness`; full-day + half-day). Absence context is exposed across overview screens (Dashboard, My Time, Day, Week, Month, Year) through daily/reporting/calendar DTOs, while capture status semantics stay unchanged. Holidays remain separate context. See `docs/business-absences.md` for detailed business rules.

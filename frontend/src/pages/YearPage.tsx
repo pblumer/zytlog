@@ -29,6 +29,12 @@ function getDayDotStatus(day: CalendarMonthDay): 'valid' | 'incomplete' | 'inval
   return 'empty';
 }
 
+function formatAbsenceLabel(day: CalendarMonthDay): string | null {
+  if (!day.absence) return null;
+  const durationHint = day.absence.duration_type === 'half_day_am' ? ' (AM)' : day.absence.duration_type === 'half_day_pm' ? ' (PM)' : '';
+  return `${day.absence.label}${durationHint}`;
+}
+
 export function YearPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
@@ -138,11 +144,12 @@ export function YearPage() {
                         <div className="year-mini-grid">
                           {monthDays.map((day) => {
                             const dotStatus = getDayDotStatus(day);
+                            const absenceLabel = formatAbsenceLabel(day);
                             return (
                               <span
                                 key={day.date}
-                                className={`year-mini-dot year-mini-dot-${dotStatus}`}
-                                title={`${day.date}: ${dotStatus}`}
+                                className={`year-mini-dot year-mini-dot-${dotStatus} ${day.absence ? `year-mini-dot-absence year-mini-dot-absence-${day.absence.type}` : ''}`.trim()}
+                                title={`${day.date}: ${dotStatus}${absenceLabel ? ` · ${absenceLabel}` : ''}`}
                               />
                             );
                           })}

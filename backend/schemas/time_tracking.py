@@ -125,6 +125,7 @@ class CalendarMonthDayRead(BaseSchema):
     actual_minutes: int
     balance_minutes: int
     event_count: int = Field(ge=0)
+    absence: DayAbsenceContext | None = None
 
 
 class CalendarMonthRead(BaseSchema):

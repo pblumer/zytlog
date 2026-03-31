@@ -35,6 +35,10 @@ export function MyTimePage() {
   if (currentStatus.error || selectedDayAccount.error || selectedDayEvents.error || calendar.error) return <ErrorState message="Zeitdaten konnten nicht geladen werden." />;
 
   const activeStatus = currentStatus.data?.status ?? 'clocked_out';
+  const selectedAbsence = selectedDayAccount.data?.absence;
+  const selectedAbsenceLabel = selectedAbsence
+    ? `${selectedAbsence.label}${selectedAbsence.duration_type === 'half_day_am' ? ' (AM)' : selectedAbsence.duration_type === 'half_day_pm' ? ' (PM)' : ''}`
+    : '—';
 
   return (
     <>
@@ -47,6 +51,7 @@ export function MyTimePage() {
         <SummaryCard title="Ist-Zeit" value={formatMinutes(selectedDayAccount.data?.actual_minutes ?? 0)} />
         <SummaryCard title="Pausen" value={formatMinutes(selectedDayAccount.data?.break_minutes ?? 0)} />
         <SummaryCard title="Balance" value={formatMinutes(selectedDayAccount.data?.balance_minutes ?? 0)} />
+        <SummaryCard title="Abwesenheit" value={selectedAbsenceLabel} />
       </section>
 
       <section className="card my-time-calendar-section" style={{ marginTop: '1rem' }} aria-label="Monatskalender">

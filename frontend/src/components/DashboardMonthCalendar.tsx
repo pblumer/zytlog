@@ -55,6 +55,12 @@ function statusText(status: CalendarDayStatus) {
   }
 }
 
+function formatAbsenceLabel(day: CalendarMonthDay): string | null {
+  if (!day.absence) return null;
+  const durationHint = day.absence.duration_type === 'half_day_am' ? ' (AM)' : day.absence.duration_type === 'half_day_pm' ? ' (PM)' : '';
+  return `${day.absence.label}${durationHint}`;
+}
+
 export function DashboardMonthCalendar({
   year,
   month,
@@ -79,6 +85,7 @@ export function DashboardMonthCalendar({
     const iso = `${year}-${String(month).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
     const day = byDate.get(iso);
     const status = day?.status ?? 'no_data';
+    const absenceLabel = day ? formatAbsenceLabel(day) : null;
 
     cells.push(
       <button
@@ -86,8 +93,8 @@ export function DashboardMonthCalendar({
         type="button"
         className={`calendar-tile ${statusClassName(status)} ${iso === todayIso ? 'calendar-tile-today' : ''} ${iso === selectedDate ? 'calendar-tile-selected' : ''}`}
         onClick={() => (onSelectDate ? onSelectDate(iso) : navigate(`/day?date=${iso}`))}
-        title={`${iso} · ${statusText(status)}`}
-        aria-label={`${iso}. Status: ${statusText(status)}.${iso === todayIso ? ' Heute.' : ''}${iso === selectedDate ? ' Ausgewählt.' : ''}`}
+        title={`${iso} · ${statusText(status)}${absenceLabel ? ` · ${absenceLabel}` : ''}`}
+        aria-label={`${iso}. Status: ${statusText(status)}.${absenceLabel ? ` Abwesenheit: ${absenceLabel}.` : ''}${iso === todayIso ? ' Heute.' : ''}${iso === selectedDate ? ' Ausgewählt.' : ''}`}
         aria-current={iso === todayIso ? 'date' : undefined}
         aria-pressed={onSelectDate ? iso === selectedDate : undefined}
       >
@@ -96,6 +103,9 @@ export function DashboardMonthCalendar({
           <span className={statusDotClassName(status)} aria-hidden="true" />
         </span>
         <span className="calendar-day-status-text">{statusText(status)}</span>
+        {absenceLabel ? (
+          <span className={`calendar-absence-badge calendar-absence-${day?.absence?.type}`}>{absenceLabel}</span>
+        ) : null}
         <span className="calendar-day-minutes">{day ? formatMinutes(day.actual_minutes) : '—'}</span>
       </button>,
     );
