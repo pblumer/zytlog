@@ -66,7 +66,14 @@ def client() -> TestClient:
             tenant_id=tenant.id,
             name="Full Time",
             weekly_target_hours=40,
-            workdays_per_week=5,
+            default_workdays_per_week=5,
+            default_workday_monday=True,
+            default_workday_tuesday=True,
+            default_workday_wednesday=True,
+            default_workday_thursday=True,
+            default_workday_friday=True,
+            default_workday_saturday=False,
+            default_workday_sunday=False,
             annual_target_hours=None,
             active=True,
         )
@@ -188,7 +195,7 @@ def test_week_overview_valid(client: TestClient) -> None:
     assert payload["range_start"] == "2026-03-30"
     assert payload["range_end"] == "2026-04-05"
     assert len(payload["days"]) == 7
-    assert payload["totals"]["target_minutes"] == 3360
+    assert payload["totals"]["target_minutes"] == 2400
     assert payload["totals"]["actual_minutes"] == 960
     assert payload["totals"]["break_minutes"] == 60
     assert payload["totals"]["days_complete"] == 2
@@ -205,10 +212,10 @@ def test_month_overview_valid(client: TestClient) -> None:
     assert payload["range_start"] == "2026-03-01"
     assert payload["range_end"] == "2026-03-31"
     assert len(payload["days"]) == 31
-    assert payload["totals"]["target_minutes"] == 14880
+    assert payload["totals"]["target_minutes"] == 10560
     assert payload["totals"]["actual_minutes"] == 960
     assert payload["totals"]["break_minutes"] == 60
-    assert payload["totals"]["balance_minutes"] == -13920
+    assert payload["totals"]["balance_minutes"] == -9600
     assert payload["totals"]["days_complete"] == 2
     assert payload["totals"]["days_empty"] == 29
 
@@ -222,7 +229,7 @@ def test_year_overview_valid(client: TestClient) -> None:
     assert payload["months"][2]["actual_minutes"] == 960
     assert payload["months"][3]["days_incomplete"] == 1
     assert payload["months"][3]["days_invalid"] == 1
-    assert payload["totals"]["target_minutes"] == 175200
+    assert payload["totals"]["target_minutes"] == 125280
     assert payload["totals"]["actual_minutes"] == 960
     assert payload["totals"]["break_minutes"] == 60
 

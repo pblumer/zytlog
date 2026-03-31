@@ -14,6 +14,13 @@ class EmployeeCreate(BaseSchema):
     entry_date: date
     exit_date: date | None = None
     working_time_model_id: int | None = None
+    workday_monday: bool | None = None
+    workday_tuesday: bool | None = None
+    workday_wednesday: bool | None = None
+    workday_thursday: bool | None = None
+    workday_friday: bool | None = None
+    workday_saturday: bool | None = None
+    workday_sunday: bool | None = None
     team: str | None = Field(default=None, max_length=80)
 
 
@@ -25,6 +32,13 @@ class EmployeeUpdate(BaseSchema):
     entry_date: date | None = None
     exit_date: date | None = None
     working_time_model_id: int | None = None
+    workday_monday: bool | None = None
+    workday_tuesday: bool | None = None
+    workday_wednesday: bool | None = None
+    workday_thursday: bool | None = None
+    workday_friday: bool | None = None
+    workday_saturday: bool | None = None
+    workday_sunday: bool | None = None
     team: str | None = Field(default=None, max_length=80)
 
 
@@ -39,4 +53,11 @@ class EmployeeRead(TimestampedSchema):
     entry_date: date
     exit_date: date | None
     working_time_model_id: int | None
+    workday_monday: bool | None
+    workday_tuesday: bool | None
+    workday_wednesday: bool | None
+    workday_thursday: bool | None
+    workday_friday: bool | None
+    workday_saturday: bool | None
+    workday_sunday: bool | None
     team: str | None

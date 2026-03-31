@@ -48,8 +48,44 @@ export const downloadYearExport = (year: number, format: 'csv' | 'pdf', token?: 
   apiDownload(`/exports/my/year${format === 'pdf' ? '/pdf' : ''}?year=${year}`, token);
 
 export const getEmployees = (token?: string | null) => apiGet<Employee[]>('/employees', token);
+export type CreateEmployeePayload = {
+  user_id: number;
+  employee_number: string | null;
+  first_name: string;
+  last_name: string;
+  employment_percentage: number;
+  entry_date: string;
+  exit_date: string | null;
+  working_time_model_id: number | null;
+  workday_monday: boolean | null;
+  workday_tuesday: boolean | null;
+  workday_wednesday: boolean | null;
+  workday_thursday: boolean | null;
+  workday_friday: boolean | null;
+  workday_saturday: boolean | null;
+  workday_sunday: boolean | null;
+  team: string | null;
+};
+export const createEmployee = (payload: CreateEmployeePayload, token?: string | null) =>
+  apiPost<Employee>('/employees', payload, token);
 
 export const getWorkingTimeModels = (token?: string | null) => apiGet<WorkingTimeModel[]>('/working-time-models', token);
+export type CreateWorkingTimeModelPayload = {
+  name: string;
+  weekly_target_hours: number;
+  default_workdays_per_week: number;
+  default_workday_monday: boolean;
+  default_workday_tuesday: boolean;
+  default_workday_wednesday: boolean;
+  default_workday_thursday: boolean;
+  default_workday_friday: boolean;
+  default_workday_saturday: boolean;
+  default_workday_sunday: boolean;
+  annual_target_hours: number | null;
+  active: boolean;
+};
+export const createWorkingTimeModel = (payload: CreateWorkingTimeModelPayload, token?: string | null) =>
+  apiPost<WorkingTimeModel>('/working-time-models', payload, token);
 
 export const clockIn = (token?: string | null) => apiPost<TimeStampEvent>('/time-stamps/clock-in', undefined, token);
 

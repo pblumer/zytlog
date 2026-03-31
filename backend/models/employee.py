@@ -21,6 +21,13 @@ class Employee(TimestampMixin, Base):
     working_time_model_id: Mapped[int | None] = mapped_column(
         ForeignKey("working_time_models.id"), nullable=True
     )
+    workday_monday: Mapped[bool | None] = mapped_column(default=None, nullable=True)
+    workday_tuesday: Mapped[bool | None] = mapped_column(default=None, nullable=True)
+    workday_wednesday: Mapped[bool | None] = mapped_column(default=None, nullable=True)
+    workday_thursday: Mapped[bool | None] = mapped_column(default=None, nullable=True)
+    workday_friday: Mapped[bool | None] = mapped_column(default=None, nullable=True)
+    workday_saturday: Mapped[bool | None] = mapped_column(default=None, nullable=True)
+    workday_sunday: Mapped[bool | None] = mapped_column(default=None, nullable=True)
     team: Mapped[str | None] = mapped_column(String(80), nullable=True)
 
     tenant: Mapped["Tenant"] = relationship(back_populates="employees")

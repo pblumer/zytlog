@@ -15,12 +15,27 @@ Included:
 - Day/week/month/year CSV + PDF export endpoints.
 - Correction endpoint for timestamp/comment updates with sequence validation.
 - React + Vite frontend app shell with DataGrid-based reporting pages.
+- Annual/weekly working-time foundations with weekday work-pattern logic.
 
 Out of scope (not implemented here):
 - Approval workflows.
 - Absence management.
 - Full audit trail module.
 - Production-grade SSO provisioning automation.
+
+## Business rules: working time model and daily target time
+
+The core Fachlichkeit for annual/weekly target-time foundations is documented in:
+
+- `docs/business-working-time-model.md`
+
+This includes:
+- meaning of `WorkingTimeModel` and `employment_percentage`
+- model vs employee weekday resolution
+- day-scoped target-minute calculation
+- behavior before `entry_date` / after `exit_date`
+- current scope of `annual_target_hours`
+- explicit non-scope (vacation/sickness/holidays, etc.)
 
 ## Architecture overview
 
@@ -202,4 +217,3 @@ Current frontend hardening includes:
 3. `python -m backend.scripts.seed_demo`
 4. Configure Keycloak realm/users (see `infrastructure/keycloak/README.md`)
 5. Open http://localhost:5173 and sign in with a mapped user
-
