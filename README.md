@@ -15,7 +15,7 @@ Included:
 - Day/week/month/year CSV + PDF export endpoints.
 - Correction endpoint for timestamp/comment updates with sequence validation.
 - React + Vite frontend app shell with DataGrid-based reporting pages.
-- Calendar-oriented Month console with per-day target/actual/balance, day-context markers, and status indicators.
+- Calendar-oriented Month console with per-day target/actual/balance, day-context markers (holiday/non-workday + absence-ready placeholder), and status indicators.
 - Annual working-time foundation with weekday work-pattern logic.
 - Admin management for working-time models (create, edit, safe delete with assignment protection).
 - Role-aware primary navigation (admin-focused menu vs employee self-service menu).

@@ -26,6 +26,11 @@ class CalendarDayStatus(str, enum.Enum):
     INVALID = "invalid"
 
 
+class DayAbsenceContext(BaseSchema):
+    type: str
+    label: str
+
+
 class TimeStampEventRead(TimestampedSchema):
     id: int
     tenant_id: int
@@ -65,6 +70,7 @@ class DailyTimeAccountRead(BaseSchema):
     is_holiday: bool = False
     holiday_name: str | None = None
     is_workday: bool = False
+    absence: DayAbsenceContext | None = None
 
 
 class DailyOverviewRow(BaseSchema):
@@ -78,6 +84,7 @@ class DailyOverviewRow(BaseSchema):
     is_holiday: bool = False
     holiday_name: str | None = None
     is_workday: bool = False
+    absence: DayAbsenceContext | None = None
 
 
 class OverviewTotals(BaseSchema):

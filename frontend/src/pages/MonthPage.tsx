@@ -13,7 +13,7 @@ const now = new Date();
 const WEEKDAY_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 const MONTH_LABELS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-type DayContextLabel = 'workday' | 'non_workday' | 'holiday';
+type DayContextLabel = 'workday' | 'non_workday' | 'holiday' | 'absence';
 
 function toIsoDate(year: number, month: number, day: number) {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -33,6 +33,7 @@ function getStatusLabel(status: DailyOverviewRow['status']) {
 }
 
 function getDayContext(day: DailyOverviewRow): DayContextLabel {
+  if (day.absence) return 'absence';
   if (day.is_holiday) return 'holiday';
   if (day.is_workday) return 'workday';
   return 'non_workday';
@@ -92,7 +93,7 @@ export function MonthPage() {
         acc[context] += 1;
         return acc;
       },
-      { workday: 0, non_workday: 0, holiday: 0 },
+      { workday: 0, non_workday: 0, holiday: 0, absence: 0 },
     );
   }, [query.data?.days]);
 
@@ -111,10 +112,12 @@ export function MonthPage() {
       const day = daysByDate.get(iso);
       const status = day?.status ?? 'empty';
       const dayContext = day ? getDayContext(day) : 'non_workday';
+      const absenceLabel = day?.absence?.label ?? null;
       const holidayLabel = day?.is_holiday ? day.holiday_name : null;
       const isNoData = day?.status === 'empty';
       const isTargetFree = day?.target_minutes === 0;
       const showContextBadge = dayContext !== 'workday';
+      const contextBadgeLabel = absenceLabel ?? (dayContext === 'holiday' ? 'Holiday' : 'Non-workday');
       const actualDisplay = day ? (isNoData ? 'No data' : formatMinutes(day.actual_minutes)) : '—';
       const balanceLabel = isTargetFree ? 'Balance (target-free)' : 'Balance';
       const actualAria = day
@@ -152,7 +155,7 @@ export function MonthPage() {
           <div className="month-day-context-row">
             {showContextBadge ? (
               <span className={`month-day-context month-day-context-${dayContext}`}>
-                {dayContext === 'holiday' ? 'Holiday' : 'Non-workday'}
+                {contextBadgeLabel}
               </span>
             ) : null}
             {holidayLabel ? <span className="month-day-holiday-name">{holidayLabel}</span> : null}
@@ -205,6 +208,7 @@ export function MonthPage() {
                 { label: 'Incomplete', value: query.data.totals.days_incomplete },
                 { label: 'Invalid', value: query.data.totals.days_invalid },
                 { label: 'No Data', value: query.data.totals.days_empty },
+                { label: 'Absence Context', value: contextCounters.absence },
                 { label: 'Holidays', value: contextCounters.holiday },
                 { label: 'Workdays', value: contextCounters.workday },
               ]}
@@ -219,7 +223,7 @@ export function MonthPage() {
               <span><i className="month-day-status-dot month-day-status-dot-empty" />No data</span>
               <span><i className="month-day-context month-day-context-holiday" />Holiday</span>
               <span><i className="month-day-context month-day-context-non_workday" />Non-workday</span>
-              <span><i className="month-day-context month-day-context-absence" />Reserved: future absences</span>
+              <span><i className="month-day-context month-day-context-absence" />Absence (e.g. vacation, sickness)</span>
             </div>
           </DataSection>
 
