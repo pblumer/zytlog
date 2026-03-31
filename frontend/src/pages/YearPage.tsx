@@ -42,6 +42,13 @@ function getAbsenceLayers(day: CalendarMonthDay): Array<'left' | 'right'> {
   return ['left', 'right'];
 }
 
+function formatNonWorkingPeriodLabel(day: CalendarMonthDay): string | null {
+  if (!day.is_in_non_working_period) return null;
+  return day.non_working_period_label
+    ? `Arbeitsfreier Zeitraum: ${day.non_working_period_label}`
+    : 'Arbeitsfreier Zeitraum';
+}
+
 export function YearPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
@@ -147,17 +154,22 @@ export function YearPage() {
                         </div>
                       </dl>
 
-                      <div className="year-mini-grid-wrap" aria-hidden="true">
+                      <div className="year-mini-grid-wrap">
                         <div className="year-mini-grid">
                           {monthDays.map((day) => {
                             const dotStatus = getDayDotStatus(day);
                             const absenceLabel = formatAbsenceLabel(day);
                             const absenceLayers = getAbsenceLayers(day);
+                            const nonWorkingPeriodLabel = formatNonWorkingPeriodLabel(day);
+                            const contextParts = [dotStatus, absenceLabel, nonWorkingPeriodLabel].filter(Boolean);
+                            const contextLabel = contextParts.join(' · ');
                             return (
                               <span
                                 key={day.date}
-                                className={`year-mini-dot year-mini-dot-${dotStatus}`}
-                                title={`${day.date}: ${dotStatus}${absenceLabel ? ` · ${absenceLabel}` : ''}`}
+                                role="img"
+                                aria-label={`${day.date}: ${contextLabel}`}
+                                className={`year-mini-dot year-mini-dot-${dotStatus} ${day.is_in_non_working_period ? 'year-mini-dot-non-working-period' : ''}`}
+                                title={`${day.date}: ${contextLabel}`}
                               >
                                 {absenceLayers.map((side) => (
                                   <span
@@ -165,6 +177,7 @@ export function YearPage() {
                                     className={`year-mini-dot-absence-layer year-mini-dot-absence-${side} year-mini-dot-absence-${day.absence?.type}`}
                                   />
                                 ))}
+                                {day.is_in_non_working_period ? <span className="year-mini-dot-non-working-marker" aria-hidden="true" /> : null}
                               </span>
                             );
                           })}
