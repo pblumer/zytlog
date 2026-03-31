@@ -130,6 +130,36 @@ class StubOpenHolidaysSubdivisionsFailClient(StubOpenHolidaysClient):
         raise HTTPException(status_code=502, detail="Regionen/Subdivisions konnten nicht geladen werden.")
 
 
+class StubOpenHolidaysExistingCollisionClient(StubOpenHolidaysClient):
+    def fetch_public_holidays(self, **_kwargs):
+        return [
+            OpenHolidayItem(
+                date=date(2026, 1, 1),
+                name="Neujahr",
+                country_iso_code="CH",
+                subdivision_code="CH-BE",
+                language_code="DE",
+                source_reference="a",
+            ),
+            OpenHolidayItem(
+                date=date(2026, 4, 3),
+                name="Karfreitag",
+                country_iso_code="CH",
+                subdivision_code="CH-BE",
+                language_code="DE",
+                source_reference="c",
+            ),
+            OpenHolidayItem(
+                date=date(2026, 8, 1),
+                name="Bundesfeier",
+                country_iso_code="CH",
+                subdivision_code="CH-BE",
+                language_code="DE",
+                source_reference="b",
+            ),
+        ]
+
+
 @pytest.fixture
 def test_session_local() -> sessionmaker:
     engine = create_engine(
@@ -185,6 +215,15 @@ def test_session_local() -> sessionmaker:
                 date=date(2026, 1, 1),
                 name="Bestehend",
                 active=True,
+            )
+        )
+        session.add(
+            Holiday(
+                tenant_id=demo_tenant.id,
+                holiday_set_id=demo_set.id,
+                date=date(2026, 4, 3),
+                name="Bestehend (inaktiv)",
+                active=False,
             )
         )
         session.commit()
@@ -373,3 +412,49 @@ def test_openholidays_preview_and_commit_are_consistent(
     assert commit.status_code == 200
     assert commit.json()["created"] == len(create_rows)
     assert commit.json()["skipped"] == len(skip_rows)
+
+
+def test_openholidays_skip_existing_ignores_already_present_dates_including_inactive(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(openholidays_endpoint, "_client", lambda: StubOpenHolidaysExistingCollisionClient())
+    set_response = client.get('/api/v1/holiday-sets', headers={'Authorization': 'Bearer valid-admin-token'})
+    holiday_set_id = set_response.json()[0]['id']
+
+    preview = client.post(
+        f"/api/v1/admin/holiday-sets/{holiday_set_id}/import/openholidays/preview",
+        headers={"Authorization": "Bearer valid-admin-token"},
+        json=_payload("skip_existing"),
+    )
+    assert preview.status_code == 200
+    preview_rows = preview.json()["rows"]
+    by_date = {row["date"]: row for row in preview_rows}
+    assert by_date["2026-01-01"]["exists_in_holiday_set"] is True
+    assert by_date["2026-01-01"]["action_hint"] == "skip"
+    assert by_date["2026-04-03"]["exists_in_holiday_set"] is True
+    assert by_date["2026-04-03"]["action_hint"] == "skip"
+    assert by_date["2026-08-01"]["action_hint"] == "create"
+
+    commit = client.post(
+        f"/api/v1/admin/holiday-sets/{holiday_set_id}/import/openholidays/commit",
+        headers={"Authorization": "Bearer valid-admin-token"},
+        json=_payload("skip_existing"),
+    )
+    assert commit.status_code == 200
+    assert commit.json() == {"created": 1, "skipped": 2, "replaced": 0}
+
+
+def test_openholidays_replace_existing_in_range_replaces_existing_dates_including_inactive(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(openholidays_endpoint, "_client", lambda: StubOpenHolidaysExistingCollisionClient())
+    set_response = client.get('/api/v1/holiday-sets', headers={'Authorization': 'Bearer valid-admin-token'})
+    holiday_set_id = set_response.json()[0]['id']
+
+    commit = client.post(
+        f"/api/v1/admin/holiday-sets/{holiday_set_id}/import/openholidays/commit",
+        headers={"Authorization": "Bearer valid-admin-token"},
+        json=_payload("replace_existing_in_range"),
+    )
+    assert commit.status_code == 200
+    assert commit.json() == {"created": 3, "skipped": 0, "replaced": 2}
