@@ -75,8 +75,7 @@ export const updateEmployee = (employeeId: number, payload: UpdateEmployeePayloa
 export const getWorkingTimeModels = (token?: string | null) => apiGet<WorkingTimeModel[]>('/working-time-models', token);
 export type CreateWorkingTimeModelPayload = {
   name: string;
-  weekly_target_hours: number;
-  default_workdays_per_week: number;
+  annual_target_hours: number;
   default_workday_monday: boolean;
   default_workday_tuesday: boolean;
   default_workday_wednesday: boolean;
@@ -84,7 +83,6 @@ export type CreateWorkingTimeModelPayload = {
   default_workday_friday: boolean;
   default_workday_saturday: boolean;
   default_workday_sunday: boolean;
-  annual_target_hours: number | null;
   active: boolean;
 };
 export const createWorkingTimeModel = (payload: CreateWorkingTimeModelPayload, token?: string | null) =>

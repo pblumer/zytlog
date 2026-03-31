@@ -41,8 +41,6 @@ def _build_service(*, employee_percentage: float = 100, employee_overrides: dict
     model = WorkingTimeModel(
         tenant_id=tenant.id,
         name="42h Model",
-        weekly_target_hours=42,
-        default_workdays_per_week=5,
         default_workday_monday=True,
         default_workday_tuesday=True,
         default_workday_wednesday=True,
@@ -88,12 +86,12 @@ def test_100_percent_employee_with_standard_monday_to_friday_target() -> None:
     monday_account = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 3, 30))
     sunday_account = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 4, 5))
 
-    assert monday_account.target_minutes == 504  # 42h / 5 = 8.4h
+    assert monday_account.target_minutes == 483  # 2100h / 261 Arbeitstage in 2026
     assert sunday_account.target_minutes == 0
     session.close()
 
 
-def test_80_percent_employee_with_weekday_override_distributes_weekly_target_equally() -> None:
+def test_80_percent_employee_with_weekday_override_distributes_annual_target_equally() -> None:
     session, tenant_id, employee, service = _build_service(
         employee_percentage=80,
         employee_overrides={
@@ -108,7 +106,7 @@ def test_80_percent_employee_with_weekday_override_distributes_weekly_target_equ
     monday_account = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 3, 30))
     wednesday_account = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 4, 1))
 
-    assert monday_account.target_minutes == 504  # (42h * 80%) / 4 = 8.4h
+    assert monday_account.target_minutes == 482  # (2100h * 80%) / 209 Arbeitstage in 2026
     assert wednesday_account.target_minutes == 0
     session.close()
 
@@ -157,7 +155,7 @@ def test_reporting_uses_same_daily_target_logic_consistently() -> None:
 
     week = reporting.get_week_overview(tenant_id=tenant_id, employee=employee, iso_year=2026, iso_week=14)
 
-    assert week.totals.target_minutes == 2016  # 4 active days * 504
+    assert week.totals.target_minutes == 1928  # 4 active days * 482
     wednesday = next(day for day in week.days if day.date == date(2026, 4, 1))
     assert wednesday.target_minutes == 0
     session.close()

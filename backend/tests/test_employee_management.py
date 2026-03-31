@@ -103,16 +103,12 @@ def test_session_local() -> sessionmaker:
         tenant_model = WorkingTimeModel(
             tenant_id=demo_tenant.id,
             name="Tenant Model",
-            weekly_target_hours=40,
-            default_workdays_per_week=5,
             annual_target_hours=2080,
             active=True,
         )
         other_tenant_model = WorkingTimeModel(
             tenant_id=other_tenant.id,
             name="Other Tenant Model",
-            weekly_target_hours=35,
-            default_workdays_per_week=5,
             annual_target_hours=1820,
             active=True,
         )

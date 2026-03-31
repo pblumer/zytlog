@@ -103,24 +103,18 @@ def test_session_local() -> sessionmaker:
         assigned_model = WorkingTimeModel(
             tenant_id=demo_tenant.id,
             name="Assigned Model",
-            weekly_target_hours=40,
-            default_workdays_per_week=5,
             annual_target_hours=2080,
             active=True,
         )
         unused_model = WorkingTimeModel(
             tenant_id=demo_tenant.id,
             name="Unused Model",
-            weekly_target_hours=38.5,
-            default_workdays_per_week=5,
             annual_target_hours=2002,
             active=True,
         )
         other_tenant_model = WorkingTimeModel(
             tenant_id=other_tenant.id,
             name="Other Tenant Model",
-            weekly_target_hours=35,
-            default_workdays_per_week=5,
             annual_target_hours=1820,
             active=True,
         )
@@ -173,9 +167,7 @@ def test_update_working_time_model_success(client: TestClient) -> None:
         headers={"Authorization": "Bearer valid-admin-token"},
         json={
             "name": "Überarbeitetes Modell",
-            "weekly_target_hours": 39.5,
             "annual_target_hours": 1980,
-            "default_workdays_per_week": 4,
             "default_workday_friday": False,
             "active": False,
         },
@@ -183,9 +175,7 @@ def test_update_working_time_model_success(client: TestClient) -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["name"] == "Überarbeitetes Modell"
-    assert payload["weekly_target_hours"] == 39.5
     assert payload["annual_target_hours"] == 1980
-    assert payload["default_workdays_per_week"] == 4
     assert payload["default_workday_friday"] is False
     assert payload["active"] is False
 

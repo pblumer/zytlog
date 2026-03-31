@@ -78,8 +78,6 @@ def client() -> TestClient:
         model = WorkingTimeModel(
             tenant_id=tenant.id,
             name="Full Time",
-            weekly_target_hours=40,
-            default_workdays_per_week=5,
             default_workday_monday=True,
             default_workday_tuesday=True,
             default_workday_wednesday=True,
@@ -87,14 +85,12 @@ def client() -> TestClient:
             default_workday_friday=True,
             default_workday_saturday=False,
             default_workday_sunday=False,
-            annual_target_hours=None,
+            annual_target_hours=2080,
             active=True,
         )
         other_model = WorkingTimeModel(
             tenant_id=other_tenant.id,
             name="Other Full Time",
-            weekly_target_hours=40,
-            default_workdays_per_week=5,
             default_workday_monday=True,
             default_workday_tuesday=True,
             default_workday_wednesday=True,
@@ -102,7 +98,7 @@ def client() -> TestClient:
             default_workday_friday=True,
             default_workday_saturday=False,
             default_workday_sunday=False,
-            annual_target_hours=None,
+            annual_target_hours=2080,
             active=True,
         )
         session.add_all([model, other_model])
@@ -320,7 +316,7 @@ def test_daily_account_for_valid_pair(client: TestClient) -> None:
     assert response.status_code == 200
 
     payload = response.json()
-    assert payload["target_minutes"] == 480
+    assert payload["target_minutes"] == 478
     assert payload["actual_minutes"] >= 0
     assert payload["status"] == "complete"
 
