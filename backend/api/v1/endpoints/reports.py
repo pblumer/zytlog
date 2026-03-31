@@ -7,11 +7,13 @@ from backend.models.employee import Employee
 from backend.repositories.absence_repository import AbsenceRepository
 from backend.repositories.employee_repository import EmployeeRepository
 from backend.repositories.holiday_repository import HolidayRepository
+from backend.repositories.non_working_period_set_repository import NonWorkingPeriodSetRepository
 from backend.repositories.time_stamp_event_repository import TimeStampEventRepository
 from backend.schemas.time_tracking import MonthlyOverviewRead, WeeklyOverviewRead, YearlyOverviewRead
 from backend.services.absence_service import AbsenceService
 from backend.services.daily_account_service import DailyAccountService
 from backend.services.holiday_service import HolidayService
+from backend.services.non_working_period_set_service import NonWorkingPeriodSetService
 from backend.services.reporting_service import ReportingService
 
 router = APIRouter(prefix="/reports", tags=["reports"])
@@ -30,6 +32,7 @@ def _reporting_service(db: Session) -> ReportingService:
             TimeStampEventRepository(db),
             HolidayService(HolidayRepository(db)),
             AbsenceService(AbsenceRepository(db), EmployeeRepository(db)),
+            NonWorkingPeriodSetService(NonWorkingPeriodSetRepository(db)),
         )
     )
 

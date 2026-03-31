@@ -23,6 +23,8 @@ class Tenant(TimestampMixin, Base):
     daily_time_accounts: Mapped[list["DailyTimeAccount"]] = relationship(back_populates="tenant")
     holidays: Mapped[list["Holiday"]] = relationship(back_populates="tenant")
     absences: Mapped[list["Absence"]] = relationship(back_populates="tenant")
+    non_working_period_sets: Mapped[list["NonWorkingPeriodSet"]] = relationship(back_populates="tenant")
+    non_working_periods: Mapped[list["NonWorkingPeriod"]] = relationship(back_populates="tenant")
     holiday_sets: Mapped[list["HolidaySet"]] = relationship(
         back_populates="tenant",
         foreign_keys="HolidaySet.tenant_id",

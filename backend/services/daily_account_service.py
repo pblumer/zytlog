@@ -10,6 +10,7 @@ from backend.repositories.time_stamp_event_repository import TimeStampEventRepos
 from backend.schemas.time_tracking import DailyAccountStatus, DailyTimeAccountRead
 from backend.services.absence_service import AbsenceService
 from backend.services.holiday_service import HolidayService
+from backend.services.non_working_period_set_service import NonWorkingPeriodSetService
 
 
 class DailyAccountService:
@@ -18,10 +19,12 @@ class DailyAccountService:
         repository: TimeStampEventRepository,
         holiday_service: HolidayService,
         absence_service: AbsenceService,
+        non_working_period_set_service: NonWorkingPeriodSetService,
     ) -> None:
         self.repository = repository
         self.holiday_service = holiday_service
         self.absence_service = absence_service
+        self.non_working_period_set_service = non_working_period_set_service
 
     def get_daily_account(self, *, tenant_id: int, employee: Employee, target_date: date) -> DailyTimeAccountRead:
         holiday_name = self.holiday_service.get_holiday_name_for_employee_date(
@@ -29,11 +32,18 @@ class DailyAccountService:
             tenant=employee.tenant,
             target_date=target_date,
         )
+        non_working_period = self.non_working_period_set_service.get_non_working_period_on_date(
+            tenant_id=tenant_id,
+            period_set_id=employee.non_working_period_set_id,
+            target_date=target_date,
+        )
+        is_in_non_working_period = non_working_period is not None
         is_workday = self._is_employee_workday(employee=employee, target_date=target_date)
         target_minutes = self._calculate_target_minutes(
             employee=employee,
             target_date=target_date,
             holiday_name=holiday_name,
+            is_in_non_working_period=is_in_non_working_period,
         )
         events = self.repository.list_clock_events_for_day(
             tenant_id=tenant_id,
@@ -67,6 +77,8 @@ class DailyAccountService:
             is_holiday=holiday_name is not None,
             is_workday=is_workday,
             absence=absence,
+            is_in_non_working_period=is_in_non_working_period,
+            non_working_period_label=non_working_period.name if non_working_period is not None else None,
         )
 
     def get_daily_accounts_in_range(
@@ -103,6 +115,7 @@ class DailyAccountService:
         employee: Employee,
         target_date: date,
         holiday_name: str | None = None,
+        is_in_non_working_period: bool = False,
     ) -> int:
         model = employee.working_time_model
         if model is None:
@@ -115,6 +128,8 @@ class DailyAccountService:
         if employee.exit_date is not None and target_date > employee.exit_date:
             return 0
         if holiday_name is not None:
+            return 0
+        if is_in_non_working_period:
             return 0
 
         workday_pattern = self._resolve_employee_workday_pattern(employee=employee)
@@ -162,7 +177,12 @@ class DailyAccountService:
         total = 0
         cursor = period_start
         while cursor <= period_end:
-            if workday_pattern[cursor.weekday()] and cursor not in holiday_dates:
+            has_non_working_period = self.non_working_period_set_service.has_non_working_period_on_date(
+                tenant_id=employee.tenant_id,
+                period_set_id=employee.non_working_period_set_id,
+                target_date=cursor,
+            )
+            if workday_pattern[cursor.weekday()] and cursor not in holiday_dates and not has_non_working_period:
                 total += 1
             cursor += timedelta(days=1)
 

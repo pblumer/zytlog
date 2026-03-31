@@ -356,6 +356,13 @@ export function DayPage() {
           {dailyAccount.data.is_holiday ? (
             <SummaryCard title="Feiertag" value={dailyAccount.data.holiday_name ?? 'Ja'} hint="Sollzeit am Feiertag ist immer 0." />
           ) : null}
+          {dailyAccount.data.is_in_non_working_period ? (
+            <SummaryCard
+              title="Arbeitsfreier Zeitraum"
+              value={dailyAccount.data.non_working_period_label ?? 'Ja'}
+              hint="Für zugewiesene Arbeitsfrei-Zeiträume gilt target_minutes=0 und der Tag ist nicht target-bearing."
+            />
+          ) : null}
           <SummaryCard title="Ist" value={<span className="time-value">{formatMinutes(dailyAccount.data.actual_minutes)}</span>} />
           <SummaryCard
             title="Saldo"

@@ -11,6 +11,12 @@ import {
   createHoliday,
   deleteHolidaySet,
   deleteHoliday,
+  createNonWorkingPeriodSet,
+  updateNonWorkingPeriodSet,
+  deleteNonWorkingPeriodSet,
+  createNonWorkingPeriod,
+  updateNonWorkingPeriod,
+  deleteNonWorkingPeriod,
   deleteWorkingTimeModel,
   deleteTimeStamp,
   getCalendarMonth,
@@ -23,6 +29,8 @@ import {
   getWorkingTimeModels,
   getHolidays,
   getHolidaySets,
+  getNonWorkingPeriodSets,
+  getNonWorkingPeriods,
   getOpenHolidaysCountries,
   getOpenHolidaysLanguages,
   getOpenHolidaysSubdivisions,
@@ -47,6 +55,10 @@ import {
   type UpdateHolidaySetPayload,
   type UpdateWorkingTimeModelPayload,
   type UpdateEmployeePayload,
+  type CreateNonWorkingPeriodSetPayload,
+  type UpdateNonWorkingPeriodSetPayload,
+  type CreateNonWorkingPeriodPayload,
+  type UpdateNonWorkingPeriodPayload,
   type CreateAbsencePayload,
   type UpdateAbsencePayload,
   type OpenHolidaysImportPayload,
@@ -211,6 +223,104 @@ export function useDeleteHolidaySetMutation() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['holiday-sets'] }),
         queryClient.invalidateQueries({ queryKey: ['holidays'] }),
+      ]);
+    },
+  });
+}
+
+
+export function useNonWorkingPeriodSets(enabled: boolean) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['non-working-period-sets'],
+    queryFn: () => getNonWorkingPeriodSets(token),
+    enabled,
+  });
+}
+
+export function useNonWorkingPeriods(periodSetId: number | null, enabled: boolean) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['non-working-periods', periodSetId],
+    queryFn: () => getNonWorkingPeriods(periodSetId ?? -1, token),
+    enabled: enabled && periodSetId !== null,
+  });
+}
+
+export function useCreateNonWorkingPeriodSetMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: (payload: CreateNonWorkingPeriodSetPayload) => createNonWorkingPeriodSet(payload, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['non-working-period-sets'] });
+    },
+  });
+}
+
+export function useUpdateNonWorkingPeriodSetMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: ({ periodSetId, payload }: { periodSetId: number; payload: UpdateNonWorkingPeriodSetPayload }) =>
+      updateNonWorkingPeriodSet(periodSetId, payload, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['non-working-period-sets'] });
+    },
+  });
+}
+
+export function useDeleteNonWorkingPeriodSetMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: (periodSetId: number) => deleteNonWorkingPeriodSet(periodSetId, token),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['non-working-period-sets'] }),
+        queryClient.invalidateQueries({ queryKey: ['employees'] }),
+      ]);
+    },
+  });
+}
+
+export function useCreateNonWorkingPeriodMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: ({ periodSetId, payload }: { periodSetId: number; payload: CreateNonWorkingPeriodPayload }) =>
+      createNonWorkingPeriod(periodSetId, payload, token),
+    onSuccess: async (_, vars) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['non-working-periods', vars.periodSetId] }),
+        queryClient.invalidateQueries({ queryKey: ['non-working-period-sets'] }),
+      ]);
+    },
+  });
+}
+
+export function useUpdateNonWorkingPeriodMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: ({ periodSetId, periodId, payload }: { periodSetId: number; periodId: number; payload: UpdateNonWorkingPeriodPayload }) =>
+      updateNonWorkingPeriod(periodSetId, periodId, payload, token),
+    onSuccess: async (_, vars) => {
+      await queryClient.invalidateQueries({ queryKey: ['non-working-periods', vars.periodSetId] });
+    },
+  });
+}
+
+export function useDeleteNonWorkingPeriodMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: ({ periodSetId, periodId }: { periodSetId: number; periodId: number }) =>
+      deleteNonWorkingPeriod(periodSetId, periodId, token),
+    onSuccess: async (_, vars) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['non-working-periods', vars.periodSetId] }),
+        queryClient.invalidateQueries({ queryKey: ['non-working-period-sets'] }),
       ]);
     },
   });

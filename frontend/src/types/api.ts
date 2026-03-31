@@ -50,6 +50,8 @@ export type DailyTimeAccount = {
   holiday_name: string | null;
   is_workday: boolean;
   absence: DayAbsenceContext | null;
+  is_in_non_working_period: boolean;
+  non_working_period_label: string | null;
 };
 
 export type DailyOverviewRow = DailyTimeAccount;
@@ -111,6 +113,8 @@ export type CalendarMonthDay = {
   balance_minutes: number;
   event_count: number;
   absence: DayAbsenceContext | null;
+  is_in_non_working_period: boolean;
+  non_working_period_label: string | null;
 };
 
 export type CalendarMonth = {
@@ -131,6 +135,7 @@ export type Employee = {
   exit_date: string | null;
   working_time_model_id: number | null;
   holiday_set_id: number | null;
+  non_working_period_set_id: number | null;
   workday_monday: boolean | null;
   workday_tuesday: boolean | null;
   workday_wednesday: boolean | null;
@@ -245,6 +250,29 @@ export type Absence = {
   end_date: string;
   duration_type: AbsenceDurationType;
   note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type NonWorkingPeriodSet = {
+  id: number;
+  tenant_id: number;
+  name: string;
+  description: string | null;
+  active: boolean;
+  period_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type NonWorkingPeriod = {
+  id: number;
+  tenant_id: number;
+  non_working_period_set_id: number;
+  start_date: string;
+  end_date: string;
+  name: string;
+  category: string | null;
   created_at: string;
   updated_at: string;
 };
