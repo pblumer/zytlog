@@ -86,6 +86,11 @@ export type CreateWorkingTimeModelPayload = {
 };
 export const createWorkingTimeModel = (payload: CreateWorkingTimeModelPayload, token?: string | null) =>
   apiPost<WorkingTimeModel>('/working-time-models', payload, token);
+export type UpdateWorkingTimeModelPayload = Partial<CreateWorkingTimeModelPayload>;
+export const updateWorkingTimeModel = (modelId: number, payload: UpdateWorkingTimeModelPayload, token?: string | null) =>
+  apiPatch<WorkingTimeModel>(`/working-time-models/${modelId}`, payload, token);
+export const deleteWorkingTimeModel = (modelId: number, token?: string | null) =>
+  apiDelete<void>(`/working-time-models/${modelId}`, token);
 
 export const clockIn = (token?: string | null) => apiPost<TimeStampEvent>('/time-stamps/clock-in', undefined, token);
 
