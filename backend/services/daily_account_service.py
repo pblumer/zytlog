@@ -8,13 +8,20 @@ from backend.models.enums import TimeStampEventType
 from backend.models.time_stamp_event import TimeStampEvent
 from backend.repositories.time_stamp_event_repository import TimeStampEventRepository
 from backend.schemas.time_tracking import DailyAccountStatus, DailyTimeAccountRead
+from backend.services.absence_service import AbsenceService
 from backend.services.holiday_service import HolidayService
 
 
 class DailyAccountService:
-    def __init__(self, repository: TimeStampEventRepository, holiday_service: HolidayService) -> None:
+    def __init__(
+        self,
+        repository: TimeStampEventRepository,
+        holiday_service: HolidayService,
+        absence_service: AbsenceService,
+    ) -> None:
         self.repository = repository
         self.holiday_service = holiday_service
+        self.absence_service = absence_service
 
     def get_daily_account(self, *, tenant_id: int, employee: Employee, target_date: date) -> DailyTimeAccountRead:
         holiday_name = self.holiday_service.get_holiday_name_for_employee_date(
@@ -34,19 +41,32 @@ class DailyAccountService:
             target_date=target_date,
         )
         actual_minutes, break_minutes, status = self._calculate_minutes_and_status(events)
+        absence = self.absence_service.get_absence_context_for_day(
+            tenant_id=tenant_id,
+            employee_id=employee.id,
+            target_date=target_date,
+        )
+        balance_reference_minutes = actual_minutes
+        if (
+            absence is not None
+            and absence.duration_type == "full_day"
+            and target_minutes > 0
+            and absence.type in {"vacation", "sickness"}
+        ):
+            balance_reference_minutes = max(actual_minutes, target_minutes)
 
         return DailyTimeAccountRead(
             date=target_date,
             target_minutes=target_minutes,
             actual_minutes=actual_minutes,
             break_minutes=break_minutes,
-            balance_minutes=actual_minutes - target_minutes,
+            balance_minutes=balance_reference_minutes - target_minutes,
             status=status,
             event_count=len(events),
             holiday_name=holiday_name,
             is_holiday=holiday_name is not None,
             is_workday=is_workday,
-            absence=None,
+            absence=absence,
         )
 
     def get_daily_accounts_in_range(

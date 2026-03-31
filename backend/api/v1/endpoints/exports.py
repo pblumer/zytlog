@@ -7,9 +7,11 @@ from sqlalchemy.orm import Session
 from backend.api.deps import get_db
 from backend.core.auth import AuthContext, require_authenticated_user
 from backend.models.employee import Employee
+from backend.repositories.absence_repository import AbsenceRepository
 from backend.repositories.employee_repository import EmployeeRepository
 from backend.repositories.holiday_repository import HolidayRepository
 from backend.repositories.time_stamp_event_repository import TimeStampEventRepository
+from backend.services.absence_service import AbsenceService
 from backend.services.daily_account_service import DailyAccountService
 from backend.services.holiday_service import HolidayService
 from backend.services.export_service import ExportService
@@ -25,8 +27,16 @@ def _resolve_employee(db: Session, context: AuthContext) -> Employee:
     return employee
 
 
+def _daily_account_service(db: Session) -> DailyAccountService:
+    return DailyAccountService(
+        TimeStampEventRepository(db),
+        HolidayService(HolidayRepository(db)),
+        AbsenceService(AbsenceRepository(db), EmployeeRepository(db)),
+    )
+
+
 def _reporting_service(db: Session) -> ReportingService:
-    return ReportingService(DailyAccountService(TimeStampEventRepository(db), HolidayService(HolidayRepository(db))))
+    return ReportingService(_daily_account_service(db))
 
 
 def _content_disposition(filename: str) -> str:
@@ -40,7 +50,7 @@ def export_my_day_csv(
     context: AuthContext = Depends(require_authenticated_user),
 ):
     employee = _resolve_employee(db, context)
-    account = DailyAccountService(TimeStampEventRepository(db), HolidayService(HolidayRepository(db))).get_daily_account(
+    account = _daily_account_service(db).get_daily_account(
         tenant_id=context.tenant_id,
         employee=employee,
         target_date=date_value,
@@ -128,7 +138,7 @@ def export_my_day_pdf(
     context: AuthContext = Depends(require_authenticated_user),
 ):
     employee = _resolve_employee(db, context)
-    account = DailyAccountService(TimeStampEventRepository(db), HolidayService(HolidayRepository(db))).get_daily_account(
+    account = _daily_account_service(db).get_daily_account(
         tenant_id=context.tenant_id,
         employee=employee,
         target_date=date_value,

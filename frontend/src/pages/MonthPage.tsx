@@ -117,7 +117,8 @@ export function MonthPage() {
       const isNoData = day?.status === 'empty';
       const isTargetFree = day?.target_minutes === 0;
       const showContextBadge = dayContext !== 'workday';
-      const contextBadgeLabel = absenceLabel ?? (dayContext === 'holiday' ? 'Holiday' : 'Non-workday');
+      const durationHint = day?.absence?.duration_type === 'half_day_am' ? ' (AM)' : day?.absence?.duration_type === 'half_day_pm' ? ' (PM)' : '';
+      const contextBadgeLabel = absenceLabel ? `${absenceLabel}${durationHint}` : dayContext === 'holiday' ? 'Holiday' : 'Non-workday';
       const actualDisplay = day ? (isNoData ? 'No data' : formatMinutes(day.actual_minutes)) : '—';
       const balanceLabel = isTargetFree ? 'Balance (target-free)' : 'Balance';
       const actualAria = day

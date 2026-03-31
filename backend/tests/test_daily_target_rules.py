@@ -12,8 +12,10 @@ from backend.models.holiday_set import HolidaySet
 from backend.models.tenant import Tenant
 from backend.models.user import User
 from backend.models.working_time_model import WorkingTimeModel
+from backend.repositories.absence_repository import AbsenceRepository
 from backend.repositories.holiday_repository import HolidayRepository
 from backend.repositories.time_stamp_event_repository import TimeStampEventRepository
+from backend.services.absence_service import AbsenceService
 from backend.services.daily_account_service import DailyAccountService
 from backend.services.holiday_service import HolidayService
 from backend.services.reporting_service import ReportingService
@@ -84,7 +86,11 @@ def _build_service(*, employee_percentage: float = 100, employee_overrides: dict
     _ = persisted_employee.working_time_model
 
     holiday_service = HolidayService(HolidayRepository(session))
-    service = DailyAccountService(TimeStampEventRepository(session), holiday_service)
+    service = DailyAccountService(
+        TimeStampEventRepository(session),
+        holiday_service,
+        AbsenceService(AbsenceRepository(session), EmployeeRepository(session)),
+    )
     return session, tenant.id, persisted_employee, service, default_holiday_set
 
 

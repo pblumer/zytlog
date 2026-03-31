@@ -28,6 +28,12 @@ import {
   updateTimeStamp,
   updateWorkingTimeModel,
   getYearReport,
+  getMyAbsences,
+  createMyAbsence,
+  getAdminAbsences,
+  createAdminAbsence,
+  updateAdminAbsence,
+  deleteAdminAbsence,
   type CreateEmployeePayload,
   type CreateHolidayPayload,
   type CreateHolidaySetPayload,
@@ -36,6 +42,8 @@ import {
   type UpdateHolidaySetPayload,
   type UpdateWorkingTimeModelPayload,
   type UpdateEmployeePayload,
+  type CreateAbsencePayload,
+  type UpdateAbsencePayload,
 } from '../api/endpoints';
 import { useAuth } from '../auth/provider';
 
@@ -336,6 +344,79 @@ export function useDeleteTimeStampMutation() {
         queryClient.invalidateQueries({ queryKey: ['year-report'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard-calendar'] }),
       ]);
+    },
+  });
+}
+
+
+export function useMyAbsences(from?: string, to?: string) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['my-absences', from ?? null, to ?? null],
+    queryFn: () => getMyAbsences(token, from, to),
+  });
+}
+
+export function useAdminAbsences(enabled: boolean, employeeId?: number, from?: string, to?: string) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['admin-absences', employeeId ?? null, from ?? null, to ?? null],
+    queryFn: () => getAdminAbsences(token, employeeId, from, to),
+    enabled,
+  });
+}
+
+export function useCreateMyAbsenceMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: (payload: CreateAbsencePayload) => createMyAbsence(payload, token),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['my-absences'] }),
+        queryClient.invalidateQueries({ queryKey: ['daily-account'] }),
+        queryClient.invalidateQueries({ queryKey: ['month-report'] }),
+        queryClient.invalidateQueries({ queryKey: ['week-report'] }),
+      ]);
+    },
+  });
+}
+
+export function useCreateAdminAbsenceMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: (payload: CreateAbsencePayload) => createAdminAbsence(payload, token),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['admin-absences'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-absences'] }),
+        queryClient.invalidateQueries({ queryKey: ['daily-account'] }),
+        queryClient.invalidateQueries({ queryKey: ['month-report'] }),
+      ]);
+    },
+  });
+}
+
+export function useUpdateAdminAbsenceMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: ({ absenceId, payload }: { absenceId: number; payload: UpdateAbsencePayload }) =>
+      updateAdminAbsence(absenceId, payload, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['admin-absences'] });
+    },
+  });
+}
+
+export function useDeleteAdminAbsenceMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: (absenceId: number) => deleteAdminAbsence(absenceId, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['admin-absences'] });
     },
   });
 }

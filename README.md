@@ -262,3 +262,8 @@ Current frontend hardening includes:
 3. `python -m backend.scripts.seed_demo`
 4. Configure Keycloak realm/users (see `infrastructure/keycloak/README.md`)
 5. Open http://localhost:5173 and sign in with a mapped user
+
+
+## Absence domain (Stage 1)
+
+Zytlog now includes a slim absence domain with tenant-aware persistence and basic CRUD APIs for employee self-service and admins (`vacation`, `sickness`; full-day + half-day). Absence context is exposed in daily/monthly reporting while capture status semantics stay unchanged. See `docs/business-absences.md` for detailed business rules.

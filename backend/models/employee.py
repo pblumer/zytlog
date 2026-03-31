@@ -37,3 +37,4 @@ class Employee(TimestampMixin, Base):
     holiday_set: Mapped["HolidaySet | None"] = relationship(back_populates="employees")
     time_stamp_events: Mapped[list["TimeStampEvent"]] = relationship(back_populates="employee")
     daily_time_accounts: Mapped[list["DailyTimeAccount"]] = relationship(back_populates="employee")
+    absences: Mapped[list["Absence"]] = relationship(back_populates="employee")

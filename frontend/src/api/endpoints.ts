@@ -12,6 +12,7 @@ import type {
   YearlyOverview,
   Holiday,
   HolidaySet,
+  Absence,
 } from '../types/api';
 
 export const getMe = (token?: string | null) => apiGet<Me>('/me', token);
@@ -166,3 +167,44 @@ export const updateTimeStamp = (eventId: number, payload: UpdateTimeStampPayload
 
 export const deleteTimeStamp = (eventId: number, token?: string | null) =>
   apiDelete<TimeStampEvent>(`/time-stamps/${eventId}`, token);
+
+export type CreateAbsencePayload = {
+  employee_id?: number;
+  absence_type: 'vacation' | 'sickness';
+  start_date: string;
+  end_date: string;
+  duration_type: 'full_day' | 'half_day_am' | 'half_day_pm';
+  note: string | null;
+};
+
+export type UpdateAbsencePayload = Partial<CreateAbsencePayload>;
+
+export const getMyAbsences = (token?: string | null, from?: string, to?: string) =>
+  apiGet<Absence[]>(`/absences/my?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) }).toString()}`, token);
+
+export const createMyAbsence = (payload: CreateAbsencePayload, token?: string | null) =>
+  apiPost<Absence>('/absences/my', payload, token);
+
+export const getAdminAbsences = (
+  token?: string | null,
+  employeeId?: number,
+  from?: string,
+  to?: string,
+) =>
+  apiGet<Absence[]>(
+    `/admin/absences?${new URLSearchParams({
+      ...(employeeId ? { employee_id: String(employeeId) } : {}),
+      ...(from ? { from } : {}),
+      ...(to ? { to } : {}),
+    }).toString()}` ,
+    token,
+  );
+
+export const createAdminAbsence = (payload: CreateAbsencePayload, token?: string | null) =>
+  apiPost<Absence>('/admin/absences', payload, token);
+
+export const updateAdminAbsence = (absenceId: number, payload: UpdateAbsencePayload, token?: string | null) =>
+  apiPatch<Absence>(`/admin/absences/${absenceId}`, payload, token);
+
+export const deleteAdminAbsence = (absenceId: number, token?: string | null) =>
+  apiDelete<void>(`/admin/absences/${absenceId}`, token);
