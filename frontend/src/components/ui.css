@@ -1021,6 +1021,11 @@ a:focus-visible,
   border-color: #bbcee8;
 }
 
+.month-day-context-non_working_period {
+  background: #fff1d6;
+  border-color: #e6cb93;
+}
+
 .month-day-holiday-name {
   font-size: 0.75rem;
   color: var(--muted);

@@ -72,6 +72,8 @@ class DailyTimeAccountRead(BaseSchema):
     holiday_name: str | None = None
     is_workday: bool = False
     absence: DayAbsenceContext | None = None
+    is_in_non_working_period: bool = False
+    non_working_period_label: str | None = None
 
 
 class DailyOverviewRow(BaseSchema):
@@ -86,6 +88,8 @@ class DailyOverviewRow(BaseSchema):
     holiday_name: str | None = None
     is_workday: bool = False
     absence: DayAbsenceContext | None = None
+    is_in_non_working_period: bool = False
+    non_working_period_label: str | None = None
 
 
 class OverviewTotals(BaseSchema):
@@ -126,6 +130,8 @@ class CalendarMonthDayRead(BaseSchema):
     balance_minutes: int
     event_count: int = Field(ge=0)
     absence: DayAbsenceContext | None = None
+    is_in_non_working_period: bool = False
+    non_working_period_label: str | None = None
 
 
 class CalendarMonthRead(BaseSchema):

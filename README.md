@@ -15,7 +15,7 @@ Included:
 - Day/week/month/year CSV + PDF export endpoints.
 - Correction endpoint for timestamp/comment updates with sequence validation.
 - React + Vite frontend app shell with DataGrid-based reporting pages.
-- Calendar-oriented overviews with per-day target/actual/balance, day-context markers (holiday/non-workday/absence), and status indicators.
+- Calendar-oriented overviews with per-day target/actual/balance, day-context markers (holiday/non-workday/absence/non-working period), and status indicators.
 - Annual working-time foundation with weekday work-pattern logic.
 - Admin management for working-time models (create, edit, safe delete with assignment protection).
 - Role-aware primary navigation (admin-focused menu vs employee self-service menu).
@@ -33,6 +33,7 @@ The core Fachlichkeit for annual target-time logic is documented in:
 - `docs/business-working-time-model.md`
 - `docs/business-holiday-sets.md`
 - `docs/business-month-view.md`
+- `docs/business-calendar-model.md`
 
 This includes:
 - meaning of `WorkingTimeModel` and `employment_percentage`
@@ -42,6 +43,7 @@ This includes:
 - why `annual_target_hours` is the leading quantity
 - annual target distribution to daily target minutes
 - explicit non-scope and extension points (vacation/sickness, etc.)
+- separation between holiday, absence, and non-working-period day contexts
 
 ## Architecture overview
 
@@ -133,6 +135,17 @@ Holiday sets (admin):
 - `POST /api/v1/holiday-sets`
 - `PATCH /api/v1/holiday-sets/{holiday_set_id}`
 - `DELETE /api/v1/holiday-sets/{holiday_set_id}`
+
+
+Non-working period sets (admin):
+- `GET /api/v1/non-working-period-sets`
+- `POST /api/v1/non-working-period-sets`
+- `PATCH /api/v1/non-working-period-sets/{period_set_id}`
+- `DELETE /api/v1/non-working-period-sets/{period_set_id}`
+- `GET /api/v1/non-working-period-sets/{period_set_id}/periods`
+- `POST /api/v1/non-working-period-sets/{period_set_id}/periods`
+- `PATCH /api/v1/non-working-period-sets/{period_set_id}/periods/{period_id}`
+- `DELETE /api/v1/non-working-period-sets/{period_set_id}/periods/{period_id}`
 
 Public holidays (admin):
 - `GET /api/v1/holidays?year=YYYY&holiday_set_id=ID`

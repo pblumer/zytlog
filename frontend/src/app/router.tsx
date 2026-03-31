@@ -11,6 +11,7 @@ import { HolidaysPage } from '../pages/HolidaysPage';
 import { MonthPage } from '../pages/MonthPage';
 import { MyAbsencesPage } from '../pages/MyAbsencesPage';
 import { MyTimePage } from '../pages/MyTimePage';
+import { NonWorkingPeriodSetsPage } from '../pages/NonWorkingPeriodSetsPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { UnauthorizedPage } from '../pages/UnauthorizedPage';
 import { WeekPage } from '../pages/WeekPage';
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
           { path: 'working-time-models', element: <WorkingTimeModelsPage /> },
           { path: 'holiday-sets', element: <HolidaySetsPage /> },
           { path: 'holidays', element: <HolidaysPage /> },
+          { path: 'non-working-period-sets', element: <NonWorkingPeriodSetsPage /> },
           { path: 'admin-absences', element: <AdminAbsencesPage /> },
           { path: '*', element: <NotFoundPage /> },
         ],

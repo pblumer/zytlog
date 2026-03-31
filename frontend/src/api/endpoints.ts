@@ -19,6 +19,8 @@ import type {
   OpenHolidaysImportPreview,
   OpenHolidaysLanguage,
   OpenHolidaysSubdivision,
+  NonWorkingPeriodSet,
+  NonWorkingPeriod,
 } from '../types/api';
 
 export type { OpenHolidaysImportPayload } from '../types/api';
@@ -69,6 +71,7 @@ export type CreateEmployeePayload = {
   exit_date: string | null;
   working_time_model_id: number | null;
   holiday_set_id: number | null;
+  non_working_period_set_id: number | null;
   workday_monday: boolean | null;
   workday_tuesday: boolean | null;
   workday_wednesday: boolean | null;
@@ -151,6 +154,56 @@ export const updateHolidaySet = (holidaySetId: number, payload: UpdateHolidaySet
   apiPatch<HolidaySet>(`/holiday-sets/${holidaySetId}`, payload, token);
 export const deleteHolidaySet = (holidaySetId: number, token?: string | null) =>
   apiDelete<void>(`/holiday-sets/${holidaySetId}`, token);
+
+
+export const getNonWorkingPeriodSets = (token?: string | null) =>
+  apiGet<NonWorkingPeriodSet[]>('/non-working-period-sets', token);
+
+export type CreateNonWorkingPeriodSetPayload = {
+  name: string;
+  description: string | null;
+  active: boolean;
+};
+export type UpdateNonWorkingPeriodSetPayload = Partial<CreateNonWorkingPeriodSetPayload>;
+
+export const createNonWorkingPeriodSet = (payload: CreateNonWorkingPeriodSetPayload, token?: string | null) =>
+  apiPost<NonWorkingPeriodSet>('/non-working-period-sets', payload, token);
+
+export const updateNonWorkingPeriodSet = (
+  periodSetId: number,
+  payload: UpdateNonWorkingPeriodSetPayload,
+  token?: string | null,
+) => apiPatch<NonWorkingPeriodSet>(`/non-working-period-sets/${periodSetId}`, payload, token);
+
+export const deleteNonWorkingPeriodSet = (periodSetId: number, token?: string | null) =>
+  apiDelete<void>(`/non-working-period-sets/${periodSetId}`, token);
+
+export const getNonWorkingPeriods = (periodSetId: number, token?: string | null) =>
+  apiGet<NonWorkingPeriod[]>(`/non-working-period-sets/${periodSetId}/periods`, token);
+
+export type CreateNonWorkingPeriodPayload = {
+  start_date: string;
+  end_date: string;
+  name: string;
+  category: string | null;
+};
+export type UpdateNonWorkingPeriodPayload = Partial<CreateNonWorkingPeriodPayload>;
+
+export const createNonWorkingPeriod = (
+  periodSetId: number,
+  payload: CreateNonWorkingPeriodPayload,
+  token?: string | null,
+) => apiPost<NonWorkingPeriod>(`/non-working-period-sets/${periodSetId}/periods`, payload, token);
+
+export const updateNonWorkingPeriod = (
+  periodSetId: number,
+  periodId: number,
+  payload: UpdateNonWorkingPeriodPayload,
+  token?: string | null,
+) => apiPatch<NonWorkingPeriod>(`/non-working-period-sets/${periodSetId}/periods/${periodId}`, payload, token);
+
+export const deleteNonWorkingPeriod = (periodSetId: number, periodId: number, token?: string | null) =>
+  apiDelete<void>(`/non-working-period-sets/${periodSetId}/periods/${periodId}`, token);
 
 export const getOpenHolidaysCountries = (token?: string | null) =>
   apiGet<OpenHolidaysCountry[]>('/admin/openholidays/countries', token);

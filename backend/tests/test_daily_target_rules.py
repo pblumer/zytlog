@@ -9,15 +9,20 @@ from backend.models.employee import Employee
 from backend.models.enums import UserRole
 from backend.models.holiday import Holiday
 from backend.models.holiday_set import HolidaySet
+from backend.models.non_working_period import NonWorkingPeriod
+from backend.models.non_working_period_set import NonWorkingPeriodSet
 from backend.models.tenant import Tenant
 from backend.models.user import User
 from backend.models.working_time_model import WorkingTimeModel
 from backend.repositories.absence_repository import AbsenceRepository
+from backend.repositories.employee_repository import EmployeeRepository
 from backend.repositories.holiday_repository import HolidayRepository
+from backend.repositories.non_working_period_set_repository import NonWorkingPeriodSetRepository
 from backend.repositories.time_stamp_event_repository import TimeStampEventRepository
 from backend.services.absence_service import AbsenceService
 from backend.services.daily_account_service import DailyAccountService
 from backend.services.holiday_service import HolidayService
+from backend.services.non_working_period_set_service import NonWorkingPeriodSetService
 from backend.services.reporting_service import ReportingService
 
 
@@ -90,6 +95,7 @@ def _build_service(*, employee_percentage: float = 100, employee_overrides: dict
         TimeStampEventRepository(session),
         holiday_service,
         AbsenceService(AbsenceRepository(session), EmployeeRepository(session)),
+        NonWorkingPeriodSetService(NonWorkingPeriodSetRepository(session)),
     )
     return session, tenant.id, persisted_employee, service, default_holiday_set
 
@@ -208,4 +214,34 @@ def test_employee_holiday_set_override_takes_precedence_over_tenant_default() ->
     account = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 4, 6))
     assert account.target_minutes > 0
     assert account.is_holiday is False
+    session.close()
+
+
+def test_non_working_period_sets_target_to_zero_and_redistributes_annual_target() -> None:
+    session, tenant_id, employee, service, _ = _build_service()
+    period_set = NonWorkingPeriodSet(tenant_id=tenant_id, name="Schulferien", active=True)
+    session.add(period_set)
+    session.flush()
+    employee.non_working_period_set_id = period_set.id
+    session.add(employee)
+    session.add(
+        NonWorkingPeriod(
+            tenant_id=tenant_id,
+            non_working_period_set_id=period_set.id,
+            start_date=date(2026, 3, 30),
+            end_date=date(2026, 3, 30),
+            name="Frühlingsferien",
+            category="school_break",
+        )
+    )
+    session.commit()
+
+    monday = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 3, 30))
+    tuesday = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 3, 31))
+
+    assert monday.target_minutes == 0
+    assert monday.is_in_non_working_period is True
+    assert monday.non_working_period_label == "Frühlingsferien"
+    # 2100h / (261 - 1 non-working period day) = 484.6 min -> 485
+    assert tuesday.target_minutes == 485
     session.close()

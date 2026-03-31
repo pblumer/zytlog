@@ -13,7 +13,7 @@ const now = new Date();
 const WEEKDAY_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 const MONTH_LABELS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-type DayContextLabel = 'workday' | 'non_workday' | 'holiday' | 'absence';
+type DayContextLabel = 'workday' | 'non_workday' | 'holiday' | 'absence' | 'non_working_period';
 
 function toIsoDate(year: number, month: number, day: number) {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -34,6 +34,7 @@ function getStatusLabel(status: DailyOverviewRow['status']) {
 
 function getDayContext(day: DailyOverviewRow): DayContextLabel {
   if (day.absence) return 'absence';
+  if (day.is_in_non_working_period) return 'non_working_period';
   if (day.is_holiday) return 'holiday';
   if (day.is_workday) return 'workday';
   return 'non_workday';
@@ -93,7 +94,7 @@ export function MonthPage() {
         acc[context] += 1;
         return acc;
       },
-      { workday: 0, non_workday: 0, holiday: 0, absence: 0 },
+      { workday: 0, non_workday: 0, holiday: 0, absence: 0, non_working_period: 0 },
     );
   }, [query.data?.days]);
 
@@ -118,7 +119,13 @@ export function MonthPage() {
       const isTargetFree = day?.target_minutes === 0;
       const showContextBadge = dayContext !== 'workday';
       const durationHint = day?.absence?.duration_type === 'half_day_am' ? ' (AM)' : day?.absence?.duration_type === 'half_day_pm' ? ' (PM)' : '';
-      const contextBadgeLabel = absenceLabel ? `${absenceLabel}${durationHint}` : dayContext === 'holiday' ? 'Holiday' : 'Non-workday';
+      const contextBadgeLabel = absenceLabel
+        ? `${absenceLabel}${durationHint}`
+        : dayContext === 'holiday'
+          ? 'Holiday'
+          : dayContext === 'non_working_period'
+            ? day?.non_working_period_label ?? 'Arbeitsfreier Zeitraum'
+            : 'Non-workday';
       const actualDisplay = day ? (isNoData ? 'No data' : formatMinutes(day.actual_minutes)) : '—';
       const balanceLabel = isTargetFree ? 'Balance (target-free)' : 'Balance';
       const actualAria = day
@@ -212,6 +219,7 @@ export function MonthPage() {
                 { label: 'Absence Context', value: contextCounters.absence },
                 { label: 'Holidays', value: contextCounters.holiday },
                 { label: 'Workdays', value: contextCounters.workday },
+                { label: 'Arbeitsfreie Zeiträume', value: contextCounters.non_working_period },
               ]}
             />
           </DataSection>
@@ -225,6 +233,7 @@ export function MonthPage() {
               <span><i className="month-day-context month-day-context-holiday" />Holiday</span>
               <span><i className="month-day-context month-day-context-non_workday" />Non-workday</span>
               <span><i className="month-day-context month-day-context-absence" />Absence (e.g. vacation, sickness)</span>
+              <span><i className="month-day-context month-day-context-non_working_period" />Arbeitsfreier Zeitraum</span>
             </div>
           </DataSection>
 

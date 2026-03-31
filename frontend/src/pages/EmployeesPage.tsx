@@ -9,6 +9,7 @@ import {
   useEmployees,
   useHolidaySets,
   useUpdateEmployeeMutation,
+  useNonWorkingPeriodSets,
   useWorkingTimeModels,
 } from '../hooks/useZytlogApi';
 import type { Employee } from '../types/api';
@@ -36,6 +37,7 @@ type EmployeeFormState = {
   employmentPercentage: string;
   workingTimeModelId: string;
   holidaySetId: string;
+  nonWorkingPeriodSetId: string;
   overridesEnabled: boolean;
   overrideValues: Record<WeekdayKey, boolean>;
 };
@@ -61,6 +63,7 @@ const createInitialFormState = (): EmployeeFormState => ({
   employmentPercentage: '100',
   workingTimeModelId: '',
   holidaySetId: '',
+  nonWorkingPeriodSetId: '',
   overridesEnabled: false,
   overrideValues: defaultOverrideValues,
 });
@@ -90,6 +93,7 @@ function createEditState(employee: Employee): EmployeeFormState {
     employmentPercentage: String(employee.employment_percentage),
     workingTimeModelId: employee.working_time_model_id ? String(employee.working_time_model_id) : '',
     holidaySetId: employee.holiday_set_id ? String(employee.holiday_set_id) : '',
+    nonWorkingPeriodSetId: employee.non_working_period_set_id ? String(employee.non_working_period_set_id) : '',
     overridesEnabled: hasOverride,
     overrideValues: {
       workday_monday: employee.workday_monday ?? true,
@@ -108,6 +112,7 @@ export function EmployeesPage() {
   const query = useEmployees(isAdmin);
   const modelsQuery = useWorkingTimeModels(isAdmin);
   const holidaySetsQuery = useHolidaySets(isAdmin);
+  const nonWorkingPeriodSetsQuery = useNonWorkingPeriodSets(isAdmin);
   const createMutation = useCreateEmployeeMutation();
   const updateMutation = useUpdateEmployeeMutation();
 
@@ -121,6 +126,10 @@ export function EmployeesPage() {
   const holidaySetsById = useMemo(
     () => new Map((holidaySetsQuery.data ?? []).map((item) => [item.id, item.name])),
     [holidaySetsQuery.data],
+  );
+  const nonWorkingSetsById = useMemo(
+    () => new Map((nonWorkingPeriodSetsQuery.data ?? []).map((item) => [item.id, item.name])),
+    [nonWorkingPeriodSetsQuery.data],
   );
 
   const columns = useMemo<DataGridColumn<Employee>[]>(
@@ -166,6 +175,11 @@ export function EmployeesPage() {
         cell: (row) => (row.holiday_set_id ? holidaySetsById.get(row.holiday_set_id) ?? `#${row.holiday_set_id}` : 'Standard des Tenants verwenden'),
       },
       {
+        id: 'non_working_period_set',
+        header: 'Arbeitsfrei-Set',
+        cell: (row) => (row.non_working_period_set_id ? nonWorkingSetsById.get(row.non_working_period_set_id) ?? `#${row.non_working_period_set_id}` : '—'),
+      },
+      {
         id: 'actions',
         header: 'Aktion',
         cell: (row) => (
@@ -182,7 +196,7 @@ export function EmployeesPage() {
         ),
       },
     ],
-    [modelsById, holidaySetsById],
+    [modelsById, holidaySetsById, nonWorkingSetsById],
   );
 
   const onSubmit = async (event: FormEvent) => {
@@ -197,6 +211,7 @@ export function EmployeesPage() {
       exit_date: form.exitDate || null,
       working_time_model_id: form.workingTimeModelId ? Number(form.workingTimeModelId) : null,
       holiday_set_id: form.holidaySetId ? Number(form.holidaySetId) : null,
+      non_working_period_set_id: form.nonWorkingPeriodSetId ? Number(form.nonWorkingPeriodSetId) : null,
       workday_monday: form.overridesEnabled ? form.overrideValues.workday_monday : null,
       workday_tuesday: form.overridesEnabled ? form.overrideValues.workday_tuesday : null,
       workday_wednesday: form.overridesEnabled ? form.overrideValues.workday_wednesday : null,
@@ -306,6 +321,20 @@ export function EmployeesPage() {
               {(holidaySetsQuery.data ?? []).map((holidaySet) => (
                 <option key={holidaySet.id} value={holidaySet.id}>
                   {holidaySet.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Arbeitsfrei-Set
+            <select
+              value={form.nonWorkingPeriodSetId}
+              onChange={(event) => setForm((prev) => ({ ...prev, nonWorkingPeriodSetId: event.target.value }))}
+            >
+              <option value="">Kein Arbeitsfrei-Set</option>
+              {(nonWorkingPeriodSetsQuery.data ?? []).map((periodSet) => (
+                <option key={periodSet.id} value={periodSet.id}>
+                  {periodSet.name}
                 </option>
               ))}
             </select>

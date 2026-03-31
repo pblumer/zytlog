@@ -41,6 +41,8 @@ class CalendarService:
                     balance_minutes=day.balance_minutes,
                     event_count=day.event_count,
                     absence=day.absence,
+                    is_in_non_working_period=day.is_in_non_working_period,
+                    non_working_period_label=day.non_working_period_label,
                 )
                 for day in month_overview.days
             ],

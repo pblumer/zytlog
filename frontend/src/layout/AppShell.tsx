@@ -20,6 +20,7 @@ const adminNavItems: NavItem[] = [
   { to: '/working-time-models', label: 'Working Time Models' },
   { to: '/holiday-sets', label: 'Feiertagssätze' },
   { to: '/holidays', label: 'Feiertage' },
+  { to: '/non-working-period-sets', label: 'Arbeitsfreie Zeiträume' },
   { to: '/admin-absences', label: 'Abwesenheiten' },
 ];
 

@@ -6,12 +6,14 @@ from backend.core.auth import AuthContext, require_authenticated_user
 from backend.repositories.absence_repository import AbsenceRepository
 from backend.repositories.employee_repository import EmployeeRepository
 from backend.repositories.holiday_repository import HolidayRepository
+from backend.repositories.non_working_period_set_repository import NonWorkingPeriodSetRepository
 from backend.repositories.time_stamp_event_repository import TimeStampEventRepository
 from backend.schemas.time_tracking import CalendarMonthRead
 from backend.services.absence_service import AbsenceService
 from backend.services.calendar_service import CalendarService
 from backend.services.daily_account_service import DailyAccountService
 from backend.services.holiday_service import HolidayService
+from backend.services.non_working_period_set_service import NonWorkingPeriodSetService
 from backend.services.reporting_service import ReportingService
 
 router = APIRouter(prefix="/calendar", tags=["calendar"])
@@ -35,6 +37,7 @@ def my_month_calendar(
         repository,
         HolidayService(HolidayRepository(db)),
         AbsenceService(AbsenceRepository(db), EmployeeRepository(db)),
+        NonWorkingPeriodSetService(NonWorkingPeriodSetRepository(db)),
     )
     reporting_service = ReportingService(daily_service)
     calendar_service = CalendarService(reporting_service)
