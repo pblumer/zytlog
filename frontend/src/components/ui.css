@@ -864,10 +864,19 @@ a:focus-visible,
   font-weight: 700;
 }
 
+.month-day-tile-main-no-data {
+  color: var(--muted);
+  font-weight: 600;
+}
+
 .month-day-tile-secondary,
 .month-day-tile-balance {
   font-size: 0.8rem;
   color: var(--muted);
+}
+
+.month-day-tile-balance-target-free {
+  opacity: 0.72;
 }
 
 .month-day-status-dot {

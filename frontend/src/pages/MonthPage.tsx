@@ -112,6 +112,19 @@ export function MonthPage() {
       const status = day?.status ?? 'empty';
       const dayContext = day ? getDayContext(day) : 'non_workday';
       const holidayLabel = day?.is_holiday ? day.holiday_name : null;
+      const isNoData = day?.status === 'empty';
+      const isTargetFree = day?.target_minutes === 0;
+      const showContextBadge = dayContext !== 'workday';
+      const actualDisplay = day ? (isNoData ? 'No data' : formatMinutes(day.actual_minutes)) : '—';
+      const balanceLabel = isTargetFree ? 'Balance (target-free)' : 'Balance';
+      const actualAria = day
+        ? isNoData
+          ? 'No capture data.'
+          : `Actual ${formatMinutes(day.actual_minutes)}.`
+        : 'No day entry.';
+      const secondaryAria = day
+        ? `Target ${formatMinutes(day.target_minutes)}. Balance ${formatMinutes(day.balance_minutes)}.`
+        : '';
 
       cells.push(
         <button
@@ -120,22 +133,28 @@ export function MonthPage() {
           className={`month-day-tile month-day-tile-${status} ${iso === todayIso ? 'month-day-tile-today' : ''}`}
           onClick={() => navigate(`/day?date=${iso}`)}
           title={`${iso} · ${getStatusLabel(status)}${holidayLabel ? ` · ${holidayLabel}` : ''}`}
-          aria-label={`${iso}. ${getStatusLabel(status)}. Actual ${day ? formatMinutes(day.actual_minutes) : '00:00'}.`}
+          aria-label={`${iso}. ${getStatusLabel(status)}. ${actualAria} ${secondaryAria}`.trim()}
           aria-current={iso === todayIso ? 'date' : undefined}
         >
           <div className="month-day-tile-head">
             <strong>{dayNumber}</strong>
             <span className={`month-day-status-dot month-day-status-dot-${status}`} aria-hidden="true" />
           </div>
-          <div className="month-day-tile-main">{day ? formatMinutes(day.actual_minutes) : '—'}</div>
+          <div className={`month-day-tile-main ${isNoData ? 'month-day-tile-main-no-data' : ''}`}>{actualDisplay}</div>
           <div className="month-day-tile-secondary">Target {day ? formatMinutes(day.target_minutes) : '—'}</div>
-          <div className={`month-day-tile-balance ${day && day.balance_minutes > 0 ? 'balance-positive' : ''} ${day && day.balance_minutes < 0 ? 'balance-negative' : ''}`}>
-            Balance {day ? formatMinutes(day.balance_minutes) : '—'}
-          </div>
+          {!isNoData ? (
+            <div
+              className={`month-day-tile-balance ${isTargetFree ? 'month-day-tile-balance-target-free' : ''} ${day && day.balance_minutes > 0 ? 'balance-positive' : ''} ${day && day.balance_minutes < 0 ? 'balance-negative' : ''}`}
+            >
+              {balanceLabel} {day ? formatMinutes(day.balance_minutes) : '—'}
+            </div>
+          ) : null}
           <div className="month-day-context-row">
-            <span className={`month-day-context month-day-context-${dayContext}`}>
-              {dayContext === 'holiday' ? 'Holiday' : dayContext === 'workday' ? 'Workday' : 'Non-workday'}
-            </span>
+            {showContextBadge ? (
+              <span className={`month-day-context month-day-context-${dayContext}`}>
+                {dayContext === 'holiday' ? 'Holiday' : 'Non-workday'}
+              </span>
+            ) : null}
             {holidayLabel ? <span className="month-day-holiday-name">{holidayLabel}</span> : null}
           </div>
         </button>,
@@ -199,7 +218,6 @@ export function MonthPage() {
               <span><i className="month-day-status-dot month-day-status-dot-invalid" />Invalid</span>
               <span><i className="month-day-status-dot month-day-status-dot-empty" />No data</span>
               <span><i className="month-day-context month-day-context-holiday" />Holiday</span>
-              <span><i className="month-day-context month-day-context-workday" />Workday</span>
               <span><i className="month-day-context month-day-context-non_workday" />Non-workday</span>
               <span><i className="month-day-context month-day-context-absence" />Reserved: future absences</span>
             </div>

@@ -25,6 +25,12 @@ Each day tile can display:
 - holiday marker and holiday name (if applicable)
 - workday/non-workday marker (`is_workday`)
 
+Presentation notes:
+
+- `empty` capture status is shown as missing capture data ("No data"), not as a recorded `00:00` work result.
+- On days with `target_minutes = 0`, balance remains calculated but is visually de-emphasized.
+- Default workdays are treated as implicit context and do not require a visible "Workday" badge on every tile.
+
 Each tile links to:
 
 - `/day?date=YYYY-MM-DD`
