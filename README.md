@@ -1,237 +1,135 @@
 # Zytlog MVP
 
-Zytlog is a **tenant-aware web time-tracking MVP** for small teams. It supports authenticated clock-in/clock-out tracking, derived daily time accounts, period reporting (week/month/year), correction flow, and CSV/PDF exports.
+Zytlog ist eine **tenant-fähige Web-Anwendung für Zeiterfassung** mit jährlicher Sollzeitlogik, Tageskonten, Kalenderkontexten und periodischem Reporting.
 
-This repository is focused on a demo-ready MVP baseline that is practical to run locally and safe to extend.
+Dieses Repository dokumentiert den aktuell implementierten MVP-Stand (Backend + Frontend) und dient als stabile Basis für fachliche Erweiterungen.
 
-## MVP scope (current)
+## Schnellstart
 
-Included:
-- FastAPI backend with tenant-scoped data access.
-- Keycloak-ready JWT authentication and role checks.
-- Employee time-stamp tracking (`clock_in`, `clock_out`, breaks).
-- Derived daily accounts and status calculations.
-- Weekly / monthly / yearly personal reporting.
-- Day/week/month/year CSV + PDF export endpoints.
-- Correction endpoint for timestamp/comment updates with sequence validation.
-- React + Vite frontend app shell with DataGrid-based reporting pages.
-- Calendar-oriented overviews with per-day target/actual/balance, day-context markers (holiday/non-workday/absence/non-working period), and status indicators.
-- Annual working-time foundation with weekday work-pattern logic.
-- Admin management for working-time models (create, edit, safe delete with assignment protection).
-- Role-aware primary navigation (admin-focused menu vs employee self-service menu).
-
-Out of scope (not implemented here):
-- Approval workflows.
-- Advanced absence workflows (approval/planning).
-- Full audit trail module.
-- Production-grade SSO provisioning automation.
-
-## Business rules: working time model and daily target time
-
-The core Fachlichkeit for annual target-time logic is documented in:
-
-- `docs/business-working-time-model.md`
-- `docs/business-holiday-sets.md`
-- `docs/business-month-view.md`
-- `docs/business-calendar-model.md`
-
-This includes:
-- meaning of `WorkingTimeModel` and `employment_percentage`
-- model vs employee weekday resolution
-- day-scoped target-minute calculation
-- behavior before `entry_date` / after `exit_date`
-- why `annual_target_hours` is the leading quantity
-- annual target distribution to daily target minutes
-- explicit non-scope and extension points (vacation/sickness, etc.)
-- separation between holiday, absence, and non-working-period day contexts
-
-## Architecture overview
-
-### Backend
-- **Framework**: FastAPI + SQLAlchemy + Alembic.
-- **Auth**: JWT validation via Keycloak JWKS.
-- **Tenant model**: user -> tenant mapping in DB; all business data is tenant-scoped.
-- **Business services**: time tracking, daily account derivation, reporting, export.
-
-### Frontend
-- **Framework**: React 19 + TypeScript + Vite.
-- **Data/state**: TanStack Query + typed API client.
-- **Routing/auth shell**: protected routes and app shell layout.
-- **Primary table UI**: `DataGrid` in `frontend/src/components/DataGrid.tsx`.
-
-## Repository structure
-
-```text
-backend/                  FastAPI app, services, repositories, models, tests
-frontend/                 React app
-frontend/src/             Active frontend source tree (source of truth)
-infrastructure/keycloak/  Local Keycloak setup notes
-docker-compose.yml        Local multi-service startup
-```
-
-> Note: Legacy duplicate frontend folders outside `frontend/src/*` were removed to avoid confusion. Use `frontend/src/*` as the single active tree.
-
-## Role model and tenant-aware behavior
-
-Roles:
-- `employee`
-- `team_lead`
-- `admin`
-
-Tenant behavior:
-- Every internal user belongs to exactly one tenant.
-- API access is scoped by tenant from auth context.
-- Admin-only operations (e.g., employee/model create) require `admin`.
-- Employee management in Zytlog is business-profile management (employment data), not direct identity administration in Keycloak.
-- Working time models can be edited by admins and deleted only when unassigned; otherwise the API returns a conflict message.
-- Time-stamp correction allows tenant admins for all tenant events, while employees/team leads can only edit their own events.
-
-## User onboarding model (current MVP)
-
-Zytlog currently keeps identity and business profile responsibilities separated:
-
-1. Create the person as a user in **Keycloak**.
-2. Let the person log in to Zytlog once.
-3. Zytlog performs **JIT provisioning** and creates the internal app user mapping.
-4. An admin completes or updates the **Employee profile** in Zytlog (employee number, workload, work model, entry/exit, weekday overrides, team).
-
-Important:
-- Zytlog does **not** currently manage Keycloak users directly.
-- No invitation flow, password management, or bidirectional user synchronization is implemented in this MVP.
-
-## Key API flows
-
-Authentication + context:
-- `GET /api/v1/me`
-
-Time tracking:
-- `POST /api/v1/time-stamps/clock-in`
-- `POST /api/v1/time-stamps/clock-out`
-- `GET /api/v1/time-stamps/my?from=YYYY-MM-DD&to=YYYY-MM-DD`
-- `GET /api/v1/time-stamps/my/current-status`
-- `PATCH /api/v1/time-stamps/{time_stamp_id}`
-
-Daily account + reports:
-- `GET /api/v1/daily-accounts/my?date=YYYY-MM-DD`
-- `GET /api/v1/reports/my/week?year=YYYY&week=WW`
-- `GET /api/v1/reports/my/month?year=YYYY&month=MM`
-- `GET /api/v1/reports/my/year?year=YYYY`
-
-Exports:
-- Day: `GET /api/v1/exports/my/day` + `/pdf`
-- Week: `GET /api/v1/exports/my/week` + `/pdf`
-- Month: `GET /api/v1/exports/my/month` + `/pdf`
-- Year: `GET /api/v1/exports/my/year` + `/pdf`
-
-Working time models (admin):
-- `GET /api/v1/working-time-models`
-- `POST /api/v1/working-time-models`
-- `PATCH /api/v1/working-time-models/{model_id}`
-- `DELETE /api/v1/working-time-models/{model_id}` (blocked with `409` if still assigned to employees)
-
-
-Holiday sets (admin):
-- `GET /api/v1/holiday-sets`
-- `POST /api/v1/holiday-sets`
-- `PATCH /api/v1/holiday-sets/{holiday_set_id}`
-- `DELETE /api/v1/holiday-sets/{holiday_set_id}`
-
-
-Non-working period sets (admin):
-- `GET /api/v1/non-working-period-sets`
-- `POST /api/v1/non-working-period-sets`
-- `PATCH /api/v1/non-working-period-sets/{period_set_id}`
-- `DELETE /api/v1/non-working-period-sets/{period_set_id}`
-- `GET /api/v1/non-working-period-sets/{period_set_id}/periods`
-- `POST /api/v1/non-working-period-sets/{period_set_id}/periods`
-- `PATCH /api/v1/non-working-period-sets/{period_set_id}/periods/{period_id}`
-- `DELETE /api/v1/non-working-period-sets/{period_set_id}/periods/{period_id}`
-
-Public holidays (admin):
-- `GET /api/v1/holidays?year=YYYY&holiday_set_id=ID`
-- `POST /api/v1/holidays`
-- `PATCH /api/v1/holidays/{holiday_id}`
-- `DELETE /api/v1/holidays/{holiday_id}`
-- Manual OpenHolidays import into a selected holiday set:
-  - `GET /api/v1/admin/openholidays/countries`
-  - `GET /api/v1/admin/openholidays/languages`
-  - `GET /api/v1/admin/openholidays/subdivisions?countryIsoCode=CH`
-  - `POST /api/v1/admin/holiday-sets/{holiday_set_id}/import/openholidays/preview`
-  - `POST /api/v1/admin/holiday-sets/{holiday_set_id}/import/openholidays/commit`
-
-The OpenHolidays integration is import-only: holidays are persisted in Zytlog's own database and remain available for daily target calculations without runtime dependency on OpenHolidays.
-Import behavior notes:
-- Uniqueness remains `holiday_set_id + date` (one holiday per date per holiday set).
-- OpenHolidays rows are deduplicated by date before preview and commit.
-- If subdivisions cannot be loaded, admins can continue with “Keine regionale Einschränkung”.
-Employees (admin):
-- `GET /api/v1/employees`
-- `POST /api/v1/employees`
-- `PATCH /api/v1/employees/{employee_id}`
-
-## Local development setup
-
-## 1) Prerequisites
-- Docker + Docker Compose
-- Python 3.12+ (for local backend outside Docker)
-- Node 22+ and npm (for local frontend outside Docker)
-
-## 2) Environment files
-
-Copy examples:
+1. Umgebungsdateien kopieren:
 
 ```bash
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
 
-## 3) Start full stack with Docker Compose
+2. Stack starten:
 
 ```bash
 docker compose up --build
 ```
 
-Services:
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:8000
-- API docs: http://localhost:8000/docs
-- Keycloak: http://localhost:8080
-- PostgreSQL: localhost:5432
-
-## 4) Apply DB migrations
-
-From repository root:
+3. Migrationen ausführen:
 
 ```bash
 cd backend
 alembic upgrade head
 ```
 
-(You can run this on host Python env or inside backend container.)
-
-## 5) Seed demo data (recommended for demos)
+4. Optional Demo-Daten laden:
 
 ```bash
 python -m backend.scripts.seed_demo
 ```
 
-This creates (idempotently):
-- one demo tenant (`demo-co`)
-- one admin user mapping (`admin@demo.local`)
-- one employee user mapping (`employee@demo.local`)
-- one working time model
-- sample timestamp events for current and previous day
+Lokale URLs:
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000
+- OpenAPI: http://localhost:8000/docs
+- Keycloak: http://localhost:8080
 
-### Keycloak note for local demo
+## Fachliche Kernkonzepte
 
-If your Keycloak users use different subject IDs, update the seeded `users.keycloak_user_id` values or create matching users in Keycloak so JWT `sub` matches DB records.
+- **Jahres-Sollzeit als führende Grösse** (`annual_target_hours`) inkl. Verteilung auf target-bearing Arbeitstage.
+- **Kalenderkontexte je Tag**: Feiertag, Absenz, arbeitsfreier Zeitraum.
+- **Capture-Status getrennt vom Tageskontext**: `complete`, `incomplete`, `invalid`, `empty`.
+- **Vorarbeitungs-Effekt**: Feiertage und arbeitsfreie Zeiträume reduzieren target-bearing Tage; die Jahres-Sollzeit bleibt konstant.
 
-Detailed Keycloak bootstrap remains in:
-- `infrastructure/keycloak/README.md`
+Detaillierte Fachdokumente unter `docs/`:
+- `docs/business-working-time-model.md`
+- `docs/business-calendar-model.md`
+- `docs/business-month-view.md`
+- `docs/business-absences.md`
+- `docs/business-holiday-sets.md`
+- `docs/business-holidays.md`
+- `docs/business-non-working-periods.md`
+- `docs/frontend-views.md`
+- `docs/technical-calculation-engine.md`
 
-## Alternative: run backend/frontend directly (without Compose)
+## Rollen- und Tenant-Modell
+
+Implementierte Rollen (Systemstand):
+- `employee`
+- `team_lead`
+- `admin`
+
+Aktueller MVP-Verhaltensstand:
+- Admin-Endpunkte sind auf `admin` eingeschränkt.
+- Self-Service-Endpunkte sind für authentifizierte Nutzer verfügbar.
+- Für Korrektur-/Löschvorgänge gilt derzeit fachlich: `admin` kann tenant-weit, Nicht-Admins nur eigene Ereignisse.
+- Die Rolle `team_lead` ist technisch weiterhin Teil des Rollenmodells, wird im aktuellen UI/Use-Case aber nicht als eigenständige Fachrolle ausgebaut.
+
+Tenant-Regeln:
+- Jeder interne Nutzer gehört genau einem Tenant.
+- Fachdatenzugriffe sind tenant-scoped.
+- Mitarbeitenden-Verwaltung in Zytlog ist Fachprofil-Verwaltung (nicht vollständige Identity-Verwaltung in Keycloak).
+
+## Architekturüberblick
 
 ### Backend
+- FastAPI + SQLAlchemy + Alembic.
+- JWT-Validierung via Keycloak (JWKS).
+- Service-Layer für Zeitbuchung, Tageskonten, Reporting, Kalender und Exporte.
+- Zentrale Berechnungslogik im Backend; Frontend nutzt dieselben API-Ergebnisse in allen Sichten.
+
+### Frontend
+- React 19 + TypeScript + Vite.
+- TanStack Query + typisierte API-Endpunkte.
+- Kalender-/Report-Sichten: Dashboard, My Time, Day, Week, Month, Year.
+- Admin-Sichten für Mitarbeitende, Arbeitszeitmodelle, Feiertagssätze, Feiertage, arbeitsfreie Zeiträume und Absenzen.
+
+## API-Kernflüsse (Auszug)
+
+Authentifizierung/Kontext:
+- `GET /api/v1/me`
+
+Zeiterfassung:
+- `POST /api/v1/time-stamps/clock-in`
+- `POST /api/v1/time-stamps/clock-out`
+- `GET /api/v1/time-stamps/my?from=YYYY-MM-DD&to=YYYY-MM-DD`
+- `GET /api/v1/time-stamps/my/current-status`
+- `PATCH /api/v1/time-stamps/{time_stamp_id}`
+
+Tageskonto, Kalender, Reports:
+- `GET /api/v1/daily-accounts/my?date=YYYY-MM-DD`
+- `GET /api/v1/calendar/my/month?year=YYYY&month=MM`
+- `GET /api/v1/reports/my/week?year=YYYY&week=WW`
+- `GET /api/v1/reports/my/month?year=YYYY&month=MM`
+- `GET /api/v1/reports/my/year?year=YYYY`
+
+Admin-Domänen:
+- Working Time Models: `/api/v1/working-time-models`
+- Holiday Sets + Holidays: `/api/v1/holiday-sets`, `/api/v1/holidays`
+- Non-Working Period Sets: `/api/v1/non-working-period-sets`
+- Absences: `/api/v1/my/absences`, `/api/v1/admin/absences`
+
+OpenHolidays:
+- Manuelle Preview/Commit-Importstrecke unter `/api/v1/admin/.../openholidays/...`.
+- OpenHolidays ist **Importquelle**, keine Laufzeit-Abhängigkeit für Tagesberechnung.
+
+## Repository-Struktur
+
+```text
+backend/                  FastAPI App, Services, Repositories, Modelle, Tests
+frontend/                 React App
+docs/                     Fachliche und technische Projektdokumentation
+infrastructure/keycloak/  Hinweise für lokale Keycloak-Konfiguration
+docker-compose.yml        Lokales Multi-Service-Setup
+```
+
+## Alternative: ohne Docker Compose
+
+Backend:
 
 ```bash
 cd backend
@@ -240,55 +138,10 @@ alembic upgrade head
 uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Frontend
+Frontend:
 
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-
-## Development checks
-
-Backend:
-```bash
-cd backend
-pytest
-```
-
-Frontend:
-```bash
-cd frontend
-npm run check
-npm run build
-```
-
-## Known MVP limitations
-
-- Auth flow is Keycloak-ready but still demo-oriented in local setup.
-- No dedicated approval pipeline for corrections yet.
-- No absence planning + approval workflow module.
-- No long-term audit/event sourcing stream.
-- Local compose installs dependencies at container start (optimized for simplicity, not production image performance).
-
-## Frontend consistency and UX notes
-
-Current frontend hardening includes:
-- consistent empty-state handling across day/week/month/year pages
-- consistent report export action placement in page headers
-- clearer export and correction failure messages
-- DataGrid-first table usage
-- admin navigation includes management pages for `Employees`, `Working Time Models`, `Feiertagssätze`, and `Feiertage` while self-service pages remain employee-focused in the current MVP
-
-## Demo startup sequence (quick)
-
-1. `docker compose up --build`
-2. `cd backend && alembic upgrade head`
-3. `python -m backend.scripts.seed_demo`
-4. Configure Keycloak realm/users (see `infrastructure/keycloak/README.md`)
-5. Open http://localhost:5173 and sign in with a mapped user
-
-
-## Absence domain (Stage 1)
-
-Zytlog now includes a slim absence domain with tenant-aware persistence and basic CRUD APIs for employee self-service and admins (`vacation`, `sickness`; full-day + half-day). Absence context is exposed across overview screens (Dashboard, My Time, Day, Week, Month, Year) through daily/reporting/calendar DTOs, while capture status semantics stay unchanged. Holidays remain separate context. See `docs/business-absences.md` for detailed business rules.

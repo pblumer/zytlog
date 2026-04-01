@@ -1,105 +1,77 @@
-# Fachlichkeit: Jahresarbeitszeit als führende Sollgrösse
+# Fachlichkeit: Working-Time-Model (annual target als führende Sollgrösse)
 
-Dieses Dokument beschreibt die verbindliche Zielzeit-Logik für Zytlog (Stand: 31.03.2026).
+Stand: 01.04.2026
 
-## 1) Fachliche Korrektur: Eine einzige führende Sollgrösse
+## Ziel dieses Dokuments
 
-Das Modell mit gleichzeitig pflegbaren `weekly_target_hours` und `annual_target_hours` wurde entfernt.
+Dieses Dokument beschreibt den **aktuell implementierten** Fachstand der Sollzeitlogik in Zytlog.
 
-**Neue Regel:**
-- `annual_target_hours` ist die **führende Sollgrösse** des `WorkingTimeModel`.
-- Wochenzielstunden werden nicht mehr gespeichert und nicht mehr in der UI gepflegt.
+Kernaussage: `annual_target_hours` ist die einzige führende Sollgrösse. Die tägliche Sollzeit wird daraus zentral im Backend berechnet und in Day/Week/Month/Year sowie Kalenderansichten wiederverwendet.
 
-Begründung:
-- Zwei unabhängige Zielgrössen erzeugen Widersprüche.
-- Die Jahresarbeitszeit ist die stabilere Basis für spätere Feiertag-/Abwesenheitslogik.
+## 1) Führende Sollgrösse
 
-## 2) WorkingTimeModel (Standardmuster)
+- `WorkingTimeModel.annual_target_hours` ist verpflichtend und autoritativ.
+- Eine getrennte Pflege von Wochenzielstunden ist entfernt.
+- `employment_percentage` auf `Employee` skaliert die jährliche Sollzeit.
 
-Ein `WorkingTimeModel` enthält:
-- `name`
-- `annual_target_hours` (verpflichtend)
+Formel (vereinfacht):
+
+`effective_annual_minutes = annual_target_hours * 60 * employment_percentage / 100`
+
+## 2) Arbeitsmuster-Auflösung (Modell + Mitarbeiter)
+
+`WorkingTimeModel` liefert das Standard-Wochentagsmuster:
 - `default_workday_monday` ... `default_workday_sunday`
-- `active`
 
-Die Anzahl Standard-Arbeitstage pro Woche wird **nicht separat gespeichert**, sondern bei Bedarf aus den Wochentag-Flags abgeleitet.
+`Employee` kann pro Wochentag überschreiben:
+- `workday_monday` ... `workday_sunday` (`null` = Modellwert verwenden)
 
-## 3) Employee (individuelle Zuordnung)
+Zusätzlich begrenzen `entry_date` und optional `exit_date` den aktiven Beschäftigungszeitraum.
 
-Ein `Employee` erweitert das Modell mit:
-- `employment_percentage` (Arbeitspensum)
-- `working_time_model_id`
-- `entry_date` / `exit_date`
-- optionalen Overrides `workday_monday` ... `workday_sunday`
+## 3) Target-bearing Arbeitstage
 
-Override-Regel:
-- Employee-Override gesetzt (`true`/`false`) -> überschreibt Modellwert.
-- Override `null` -> Standard-Arbeitstag aus Modell gilt.
+Die tägliche Sollzeit wird nur auf **target-bearing Arbeitstage** verteilt.
 
-## 4) Autoritative Berechnung der Tageszielzeit
+Ein Tag ist target-bearing, wenn er:
+1. im aktiven Beschäftigungszeitraum liegt,
+2. laut aufgelöstem Arbeitsmuster ein Arbeitstag ist,
+3. **kein** aktiver Feiertag ist,
+4. **nicht** in einem zugewiesenen arbeitsfreien Zeitraum liegt.
 
-Die Tageszielzeit wird zentral im Backend berechnet und von Tagesansicht, Kalender sowie Woche/Monat/Jahr-Reports identisch verwendet.
+Wenn eine Bedingung nicht erfüllt ist, gilt für diesen Tag `target_minutes = 0`.
 
-### Schrittfolge
+## 4) Feiertage, Absenzen, arbeitsfreie Zeiträume
 
-1. **Aktive Arbeitstage für Mitarbeitende bestimmen**
-   - Wochentag-Override des Mitarbeitenden, sonst Modellstandard.
+### Feiertag
+- Wird aus HolidaySet-Logik aufgelöst (Mitarbeiter-Set vor Tenant-Default).
+- Wirkung: `target_minutes = 0`, Tag ist nicht target-bearing.
 
-2. **Relevante Arbeitstage des Kalenderjahres bestimmen**
-   - Nur Tage innerhalb `entry_date`/`exit_date`.
-   - Nur Tage, deren Wochentag aktiv ist.
-   - Nur aktive Feiertage des Tenants werden abgezogen; Ferien/Krankheit folgen später.
+### Absenz (Stage 1)
+- `vacation` / `sickness`, inkl. `full_day` und halbtägigen Varianten.
+- Absenz ist **Tageskontext**, nicht Capture-Status.
+- Stage-1-Regel: Bei ganztägiger Absenz auf target-bearing Tagen wird für die Balance-Anzeige Sollzeit als erfüllt behandelt (Display-/MVP-Regel), `actual_minutes` bleibt eventbasiert.
 
-3. **Effektive Jahreszielzeit berechnen**
-   - `effective_annual_target_hours = annual_target_hours * employment_percentage / 100`
+### Arbeitsfreier Zeitraum (non-working period)
+- Eigene Domain über `non_working_period_sets` und `non_working_periods`.
+- Zuordnung über `employee.non_working_period_set_id`.
+- Wirkung: `target_minutes = 0`, Tag ist nicht target-bearing.
 
-4. **Gleichmässig über relevante Arbeitstage verteilen**
-   - `daily_target_hours = effective_annual_target_hours / number_of_relevant_workdays_in_year`
-   - Umrechnung in Minuten, Rundung auf ganze Minuten.
+## 5) Vorarbeitungs-Effekt
 
-## 5) Nicht-Arbeitstage
+Die Jahres-Sollzeit bleibt konstant. Wenn Feiertage oder arbeitsfreie Zeiträume target-bearing Tage reduzieren, wird dieselbe Jahres-Sollzeit auf weniger Tage verteilt.
 
-Für Tage ohne reguläre Arbeitspflicht gilt `target_minutes = 0`:
-- Wochentag inaktiv,
-- vor `entry_date`,
-- nach `exit_date`.
+Folge:
+- höhere Sollminuten auf verbleibenden target-bearing Tagen,
+- keine Reduktion der vertraglichen Jahres-Sollzeit.
 
-## 6) Zukunftssemantik (noch nicht implementiert)
+## 6) Zentrale Umsetzung
 
-### Feiertage
-- Feiertage sind tenant-spezifisch und **keine target-bearing workdays**.
-- Für Feiertage gilt immer `target_minutes = 0`.
-- Die Jahresarbeitszeit schrumpft nicht; sie verteilt sich auf weniger target-bearing Tage.
+Die Logik ist zentral im Backend umgesetzt und wird nicht je View neu gerechnet:
+- Zielzeitberechnung: `DailyAccountService`
+- Periodische Aggregation: `ReportingService`
+- Kalender-Mapping: `CalendarService`
 
-### Ferien/Urlaub
-- Ferien reduzieren **nicht** die Jahresarbeitszeit.
-- Der Tag bleibt target-bearing workday; Zielzeit gilt fachlich als durch Abwesenheit erfüllt.
-
-### Krankheit
-- Gleiche Richtung wie Ferien (vorläufig): kein „verlorener Solltag“ per Default.
-- Exakte HR-Details können später verfeinert werden.
-
-## 7) Beispiele
-
-### Beispiel A: 100%
-- Modell: `annual_target_hours = 2080`
-- Aktive Arbeitstage: Mo–Fr
-- Mitarbeitender: 100%
-- Relevante Arbeitstage im Jahr: z. B. 260 (ohne spätere Feiertagslogik)
-- Tagesziel: `2080 / 260 = 8h` -> `480` Minuten
-
-### Beispiel B: 80% mit Override
-- Modell: `annual_target_hours = 2080`
-- Mitarbeitender: 80%
-- Override-Arbeitstage: Mo, Di, Do, Fr
-- Effektive Jahreszielzeit: `1664h`
-- Relevante Arbeitstage: Anzahl Mo/Di/Do/Fr im aktiven Beschäftigungszeitraum
-- Tagesziel: `1664 / relevante_arbeitstage`
-
-## 8) Warum diese Richtung fachlich korrekt ist
-
-Diese Korrektur schafft eine klare, erweiterbare Basis:
-- exakt **eine** führende Sollgrösse,
-- saubere Pensum-Logik auf Jahressicht,
-- konsistente Tagesziele für alle Auswertungen,
-- vorbereitet für Feiertag/Ferien/Krankheit ohne Modellbruch.
+Siehe auch:
+- `docs/business-calendar-model.md`
+- `docs/business-non-working-periods.md`
+- `docs/technical-calculation-engine.md`

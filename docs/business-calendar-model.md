@@ -1,49 +1,71 @@
-# Fachlichkeit: Kalenderkontext (Feiertag, Absenz, Arbeitsfreier Zeitraum)
+# Fachlichkeit: Kalenderkontext und Tagesstatus
 
-Stand: 31.03.2026
+Stand: 01.04.2026
 
 ## Ziel
-Dieses Dokument beschreibt die fachliche Trennung der Tageskontexte in Zytlog und deren Wirkung auf die annual-target-basierte Sollzeitlogik.
 
-## Drei getrennte Konzepte
+Dieses Dokument trennt die drei Ebenen der Tagesdarstellung in Zytlog klar:
+1. **Metriken** (Soll/Ist/Pause/Saldo)
+2. **Capture-Status** (Datenqualität der Zeiterfassung)
+3. **Tageskontext** (fachliche Kalendereinordnung)
 
-### 1) Feiertag
-- Quelle: Feiertagssatz (`HolidaySet`) inkl. optionalem Mitarbeiter-Override.
-- Wirkung:
-  - `target_minutes = 0`
-  - Tag ist **nicht** target-bearing.
-- Charakter: kalender-/standortbezogene Regel, nicht personenspezifische Abwesenheit.
+## 1) Metriken
 
-### 2) Absenz
-- Eigene Domain (`absence`: `vacation` / `sickness`, `full_day` / `half_day_am` / `half_day_pm`).
-- Wirkung:
-  - Absenz wird als Tageskontext sichtbar gemacht.
-  - Capture-Status bleibt getrennt (`complete` / `incomplete` / `invalid` / `empty`).
-- Charakter: personenbezogener Tageskontext, kein Feiertag.
+Pro Tag werden mindestens folgende Metriken geführt:
+- `target_minutes`
+- `actual_minutes`
+- `break_minutes`
+- `balance_minutes`
+- `event_count`
 
-### 3) Arbeitsfreier Zeitraum (`non_working_period`)
-- Eigene Domain für organisatorisch freie Zeitfenster (z. B. Schulferien für bestimmte Gruppen).
-- Modell:
-  - `non_working_period_sets`
-  - `non_working_periods` (`start_date`, `end_date`, `name`, optionale `category`)
-  - optional `employee.non_working_period_set_id`
-- Wirkung:
-  - `target_minutes = 0` an betroffenen Tagen
-  - Tage sind **nicht** target-bearing
-  - Jahresarbeitszeit bleibt konstant
-- Charakter: organisatorische Arbeitsregel, explizit **keine** Absenz und **kein** Feiertag.
+Diese Werte stammen aus der zentralen Tageskonto-Berechnung.
 
-## Wirkung auf annual target logic (Vorarbeitungs-Effekt)
+## 2) Capture-Status (separat von Kontext)
 
-Zytlog verwendet weiterhin `annual_target_hours` als führende Sollgrösse.
+Capture-Status beschreibt nur die Qualität/Vollständigkeit der Ereignisse:
+- `complete`
+- `incomplete`
+- `invalid`
+- `empty`
 
-Die effektive jährliche Sollzeit wird auf target-bearing Tage verteilt. Wird ein Tag wegen Feiertag oder Arbeitsfrei-Periode target-frei, reduziert sich die Anzahl target-bearing Tage. Dadurch steigt die Sollzeit pro verbleibendem target-bearing Tag (Vorarbeitungs-Effekt), während die Jahresarbeitszeit konstant bleibt.
+Im Kalender-API wird `empty` als `no_data` abgebildet.
 
-## API-/UI-Kontext
+Wichtig: Capture-Status sagt **nicht**, ob ein Tag Feiertag/Absenz/arbeitsfreier Zeitraum ist.
 
-Tagesbezogene DTOs führen den Kontext getrennt:
-- `is_holiday` + `holiday_name`
-- `absence`
-- `is_in_non_working_period` + `non_working_period_label`
+## 3) Tageskontext
 
-Damit bleiben semantische Grenzen klar und in Day/Month-Ansichten sichtbar.
+Der Tageskontext beschreibt die fachliche Einordnung des Datums.
+
+### Feiertag
+- Kontextfelder: `is_holiday`, `holiday_name`
+- Wirkung: `target_minutes = 0`, nicht target-bearing.
+
+### Absenz
+- Kontextfeld: `absence` (Typ + Label + Dauer)
+- Wirkung: Sichtbarkeit des Personenkontexts, getrennt vom Capture-Status.
+- Stage-1-Regel für Balance bei ganztägiger Absenz bleibt aktiv.
+
+### Arbeitsfreier Zeitraum
+- Kontextfelder: `is_in_non_working_period`, `non_working_period_label`
+- Wirkung: `target_minutes = 0`, nicht target-bearing.
+
+## 4) Priorisierte Kontextauswertung in der UI
+
+Für dichte Kalenderdarstellungen wird typischerweise folgende Priorität verwendet:
+1. `absence`
+2. `is_in_non_working_period`
+3. `is_holiday`
+4. `is_workday` / non-workday
+
+So bleiben Konflikte bei Badge-/Farbwahl beherrschbar, ohne Capture-Status zu überladen.
+
+## 5) API- und UI-Sicht
+
+- Tages- und Report-DTOs enthalten Metriken + Status + Kontextfelder parallel.
+- Month/Year zeigen dichte visuelle Marker.
+- Day/Week zeigen mehr Detailtiefe (z. B. konkrete Absenz-Dauer AM/PM).
+
+Siehe auch:
+- `docs/business-working-time-model.md`
+- `docs/business-month-view.md`
+- `docs/frontend-views.md`
