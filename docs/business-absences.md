@@ -1,50 +1,65 @@
-# Business Rules: Absences (Stage 1)
+# Fachlichkeit: Absenzen (Stage 1)
 
-## Scope
-Stage 1 introduces a slim absence domain for **visibility and basic data integrity**.
+Stand: 01.04.2026
 
-Supported absence types:
+## Zielbild Stage 1
+
+Stage 1 liefert eine schlanke, produktionsnahe Absenz-Domain für:
+- sichtbaren Tageskontext,
+- Grundvalidierungen,
+- konsistente Darstellung in Tageskonto, Reports und Kalendern.
+
+## Unterstützte Absenztypen
+
 - `vacation`
 - `sickness`
 
-Supported duration types:
+Dauertypen:
 - `full_day`
 - `half_day_am`
 - `half_day_pm`
 
-## What Stage 1 does
-- Persists tenant-scoped absences per employee and date range.
-- Validates:
-  - `end_date >= start_date`
-  - employee belongs to tenant
-  - absence lies in entry/exit employment range
-  - half-day only for single-day absences
-  - no overlapping absences for the same employee
-- Exposes absences in:
-  - daily account API (`absence` context)
-  - weekly/monthly/yearly reports (via daily rows)
-  - calendar month API (`absence` per day cell)
-  - overview UI rendering: Dashboard, My Time, Day, Week, Month, Year
+## Geltende Validierungsregeln
 
-## Separation of concerns
-- **Capture status** (`complete`, `incomplete`, `invalid`, `empty`) remains independent.
-- **Day context** can include holiday and absence information.
-- **Holidays and absences stay separate concepts**:
-  - Holiday is calendar/tenant policy context.
-  - Absence is employee-specific context.
-- Different overview screens can show absence with different detail density:
-  - compact marker in dense views (calendar/year dots),
-  - badge with AM/PM hint in detailed views (day/week/month).
+- `end_date >= start_date`
+- Mitarbeiter gehört zum Tenant
+- Absenz liegt im Beschäftigungsfenster (`entry_date` / `exit_date`)
+- Halbtag nur bei eintägiger Absenz
+- Keine überlappenden Absenzen pro Mitarbeitendem
 
-## Stage-1 simplification for balance display
-- For full-day vacation/sickness on target-bearing days, daily balance is treated as target-fulfilled.
-- `actual_minutes` remains based on recorded events.
-- This is a temporary display/business simplification for MVP usability.
+## Abgrenzung zu anderen Tageskontexten
 
-## Out of scope (Stage 2+)
-- Approval workflow
-- Manager review
-- Payroll export integration
-- Attachments/certificates
-- Partial-hour absences
-- Complex reconciliation with conflicting time events
+### Gegenüber Feiertag
+- Feiertag ist kalender-/satzbasiert (HolidaySet), nicht personenspezifisch.
+- Feiertage sind keine Absenzen.
+
+### Gegenüber arbeitsfreiem Zeitraum
+- Arbeitsfreier Zeitraum ist organisatorische Regel (`non_working_period_set`), nicht individuelle Abwesenheit.
+- Arbeitsfreie Zeiträume sind keine Absenzen.
+
+## Wirkung in Tageskonto und Reporting
+
+- Absenzen erscheinen als `absence`-Kontext in Daily Account, Week/Month/Year und Kalenderzellen.
+- Capture-Status (`complete`, `incomplete`, `invalid`, `empty`) bleibt separat.
+
+Stage-1-Vereinfachung (aktuell aktiv):
+- Bei `full_day`-Absenz (`vacation`, `sickness`) auf target-bearing Tagen wird die Balance so dargestellt, als sei die Sollzeit erfüllt.
+- `actual_minutes` bleibt weiterhin reine Eventsumme.
+
+## Sichtbarkeit in der UI
+
+- Dichte Views (Jahresraster/Kalender): kompakte Marker.
+- Detailviews (Day/Week/Month): Badge + optionale AM/PM-Hinweise.
+
+## Ausserhalb von Stage 1 (nicht implementiert)
+
+- Genehmigungsworkflow / Manager-Freigaben
+- Payroll-Integration
+- Anhänge/Nachweise
+- Teilstunden-Absenzen
+- Komplexe Konfliktauflösung mit Zeitereignissen
+
+Siehe auch:
+- `docs/business-calendar-model.md`
+- `docs/business-month-view.md`
+- `docs/business-non-working-periods.md`
