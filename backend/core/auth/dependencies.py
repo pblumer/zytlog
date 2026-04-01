@@ -86,15 +86,14 @@ def get_auth_context(
     except TokenValidationError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
 
-    user = user_repository.get_by_keycloak_user_id(claims.sub)
-    if user is None:
-        user = provisioning_service.create_user_from_token(
-            sub=claims.sub,
-            email=claims.email,
-            preferred_username=claims.preferred_username,
-        )
+    user = provisioning_service.provision_user_from_token(
+        sub=claims.sub,
+        email=claims.email,
+        preferred_username=claims.preferred_username,
+    )
+    if user.keycloak_user_id == claims.sub:
         logger.info(
-            "Auto-provisioned user %s (sub=%s) in tenant demo-co",
+            "Provisioning/resolution completed for %s (sub=%s) in tenant demo-co",
             user.email,
             claims.sub,
         )

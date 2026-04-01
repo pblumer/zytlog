@@ -55,6 +55,18 @@ class StubJWTValidator:
                     "resource_roles": {"zytlog-api": ["employee"]},
                 },
             )()
+        if token == "valid-relinked-user-token":
+            return type(
+                "Claims",
+                (),
+                {
+                    "sub": "kc-recreated-employee",
+                    "preferred_username": "employee.recreated",
+                    "email": "employee@zytlog.local",
+                    "realm_roles": ["employee"],
+                    "resource_roles": {"zytlog-api": ["employee"]},
+                },
+            )()
         raise TokenValidationError("Invalid or expired token")
 
 
@@ -192,3 +204,34 @@ def test_me_auto_provisions_new_keycloak_user(
 
         assert user.tenant_id == demo_tenant.id
         assert user.role == UserRole.EMPLOYEE
+
+
+def test_me_relinks_existing_user_by_email_when_sub_changes(
+    client: TestClient,
+    test_session_local: sessionmaker,
+) -> None:
+    response = client.get("/api/v1/me", headers={"Authorization": "Bearer valid-relinked-user-token"})
+    assert response.status_code == 200
+    payload = response.json()
+
+    with test_session_local() as session:
+        user = session.scalar(select(User).where(User.email == "employee@zytlog.local"))
+        assert user is not None
+        assert user.keycloak_user_id == "kc-recreated-employee"
+        assert user.full_name == "employee.recreated"
+
+        assert payload["email"] == "employee@zytlog.local"
+        assert payload["role"] == "employee"
+        assert payload["user_id"] == user.id
+
+
+def test_me_relinked_user_login_does_not_create_duplicate_email_user(
+    client: TestClient,
+    test_session_local: sessionmaker,
+) -> None:
+    response = client.get("/api/v1/me", headers={"Authorization": "Bearer valid-relinked-user-token"})
+    assert response.status_code == 200
+
+    with test_session_local() as session:
+        users = session.scalars(select(User).where(User.email == "employee@zytlog.local")).all()
+        assert len(users) == 1
