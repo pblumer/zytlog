@@ -79,18 +79,23 @@ class ReportingService:
     def get_year_overview(self, *, tenant_id: int, employee: Employee, year: int) -> YearlyOverviewRead:
         self._validate_year(year)
 
+        year_start = date(year, 1, 1)
+        year_end = date(year, 12, 31)
+        rows = self._build_daily_rows(
+            tenant_id=tenant_id,
+            employee=employee,
+            range_start=year_start,
+            range_end=year_end,
+        )
+
+        monthly_rows: dict[int, list[DailyOverviewRow]] = {month: [] for month in range(1, 13)}
+        for row in rows:
+            monthly_rows[row.date.month].append(row)
+
         months: list[MonthlySummaryRow] = []
         annual_totals = OverviewTotals()
-
         for month in range(1, 13):
-            month_overview = self.get_month_overview(
-                tenant_id=tenant_id,
-                employee=employee,
-                year=year,
-                month=month,
-            )
-            month_totals = month_overview.totals
-
+            month_totals = self._aggregate_totals(monthly_rows[month])
             months.append(
                 MonthlySummaryRow(
                     month=month,

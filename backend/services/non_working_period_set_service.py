@@ -1,4 +1,5 @@
 from datetime import date
+from datetime import timedelta
 
 from fastapi import HTTPException, status
 
@@ -112,6 +113,32 @@ class NonWorkingPeriodSetService:
         if period_set_id is None:
             return False
         return self.repository.exists_date_in_set(tenant_id, period_set_id, target_date)
+
+    def list_non_working_period_days_in_range(
+        self,
+        *,
+        tenant_id: int,
+        period_set_id: int | None,
+        from_date: date,
+        to_date: date,
+    ) -> dict[date, NonWorkingPeriod]:
+        if period_set_id is None:
+            return {}
+        periods = self.repository.list_periods_overlapping_range(
+            tenant_id,
+            period_set_id,
+            from_date=from_date,
+            to_date=to_date,
+        )
+        day_map: dict[date, NonWorkingPeriod] = {}
+        for period in periods:
+            cursor = max(period.start_date, from_date)
+            end = min(period.end_date, to_date)
+            while cursor <= end:
+                if cursor not in day_map:
+                    day_map[cursor] = period
+                cursor += timedelta(days=1)
+        return day_map
 
     def _require_set(self, tenant_id: int, period_set_id: int) -> NonWorkingPeriodSet:
         period_set = self.repository.get_set_for_tenant(tenant_id, period_set_id)

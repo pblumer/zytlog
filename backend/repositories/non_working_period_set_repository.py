@@ -152,3 +152,23 @@ class NonWorkingPeriodSetRepository:
             .limit(1)
         )
         return self.db.scalar(stmt) is not None
+
+    def list_periods_overlapping_range(
+        self,
+        tenant_id: int,
+        period_set_id: int,
+        *,
+        from_date: date,
+        to_date: date,
+    ) -> list[NonWorkingPeriod]:
+        stmt = (
+            select(NonWorkingPeriod)
+            .where(
+                NonWorkingPeriod.tenant_id == tenant_id,
+                NonWorkingPeriod.non_working_period_set_id == period_set_id,
+                NonWorkingPeriod.start_date <= to_date,
+                NonWorkingPeriod.end_date >= from_date,
+            )
+            .order_by(NonWorkingPeriod.start_date.asc(), NonWorkingPeriod.id.asc())
+        )
+        return list(self.db.scalars(stmt).all())
