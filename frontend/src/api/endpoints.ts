@@ -4,6 +4,7 @@ import type {
   CalendarMonth,
   DailyTimeAccount,
   Employee,
+  EmployeeUserOption,
   Me,
   MonthlyOverview,
   TimeStampEvent,
@@ -61,6 +62,11 @@ export const downloadYearExport = (year: number, format: 'csv' | 'pdf', token?: 
   apiDownload(`/exports/my/year${format === 'pdf' ? '/pdf' : ''}?year=${year}`, token);
 
 export const getEmployees = (token?: string | null) => apiGet<Employee[]>('/employees', token);
+export const getEmployeeUserOptions = (withoutEmployeeOnly = true, token?: string | null) =>
+  apiGet<EmployeeUserOption[]>(
+    `/employees/user-options?without_employee_only=${withoutEmployeeOnly ? 'true' : 'false'}`,
+    token,
+  );
 export type CreateEmployeePayload = {
   user_id: number;
   employee_number: string | null;

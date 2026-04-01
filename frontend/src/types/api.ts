@@ -148,6 +148,15 @@ export type Employee = {
   updated_at: string;
 };
 
+export type EmployeeUserOption = {
+  id: number;
+  email: string;
+  full_name: string;
+  keycloak_user_id: string;
+  role: UserRole;
+  has_employee: boolean;
+};
+
 export type WorkingTimeModel = {
   id: number;
   tenant_id: number;

@@ -212,3 +212,91 @@ def test_update_employee_rejects_foreign_working_time_model(client: TestClient) 
     )
     assert response.status_code == 400
     assert response.json()["detail"] == "Ungültiges Arbeitszeitmodell"
+
+
+def test_user_options_lists_only_users_without_employee_by_default(client: TestClient) -> None:
+    response = client.get(
+        "/api/v1/employees/user-options",
+        headers={"Authorization": "Bearer valid-admin-token"},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload) == 1
+    assert payload[0]["email"] == "admin@zytlog.local"
+    assert payload[0]["has_employee"] is False
+
+
+def test_user_options_can_include_users_with_existing_employee(client: TestClient) -> None:
+    response = client.get(
+        "/api/v1/employees/user-options?without_employee_only=false",
+        headers={"Authorization": "Bearer valid-admin-token"},
+    )
+    assert response.status_code == 200
+    payload = {row["email"]: row for row in response.json()}
+    assert payload["admin@zytlog.local"]["has_employee"] is False
+    assert payload["employee@zytlog.local"]["has_employee"] is True
+
+
+def test_user_options_are_tenant_isolated(client: TestClient) -> None:
+    response = client.get(
+        "/api/v1/employees/user-options?without_employee_only=false",
+        headers={"Authorization": "Bearer valid-admin-other-tenant-token"},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload) == 1
+    assert payload[0]["email"] == "admin.other@zytlog.local"
+
+
+def test_create_employee_rejects_existing_employee_for_user(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/employees",
+        headers={"Authorization": "Bearer valid-admin-token"},
+        json={
+            "user_id": 2,
+            "employee_number": "E-NEW",
+            "first_name": "Jane",
+            "last_name": "Doe",
+            "employment_percentage": 100,
+            "entry_date": "2026-03-01",
+            "working_time_model_id": 1,
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Für diesen Benutzer existiert bereits ein Mitarbeiterprofil"
+
+
+def test_create_employee_rejects_cross_tenant_user(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/employees",
+        headers={"Authorization": "Bearer valid-admin-token"},
+        json={
+            "user_id": 3,
+            "employee_number": "E-NEW",
+            "first_name": "Jane",
+            "last_name": "Doe",
+            "employment_percentage": 100,
+            "entry_date": "2026-03-01",
+            "working_time_model_id": 1,
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Benutzer gehört nicht zum aktuellen Tenant"
+
+
+def test_create_employee_rejects_unknown_user(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/employees",
+        headers={"Authorization": "Bearer valid-admin-token"},
+        json={
+            "user_id": 999,
+            "employee_number": "E-NEW",
+            "first_name": "Jane",
+            "last_name": "Doe",
+            "employment_percentage": 100,
+            "entry_date": "2026-03-01",
+            "working_time_model_id": 1,
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Ungültige user_id"
