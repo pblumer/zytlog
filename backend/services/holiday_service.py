@@ -89,6 +89,24 @@ class HolidayService:
             to_date=to_date,
         )
 
+    def get_active_holidays_for_employee(
+        self,
+        *,
+        employee: "Employee",
+        tenant: Tenant,
+        from_date: date,
+        to_date: date,
+    ) -> dict[date, Holiday]:
+        holiday_set_id = self.resolve_effective_holiday_set_id(employee=employee, tenant=tenant)
+        if holiday_set_id is None:
+            return {}
+        return self.repository.list_active_by_holiday_set_and_date_range(
+            tenant.id,
+            holiday_set_id=holiday_set_id,
+            from_date=from_date,
+            to_date=to_date,
+        )
+
     def _assert_holiday_set_belongs_to_tenant(self, tenant_id: int, holiday_set_id: int) -> None:
         if self.holiday_set_repository is None:
             return

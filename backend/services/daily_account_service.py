@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
@@ -5,12 +6,24 @@ from fastapi import HTTPException, status
 
 from backend.models.employee import Employee
 from backend.models.enums import TimeStampEventType
+from backend.models.non_working_period import NonWorkingPeriod
 from backend.models.time_stamp_event import TimeStampEvent
 from backend.repositories.time_stamp_event_repository import TimeStampEventRepository
 from backend.schemas.time_tracking import DailyAccountStatus, DailyTimeAccountRead
 from backend.services.absence_service import AbsenceService
 from backend.services.holiday_service import HolidayService
 from backend.services.non_working_period_set_service import NonWorkingPeriodSetService
+
+
+@dataclass(frozen=True)
+class _YearCalculationContext:
+    year: int
+    period_start: date
+    period_end: date
+    workday_pattern: list[bool]
+    holidays_by_date: dict[date, str]
+    non_working_period_by_date: dict[date, NonWorkingPeriod]
+    relevant_workdays: int
 
 
 class DailyAccountService:
@@ -27,23 +40,15 @@ class DailyAccountService:
         self.non_working_period_set_service = non_working_period_set_service
 
     def get_daily_account(self, *, tenant_id: int, employee: Employee, target_date: date) -> DailyTimeAccountRead:
-        holiday_name = self.holiday_service.get_holiday_name_for_employee_date(
-            employee=employee,
-            tenant=employee.tenant,
-            target_date=target_date,
-        )
-        non_working_period = self.non_working_period_set_service.get_non_working_period_on_date(
-            tenant_id=tenant_id,
-            period_set_id=employee.non_working_period_set_id,
-            target_date=target_date,
-        )
+        year_context = self._build_year_calculation_context(employee=employee, year=target_date.year)
+        holiday_name = year_context.holidays_by_date.get(target_date)
+        non_working_period = year_context.non_working_period_by_date.get(target_date)
         is_in_non_working_period = non_working_period is not None
-        is_workday = self._is_employee_workday(employee=employee, target_date=target_date)
+
         target_minutes = self._calculate_target_minutes(
             employee=employee,
             target_date=target_date,
-            holiday_name=holiday_name,
-            is_in_non_working_period=is_in_non_working_period,
+            context=year_context,
         )
         events = self.repository.list_clock_events_for_day(
             tenant_id=tenant_id,
@@ -75,7 +80,11 @@ class DailyAccountService:
             event_count=len(events),
             holiday_name=holiday_name,
             is_holiday=holiday_name is not None,
-            is_workday=is_workday,
+            is_workday=self._is_employee_workday(
+                employee=employee,
+                target_date=target_date,
+                workday_pattern=year_context.workday_pattern,
+            ),
             absence=absence,
             is_in_non_working_period=is_in_non_working_period,
             non_working_period_label=non_working_period.name if non_working_period is not None else None,
@@ -92,30 +101,92 @@ class DailyAccountService:
         if from_date > to_date:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid date range")
 
+        events = self.repository.list_clock_events(
+            tenant_id=tenant_id,
+            employee_id=employee.id,
+            from_date=from_date,
+            to_date=to_date,
+        )
+        events_by_day: dict[date, list[TimeStampEvent]] = {}
+        for event in events:
+            event_date = event.timestamp.date()
+            events_by_day.setdefault(event_date, []).append(event)
+
+        absences_by_day = self.absence_service.get_absence_contexts_in_range(
+            tenant_id=tenant_id,
+            employee_id=employee.id,
+            from_date=from_date,
+            to_date=to_date,
+        )
+
+        context_cache: dict[int, _YearCalculationContext] = {}
         accounts: list[DailyTimeAccountRead] = []
         cursor = from_date
         while cursor <= to_date:
-            accounts.append(self.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=cursor))
+            context = context_cache.get(cursor.year)
+            if context is None:
+                context = self._build_year_calculation_context(employee=employee, year=cursor.year)
+                context_cache[cursor.year] = context
+
+            day_events = events_by_day.get(cursor, [])
+            holiday_name = context.holidays_by_date.get(cursor)
+            non_working_period = context.non_working_period_by_date.get(cursor)
+            target_minutes = self._calculate_target_minutes(
+                employee=employee,
+                target_date=cursor,
+                context=context,
+            )
+            actual_minutes, break_minutes, status = self._calculate_minutes_and_status(day_events)
+            absence = absences_by_day.get(cursor)
+            balance_reference_minutes = actual_minutes
+            if (
+                absence is not None
+                and absence.duration_type == "full_day"
+                and target_minutes > 0
+                and absence.type in {"vacation", "sickness"}
+            ):
+                balance_reference_minutes = max(actual_minutes, target_minutes)
+
+            accounts.append(
+                DailyTimeAccountRead(
+                    date=cursor,
+                    target_minutes=target_minutes,
+                    actual_minutes=actual_minutes,
+                    break_minutes=break_minutes,
+                    balance_minutes=balance_reference_minutes - target_minutes,
+                    status=status,
+                    event_count=len(day_events),
+                    holiday_name=holiday_name,
+                    is_holiday=holiday_name is not None,
+                    is_workday=self._is_employee_workday(
+                        employee=employee,
+                        target_date=cursor,
+                        workday_pattern=context.workday_pattern,
+                    ),
+                    absence=absence,
+                    is_in_non_working_period=non_working_period is not None,
+                    non_working_period_label=non_working_period.name if non_working_period is not None else None,
+                )
+            )
             cursor += timedelta(days=1)
 
         return accounts
 
-    def _is_employee_workday(self, *, employee: Employee, target_date: date) -> bool:
+    def _is_employee_workday(self, *, employee: Employee, target_date: date, workday_pattern: list[bool] | None = None) -> bool:
         if target_date < employee.entry_date:
             return False
         if employee.exit_date is not None and target_date > employee.exit_date:
             return False
 
-        workday_pattern = self._resolve_employee_workday_pattern(employee=employee)
-        return workday_pattern[target_date.weekday()]
+        pattern = workday_pattern if workday_pattern is not None else self._resolve_employee_workday_pattern(employee=employee)
+        return pattern[target_date.weekday()]
 
     def _calculate_target_minutes(
         self,
         *,
         employee: Employee,
         target_date: date,
-        holiday_name: str | None = None,
-        is_in_non_working_period: bool = False,
+        context: _YearCalculationContext | None = None,
     ) -> int:
         model = employee.working_time_model
         if model is None:
@@ -127,21 +198,17 @@ class DailyAccountService:
             return 0
         if employee.exit_date is not None and target_date > employee.exit_date:
             return 0
-        if holiday_name is not None:
+
+        resolved_context = context if context is not None else self._build_year_calculation_context(employee=employee, year=target_date.year)
+        if resolved_context.holidays_by_date.get(target_date) is not None:
             return 0
-        if is_in_non_working_period:
+        if resolved_context.non_working_period_by_date.get(target_date) is not None:
             return 0
 
-        workday_pattern = self._resolve_employee_workday_pattern(employee=employee)
-        weekday_is_active = workday_pattern[target_date.weekday()]
-        if not weekday_is_active:
+        if not resolved_context.workday_pattern[target_date.weekday()]:
             return 0
 
-        relevant_workdays = self._count_relevant_workdays_for_year(
-            employee=employee,
-            year=target_date.year,
-            workday_pattern=workday_pattern,
-        )
+        relevant_workdays = resolved_context.relevant_workdays
         if relevant_workdays <= 0:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid working day configuration")
 
@@ -152,37 +219,76 @@ class DailyAccountService:
         daily_minutes = effective_annual_minutes / Decimal(str(relevant_workdays))
         return int(daily_minutes.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
-    def _count_relevant_workdays_for_year(
-        self,
-        *,
-        employee: Employee,
-        year: int,
-        workday_pattern: list[bool],
-    ) -> int:
+    def _build_year_calculation_context(self, *, employee: Employee, year: int) -> _YearCalculationContext:
         period_start = max(employee.entry_date, date(year, 1, 1))
         period_end = date(year, 12, 31)
         if employee.exit_date is not None:
             period_end = min(employee.exit_date, period_end)
 
+        workday_pattern = self._resolve_employee_workday_pattern(employee=employee)
         if period_start > period_end:
-            return 0
+            return _YearCalculationContext(
+                year=year,
+                period_start=period_start,
+                period_end=period_end,
+                workday_pattern=workday_pattern,
+                holidays_by_date={},
+                non_working_period_by_date={},
+                relevant_workdays=0,
+            )
 
-        holiday_dates = self.holiday_service.get_active_holiday_dates_for_employee(
+        holidays = self.holiday_service.get_active_holidays_for_employee(
             employee=employee,
             tenant=employee.tenant,
             from_date=period_start,
             to_date=period_end,
         )
+        non_working_period_by_date = self.non_working_period_set_service.list_non_working_period_days_in_range(
+            tenant_id=employee.tenant_id,
+            period_set_id=employee.non_working_period_set_id,
+            from_date=period_start,
+            to_date=period_end,
+        )
+
+        relevant_workdays = self._count_relevant_workdays_for_year(
+            period_start=period_start,
+            period_end=period_end,
+            workday_pattern=workday_pattern,
+            holiday_dates=set(holidays.keys()),
+            non_working_period_dates=set(non_working_period_by_date.keys()),
+        )
+        holidays_by_date = {day: holiday.name for day, holiday in holidays.items()}
+
+        return _YearCalculationContext(
+            year=year,
+            period_start=period_start,
+            period_end=period_end,
+            workday_pattern=workday_pattern,
+            holidays_by_date=holidays_by_date,
+            non_working_period_by_date=non_working_period_by_date,
+            relevant_workdays=relevant_workdays,
+        )
+
+    def _count_relevant_workdays_for_year(
+        self,
+        *,
+        period_start: date,
+        period_end: date,
+        workday_pattern: list[bool],
+        holiday_dates: set[date],
+        non_working_period_dates: set[date],
+    ) -> int:
+        if period_start > period_end:
+            return 0
 
         total = 0
         cursor = period_start
         while cursor <= period_end:
-            has_non_working_period = self.non_working_period_set_service.has_non_working_period_on_date(
-                tenant_id=employee.tenant_id,
-                period_set_id=employee.non_working_period_set_id,
-                target_date=cursor,
-            )
-            if workday_pattern[cursor.weekday()] and cursor not in holiday_dates and not has_non_working_period:
+            if (
+                workday_pattern[cursor.weekday()]
+                and cursor not in holiday_dates
+                and cursor not in non_working_period_dates
+            ):
                 total += 1
             cursor += timedelta(days=1)
 

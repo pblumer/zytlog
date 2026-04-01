@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 from fastapi import HTTPException, status
 
@@ -107,6 +107,34 @@ class AbsenceService:
             label=self._absence_label(absence.absence_type),
             duration_type=absence.duration_type.value,
         )
+
+    def get_absence_contexts_in_range(
+        self,
+        *,
+        tenant_id: int,
+        employee_id: int,
+        from_date: date,
+        to_date: date,
+    ) -> dict[date, DayAbsenceContext]:
+        absences = self.repository.list_by_tenant(
+            tenant_id=tenant_id,
+            employee_id=employee_id,
+            from_date=from_date,
+            to_date=to_date,
+        )
+        contexts: dict[date, DayAbsenceContext] = {}
+        for absence in absences:
+            cursor = max(absence.start_date, from_date)
+            end = min(absence.end_date, to_date)
+            while cursor <= end:
+                if cursor not in contexts:
+                    contexts[cursor] = DayAbsenceContext(
+                        type=absence.absence_type.value,
+                        label=self._absence_label(absence.absence_type),
+                        duration_type=absence.duration_type.value,
+                    )
+                cursor += timedelta(days=1)
+        return contexts
 
     def _validate_payload(self, *, employee: Employee, payload: AbsenceCreate) -> None:
         if payload.end_date < payload.start_date:
