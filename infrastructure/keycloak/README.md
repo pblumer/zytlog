@@ -5,12 +5,17 @@ Use this guide to provision a local realm and API client that matches backend JW
 ## 1) Start Keycloak
 
 ```bash
-docker compose up -d keycloak
+docker compose up -d keycloak-db keycloak
 ```
+
+Der lokale Compose-Stack nutzt für Keycloak eine dedizierte Postgres-DB (`keycloak-db`) mit persistentem Docker-Volume (`keycloak_postgres_data`).
 
 Open `http://localhost:8080` and sign in with:
 - username: `admin`
 - password: `admin`
+
+Beim ersten Start wird der Realm aus `keycloak/realm-import/zytlog-realm.json` importiert (`start-dev --import-realm`).
+Nachfolgende Neustarts behalten Daten (Realm, Benutzer, Clients), solange das Volume nicht gelöscht wird.
 
 ## 2) Create realm
 
@@ -56,3 +61,11 @@ Realm issuer:
 
 JWKS endpoint:
 - `http://localhost:8080/realms/zytlog/protocol/openid-connect/certs`
+
+## 8) Reset local Keycloak data intentionally
+
+```bash
+docker compose down
+docker volume rm zytlog_keycloak_postgres_data
+docker compose up -d keycloak-db keycloak
+```
