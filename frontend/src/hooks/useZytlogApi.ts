@@ -23,6 +23,7 @@ import {
   getCurrentStatus,
   getDailyAccount,
   getEmployees,
+  getEmployeeUserOptions,
   getMonthReport,
   getTimeStamps,
   getWeekReport,
@@ -126,6 +127,15 @@ export function useEmployees(enabled: boolean) {
   return useQuery({
     queryKey: ['employees'],
     queryFn: () => getEmployees(token),
+    enabled,
+  });
+}
+
+export function useEmployeeUserOptions(enabled: boolean, withoutEmployeeOnly = true) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['employee-user-options', withoutEmployeeOnly],
+    queryFn: () => getEmployeeUserOptions(withoutEmployeeOnly, token),
     enabled,
   });
 }
@@ -415,7 +425,10 @@ export function useCreateEmployeeMutation() {
   return useMutation({
     mutationFn: (payload: CreateEmployeePayload) => createEmployee(payload, token),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['employees'] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['employees'] }),
+        queryClient.invalidateQueries({ queryKey: ['employee-user-options'] }),
+      ]);
     },
   });
 }

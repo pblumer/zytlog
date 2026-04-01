@@ -6,6 +6,7 @@ import { DataGrid } from '../components/DataGrid';
 import { useAuth } from '../auth/provider';
 import {
   useCreateEmployeeMutation,
+  useEmployeeUserOptions,
   useEmployees,
   useHolidaySets,
   useUpdateEmployeeMutation,
@@ -115,6 +116,7 @@ export function EmployeesPage() {
   const nonWorkingPeriodSetsQuery = useNonWorkingPeriodSets(isAdmin);
   const createMutation = useCreateEmployeeMutation();
   const updateMutation = useUpdateEmployeeMutation();
+  const userOptionsQuery = useEmployeeUserOptions(isAdmin, true);
 
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [form, setForm] = useState<EmployeeFormState>(() => createInitialFormState());
@@ -254,19 +256,27 @@ export function EmployeesPage() {
           Falls eine Person bereits in Keycloak existiert, aber hier noch nicht vollständig gepflegt ist, kann das
           Mitarbeiterprofil hier ergänzt werden.
         </p>
+        <p className="meta" style={{ marginTop: '0.35rem' }}>
+          Wichtig: Die Keycloak-UUID ist nicht identisch mit der internen Zytlog-User-ID.
+        </p>
       </DataSection>
       <DataSection title={editingEmployee ? 'Mitarbeiter bearbeiten' : 'Mitarbeiter anlegen'}>
         <form className="grid" onSubmit={onSubmit}>
           {!editingEmployee ? (
             <label>
-              User-ID
-              <input
+              Benutzer
+              <select
                 value={form.userId}
                 onChange={(event) => setForm((prev) => ({ ...prev, userId: event.target.value }))}
-                type="number"
-                min="1"
                 required
-              />
+              >
+                <option value="">Bitte wählen</option>
+                {(userOptionsQuery.data ?? []).map((user) => (
+                  <option key={user.id} value={user.id} title={user.keycloak_user_id}>
+                    {user.full_name} ({user.email})
+                  </option>
+                ))}
+              </select>
             </label>
           ) : null}
           <label>
@@ -404,6 +414,9 @@ export function EmployeesPage() {
           </div>
           {createMutation.error || updateMutation.error ? (
             <p className="inline-error">Mitarbeiter konnte nicht gespeichert werden.</p>
+          ) : null}
+          {!editingEmployee && userOptionsQuery.data && userOptionsQuery.data.length === 0 ? (
+            <p className="meta">Aktuell sind keine Benutzer ohne Mitarbeiterprofil verfügbar.</p>
           ) : null}
         </form>
       </DataSection>

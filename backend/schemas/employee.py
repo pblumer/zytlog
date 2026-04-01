@@ -3,6 +3,7 @@ from datetime import date
 from pydantic import Field
 
 from backend.schemas.common import BaseSchema, TimestampedSchema
+from backend.models.enums import UserRole
 
 
 class EmployeeCreate(BaseSchema):
@@ -67,3 +68,12 @@ class EmployeeRead(TimestampedSchema):
     workday_saturday: bool | None
     workday_sunday: bool | None
     team: str | None
+
+
+class EmployeeUserOptionRead(BaseSchema):
+    id: int
+    email: str
+    full_name: str
+    keycloak_user_id: str
+    role: UserRole
+    has_employee: bool

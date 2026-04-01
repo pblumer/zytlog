@@ -6,8 +6,9 @@ from backend.core.auth import AuthContext, require_admin, require_authenticated_
 from backend.repositories.employee_repository import EmployeeRepository
 from backend.repositories.holiday_set_repository import HolidaySetRepository
 from backend.repositories.non_working_period_set_repository import NonWorkingPeriodSetRepository
+from backend.repositories.user_repository import UserRepository
 from backend.repositories.working_time_model_repository import WorkingTimeModelRepository
-from backend.schemas.employee import EmployeeCreate, EmployeeRead, EmployeeUpdate
+from backend.schemas.employee import EmployeeCreate, EmployeeRead, EmployeeUpdate, EmployeeUserOptionRead
 from backend.services.employee_service import EmployeeService
 
 router = APIRouter(prefix="/employees", tags=["employees"])
@@ -20,11 +21,28 @@ def list_employees(
 ) -> list[EmployeeRead]:
     service = EmployeeService(
         EmployeeRepository(db),
+        UserRepository(db),
         WorkingTimeModelRepository(db),
         HolidaySetRepository(db),
         NonWorkingPeriodSetRepository(db),
     )
     return [EmployeeRead.model_validate(row) for row in service.list_employees(context.tenant_id)]
+
+
+@router.get("/user-options", response_model=list[EmployeeUserOptionRead])
+def list_employee_user_options(
+    without_employee_only: bool = True,
+    db: Session = Depends(get_db),
+    context: AuthContext = Depends(require_admin),
+) -> list[EmployeeUserOptionRead]:
+    service = EmployeeService(
+        EmployeeRepository(db),
+        UserRepository(db),
+        WorkingTimeModelRepository(db),
+        HolidaySetRepository(db),
+        NonWorkingPeriodSetRepository(db),
+    )
+    return service.list_user_options(context.tenant_id, without_employee_only)
 
 
 @router.post("", response_model=EmployeeRead)
@@ -35,6 +53,7 @@ def create_employee(
 ) -> EmployeeRead:
     service = EmployeeService(
         EmployeeRepository(db),
+        UserRepository(db),
         WorkingTimeModelRepository(db),
         HolidaySetRepository(db),
         NonWorkingPeriodSetRepository(db),
@@ -52,6 +71,7 @@ def update_employee(
 ) -> EmployeeRead:
     service = EmployeeService(
         EmployeeRepository(db),
+        UserRepository(db),
         WorkingTimeModelRepository(db),
         HolidaySetRepository(db),
         NonWorkingPeriodSetRepository(db),

@@ -1,6 +1,7 @@
-from sqlalchemy import select
+from sqlalchemy import case, select
 from sqlalchemy.orm import Session
 
+from backend.models.employee import Employee
 from backend.models.enums import UserRole
 from backend.models.user import User
 
@@ -37,3 +38,13 @@ class UserRepository:
         self.db.commit()
         self.db.refresh(user)
         return user
+
+    def list_with_employee_status_for_tenant(self, tenant_id: int) -> list[tuple[User, bool]]:
+        has_employee = case((Employee.id.is_not(None), True), else_=False).label("has_employee")
+        stmt = (
+            select(User, has_employee)
+            .outerjoin(Employee, Employee.user_id == User.id)
+            .where(User.tenant_id == tenant_id)
+            .order_by(User.full_name, User.email, User.id)
+        )
+        return [(row[0], bool(row[1])) for row in self.db.execute(stmt).all()]
