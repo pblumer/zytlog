@@ -7,14 +7,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY backend /app/backend
+COPY backend/requirements.txt /app/backend/requirements.txt
 
 RUN pip install --upgrade pip && \
-    if [ -f /app/backend/requirements.txt ]; then \
-      pip install -r /app/backend/requirements.txt; \
-    else \
-      pip install /app/backend; \
-    fi
+    pip install -r /app/backend/requirements.txt
+
+COPY backend /app/backend
 
 EXPOSE 8000
 
