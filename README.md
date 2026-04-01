@@ -38,6 +38,26 @@ Lokale URLs:
 - OpenAPI: http://localhost:8000/docs
 - Keycloak: http://localhost:8080
 
+## Keycloak-Persistenz (lokal/dev)
+
+- Keycloak läuft lokal mit einer **eigenen Postgres-Datenbank** (`keycloak-db` Service in `docker-compose.yml`).
+- Die Datenbank wird im Named Volume `keycloak_postgres_data` gespeichert.
+- Realm-Import läuft über `start-dev --import-realm` mit `keycloak/realm-import/zytlog-realm.json`.
+- Der Import ist für den Initial-Setup gedacht: Wenn der Realm bereits in der DB existiert, wird er nicht bei jedem Neustart neu überschrieben.
+
+Was bleibt nach `docker compose down` + `docker compose up` erhalten:
+- Realms
+- Benutzer
+- Clients / Konfiguration
+
+Keycloak-Daten **bewusst zurücksetzen**:
+
+```bash
+docker compose down
+docker volume rm zytlog_keycloak_postgres_data
+docker compose up -d keycloak keycloak-db
+```
+
 ## Fachliche Kernkonzepte
 
 - **Jahres-Sollzeit als führende Grösse** (`annual_target_hours`) inkl. Verteilung auf target-bearing Arbeitstage.
