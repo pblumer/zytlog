@@ -14,6 +14,8 @@ type AuthState = {
   login: () => void;
   logout: () => void;
   unauthorized: boolean;
+  authRecoveryRequired: boolean;
+  restartAuth: () => void;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -202,6 +204,19 @@ export function AuthProvider({ children }: PropsWithChildren) {
   };
 
   const unauthorized = !isRefreshingToken && meQuery.error instanceof ApiError && meQuery.error.status === 401;
+  const authRecoveryRequired =
+    !isRefreshingToken &&
+    meQuery.error instanceof ApiError &&
+    (meQuery.error.status >= 500 || meQuery.error.status === 403);
+
+  const restartAuth = () => {
+    setAccessToken(null);
+    if (keycloakRef.current) {
+      void keycloakRef.current.logout({ redirectUri: `${window.location.origin}/` });
+      return;
+    }
+    window.location.assign('/');
+  };
 
   const value = useMemo<AuthState>(
     () => ({
@@ -218,8 +233,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
         }
       },
       unauthorized,
+      authRecoveryRequired,
+      restartAuth,
     }),
-    [authBootstrapped, meQuery.data, meQuery.isLoading, effectiveToken, isRefreshingToken, unauthorized, setAccessToken],
+    [authBootstrapped, meQuery.data, meQuery.isLoading, effectiveToken, isRefreshingToken, unauthorized, authRecoveryRequired, setAccessToken],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

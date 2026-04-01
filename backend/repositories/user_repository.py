@@ -18,6 +18,27 @@ class UserRepository:
         stmt = select(User).where(User.keycloak_user_id == keycloak_user_id)
         return self.db.execute(stmt).scalar_one_or_none()
 
+    def get_by_email(self, email: str) -> User | None:
+        stmt = select(User).where(User.email == email)
+        return self.db.execute(stmt).scalar_one_or_none()
+
+    def update_keycloak_user_id(
+        self,
+        *,
+        user_id: int,
+        keycloak_user_id: str,
+        full_name: str | None = None,
+    ) -> User | None:
+        user = self.get_by_id(user_id)
+        if user is None:
+            return None
+        user.keycloak_user_id = keycloak_user_id
+        if full_name:
+            user.full_name = full_name
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
     def create(
         self,
         *,
