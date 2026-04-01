@@ -27,11 +27,20 @@ Standard-URL lokal: http://localhost:5173
 
 ## Environment
 
-`.env.example`:
+Lokale Entwicklung (`.env` / `.env.example`):
 
 ```env
 VITE_API_BASE_URL=http://localhost:8000/api/v1
 # VITE_DEV_BEARER_TOKEN=<optional_dev_token>
+```
+
+Production Build (`.env.production`, wird von `vite build` verwendet):
+
+```env
+VITE_API_BASE_URL=https://zytlog.blumer.cloud/api/v1
+VITE_KEYCLOAK_URL=https://zytlog.blumer.cloud
+VITE_KEYCLOAK_REALM=zytlog
+VITE_KEYCLOAK_CLIENT_ID=zytlog-frontend
 ```
 
 ## Strukturüberblick
