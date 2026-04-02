@@ -13,6 +13,10 @@ class Settings(BaseSettings):
 
     auth_enabled: bool = True
     auth_disabled_fallback_user_id: int = 1
+    provisioning_tenant_slug: str = "demo-co"
+    bootstrap_admin_enabled: bool = False
+    bootstrap_admin_sub: str | None = None
+    bootstrap_admin_email: str | None = None
 
     keycloak_url: str = "http://keycloak:8080"
     keycloak_realm: str = "zytlog"

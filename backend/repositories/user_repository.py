@@ -1,4 +1,4 @@
-from sqlalchemy import case, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from backend.models.employee import Employee
@@ -69,3 +69,7 @@ class UserRepository:
             .order_by(User.full_name, User.email, User.id)
         )
         return [(row[0], bool(row[1])) for row in self.db.execute(stmt).all()]
+
+    def count_admins_by_tenant(self, tenant_id: int) -> int:
+        stmt = select(func.count()).select_from(User).where(User.tenant_id == tenant_id, User.role == UserRole.ADMIN)
+        return int(self.db.execute(stmt).scalar_one())
