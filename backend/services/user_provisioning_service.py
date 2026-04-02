@@ -5,10 +5,10 @@ from sqlalchemy.orm import Session
 
 from backend.models.enums import UserRole
 from backend.models.user import User
+from backend.core.config import settings
 from backend.repositories.tenant_repository import TenantRepository
 from backend.repositories.user_repository import UserRepository
 
-DEFAULT_PROVISIONING_TENANT_SLUG = "demo-co"
 logger = logging.getLogger(__name__)
 
 
@@ -31,30 +31,33 @@ class UserProvisioningService:
                 detail="Token is missing both email and preferred_username for provisioning",
             )
 
-        existing_by_sub = self.user_repository.get_by_keycloak_user_id(sub)
-        if existing_by_sub is not None:
-            return existing_by_sub
-
-        if email:
+        user: User | None = self.user_repository.get_by_keycloak_user_id(sub)
+        if user is None and email:
             existing_by_email = self.user_repository.get_by_email(email)
             if existing_by_email is not None:
-                updated_user = self.user_repository.update_keycloak_user_id(
+                user = self.user_repository.update_keycloak_user_id(
                     user_id=existing_by_email.id,
                     keycloak_user_id=sub,
                     full_name=preferred_username,
                 )
-                if updated_user is not None:
+                if user is not None:
                     logger.info(
                         "Relinked existing user %s from legacy keycloak subject to %s",
-                        updated_user.email,
+                        user.email,
                         sub,
                     )
-                    return updated_user
 
-        return self._create_new_user(
+        if user is None:
+            user = self._create_new_user(
+                sub=sub,
+                resolved_email=resolved_email,
+                preferred_username=preferred_username,
+            )
+
+        return self._maybe_promote_bootstrap_admin(
+            user=user,
             sub=sub,
-            resolved_email=resolved_email,
-            preferred_username=preferred_username,
+            email=email,
         )
 
     def _create_new_user(
@@ -64,11 +67,11 @@ class UserProvisioningService:
         resolved_email: str,
         preferred_username: str | None,
     ) -> User:
-        default_tenant = self.tenant_repository.get_by_slug(DEFAULT_PROVISIONING_TENANT_SLUG)
+        default_tenant = self.tenant_repository.get_by_slug(settings.provisioning_tenant_slug)
         if default_tenant is None:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Default provisioning tenant 'demo-co' was not found",
+                detail=f"Default provisioning tenant '{settings.provisioning_tenant_slug}' was not found",
             )
 
         try:
@@ -90,3 +93,39 @@ class UserProvisioningService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Unable to provision user for this identity",
             ) from exc
+
+    def _maybe_promote_bootstrap_admin(
+        self,
+        *,
+        user: User,
+        sub: str,
+        email: str | None,
+    ) -> User:
+        if not settings.bootstrap_admin_enabled:
+            return user
+        if user.role == UserRole.ADMIN:
+            return user
+
+        provisioning_tenant = self.tenant_repository.get_by_slug(settings.provisioning_tenant_slug)
+        if provisioning_tenant is None or user.tenant_id != provisioning_tenant.id:
+            return user
+
+        bootstrap_sub = settings.bootstrap_admin_sub
+        bootstrap_email = settings.bootstrap_admin_email
+        if bootstrap_sub:
+            matches_identity = sub == bootstrap_sub
+        elif bootstrap_email:
+            matches_identity = bool(email) and email.lower() == bootstrap_email.lower()
+        else:
+            matches_identity = False
+
+        if not matches_identity:
+            return user
+        if self.user_repository.count_admins_by_tenant(user.tenant_id) > 0:
+            return user
+
+        user.role = UserRole.ADMIN
+        self.user_repository.db.commit()
+        self.user_repository.db.refresh(user)
+        logger.info("Promoted bootstrap admin user %s in tenant %s", user.email, settings.provisioning_tenant_slug)
+        return user

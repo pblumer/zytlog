@@ -124,12 +124,24 @@ def client(test_session_local: sessionmaker) -> TestClient:
     app.dependency_overrides[get_jwt_validator] = lambda: StubJWTValidator()
 
     previous_auth_enabled = settings.auth_enabled
+    previous_provisioning_tenant_slug = settings.provisioning_tenant_slug
+    previous_bootstrap_admin_enabled = settings.bootstrap_admin_enabled
+    previous_bootstrap_admin_sub = settings.bootstrap_admin_sub
+    previous_bootstrap_admin_email = settings.bootstrap_admin_email
     settings.auth_enabled = True
+    settings.provisioning_tenant_slug = "demo-co"
+    settings.bootstrap_admin_enabled = False
+    settings.bootstrap_admin_sub = None
+    settings.bootstrap_admin_email = None
 
     with TestClient(app) as test_client:
         yield test_client
 
     settings.auth_enabled = previous_auth_enabled
+    settings.provisioning_tenant_slug = previous_provisioning_tenant_slug
+    settings.bootstrap_admin_enabled = previous_bootstrap_admin_enabled
+    settings.bootstrap_admin_sub = previous_bootstrap_admin_sub
+    settings.bootstrap_admin_email = previous_bootstrap_admin_email
 
 
 def test_me_requires_token(client: TestClient) -> None:
@@ -235,3 +247,99 @@ def test_me_relinked_user_login_does_not_create_duplicate_email_user(
     with test_session_local() as session:
         users = session.scalars(select(User).where(User.email == "employee@zytlog.local")).all()
         assert len(users) == 1
+
+
+def test_me_promotes_existing_matching_bootstrap_user_when_no_admin_exists(
+    client: TestClient,
+    test_session_local: sessionmaker,
+) -> None:
+    with test_session_local() as session:
+        admin = session.scalar(select(User).where(User.keycloak_user_id == "kc-admin"))
+        assert admin is not None
+        session.delete(admin)
+        session.commit()
+
+    settings.bootstrap_admin_enabled = True
+    settings.bootstrap_admin_sub = "kc-employee"
+    settings.bootstrap_admin_email = "employee@zytlog.local"
+
+    response = client.get("/api/v1/me", headers={"Authorization": "Bearer valid-employee-token"})
+    assert response.status_code == 200
+    assert response.json()["role"] == "admin"
+
+    with test_session_local() as session:
+        employee = session.scalar(select(User).where(User.keycloak_user_id == "kc-employee"))
+        assert employee is not None
+        assert employee.role == UserRole.ADMIN
+
+
+def test_me_does_not_promote_matching_bootstrap_user_if_admin_exists(
+    client: TestClient,
+    test_session_local: sessionmaker,
+) -> None:
+    settings.bootstrap_admin_enabled = True
+    settings.bootstrap_admin_sub = "kc-employee"
+    settings.bootstrap_admin_email = "employee@zytlog.local"
+
+    response = client.get("/api/v1/me", headers={"Authorization": "Bearer valid-employee-token"})
+    assert response.status_code == 200
+    assert response.json()["role"] == "employee"
+
+    with test_session_local() as session:
+        employee = session.scalar(select(User).where(User.keycloak_user_id == "kc-employee"))
+        assert employee is not None
+        assert employee.role == UserRole.EMPLOYEE
+
+
+def test_me_does_not_promote_non_matching_bootstrap_user_when_no_admin_exists(
+    client: TestClient,
+    test_session_local: sessionmaker,
+) -> None:
+    with test_session_local() as session:
+        admin = session.scalar(select(User).where(User.keycloak_user_id == "kc-admin"))
+        assert admin is not None
+        session.delete(admin)
+        session.commit()
+
+    settings.bootstrap_admin_enabled = True
+    settings.bootstrap_admin_sub = "other-sub"
+    settings.bootstrap_admin_email = "other@zytlog.local"
+
+    response = client.get("/api/v1/me", headers={"Authorization": "Bearer valid-employee-token"})
+    assert response.status_code == 200
+    assert response.json()["role"] == "employee"
+
+    with test_session_local() as session:
+        employee = session.scalar(select(User).where(User.keycloak_user_id == "kc-employee"))
+        assert employee is not None
+        assert employee.role == UserRole.EMPLOYEE
+
+
+def test_me_bootstrap_promotion_is_idempotent_across_repeated_logins(
+    client: TestClient,
+    test_session_local: sessionmaker,
+) -> None:
+    with test_session_local() as session:
+        admin = session.scalar(select(User).where(User.keycloak_user_id == "kc-admin"))
+        assert admin is not None
+        session.delete(admin)
+        session.commit()
+
+    settings.bootstrap_admin_enabled = True
+    settings.bootstrap_admin_sub = "kc-employee"
+    settings.bootstrap_admin_email = "employee@zytlog.local"
+
+    first = client.get("/api/v1/me", headers={"Authorization": "Bearer valid-employee-token"})
+    second = client.get("/api/v1/me", headers={"Authorization": "Bearer valid-employee-token"})
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert first.json()["role"] == "admin"
+    assert second.json()["role"] == "admin"
+
+    with test_session_local() as session:
+        employee = session.scalar(select(User).where(User.keycloak_user_id == "kc-employee"))
+        admins = session.scalars(select(User).where(User.role == UserRole.ADMIN)).all()
+        assert employee is not None
+        assert employee.role == UserRole.ADMIN
+        assert len(admins) == 1
