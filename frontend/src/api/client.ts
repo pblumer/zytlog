@@ -1,4 +1,6 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1';
+import { APP_CONFIG } from '../config/runtime';
+
+export const API_BASE_URL = APP_CONFIG.apiBaseUrl;
 
 type AccessTokenProvider = () => Promise<string | null> | string | null;
 let accessTokenProvider: AccessTokenProvider | null = null;

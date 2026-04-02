@@ -3,6 +3,7 @@ import Keycloak from 'keycloak-js';
 import { useQuery } from '@tanstack/react-query';
 
 import { apiGet, ApiError, setAccessTokenProvider } from '../api/client';
+import { APP_CONFIG } from '../config/runtime';
 import type { Me } from '../types/api';
 
 type AuthState = {
@@ -23,9 +24,9 @@ const AuthContext = createContext<AuthState | null>(null);
 const STORAGE_KEY = 'zytlog_access_token';
 const getStoredToken = () => localStorage.getItem(STORAGE_KEY);
 
-const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL;
-const KEYCLOAK_REALM = import.meta.env.VITE_KEYCLOAK_REALM;
-const KEYCLOAK_CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID;
+const KEYCLOAK_URL = APP_CONFIG.keycloakUrl;
+const KEYCLOAK_REALM = APP_CONFIG.keycloakRealm;
+const KEYCLOAK_CLIENT_ID = APP_CONFIG.keycloakClientId;
 
 const keycloakEnabled = Boolean(KEYCLOAK_URL && KEYCLOAK_REALM && KEYCLOAK_CLIENT_ID);
 const TOKEN_REFRESH_INTERVAL_MS = 25_000;
