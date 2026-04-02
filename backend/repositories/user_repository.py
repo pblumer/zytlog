@@ -1,4 +1,4 @@
-from sqlalchemy import case, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from backend.models.employee import Employee
@@ -59,6 +59,19 @@ class UserRepository:
         self.db.commit()
         self.db.refresh(user)
         return user
+
+    def update_role(self, *, user_id: int, role: UserRole) -> User | None:
+        user = self.get_by_id(user_id)
+        if user is None:
+            return None
+        user.role = role
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    def count_by_tenant_and_role(self, *, tenant_id: int, role: UserRole) -> int:
+        stmt = select(func.count(User.id)).where(User.tenant_id == tenant_id, User.role == role)
+        return int(self.db.execute(stmt).scalar_one())
 
     def list_with_employee_status_for_tenant(self, tenant_id: int) -> list[tuple[User, bool]]:
         has_employee = case((Employee.id.is_not(None), True), else_=False).label("has_employee")

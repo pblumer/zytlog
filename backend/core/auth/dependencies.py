@@ -93,9 +93,10 @@ def get_auth_context(
     )
     if user.keycloak_user_id == claims.sub:
         logger.info(
-            "Provisioning/resolution completed for %s (sub=%s) in tenant demo-co",
+            "Provisioning/resolution completed for %s (sub=%s) in tenant_id=%s",
             user.email,
             claims.sub,
+            user.tenant_id,
         )
 
     return _build_context_from_user(

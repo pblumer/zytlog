@@ -235,3 +235,119 @@ def test_me_relinked_user_login_does_not_create_duplicate_email_user(
     with test_session_local() as session:
         users = session.scalars(select(User).where(User.email == "employee@zytlog.local")).all()
         assert len(users) == 1
+
+
+def test_me_bootstrap_promotes_matching_new_user_when_no_admin_exists(
+    client: TestClient,
+    test_session_local: sessionmaker,
+) -> None:
+    previous_enabled = settings.bootstrap_admin_enabled
+    previous_sub = settings.bootstrap_admin_sub
+    previous_email = settings.bootstrap_admin_email
+    try:
+        settings.bootstrap_admin_enabled = True
+        settings.bootstrap_admin_sub = "kc-new-user"
+        settings.bootstrap_admin_email = None
+
+        with test_session_local() as session:
+            admin = session.scalar(select(User).where(User.keycloak_user_id == "kc-admin"))
+            assert admin is not None
+            session.delete(admin)
+            session.commit()
+
+        response = client.get("/api/v1/me", headers={"Authorization": "Bearer valid-new-user-token"})
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["role"] == "admin"
+
+        with test_session_local() as session:
+            user = session.scalar(select(User).where(User.keycloak_user_id == "kc-new-user"))
+            assert user is not None
+            assert user.role == UserRole.ADMIN
+    finally:
+        settings.bootstrap_admin_enabled = previous_enabled
+        settings.bootstrap_admin_sub = previous_sub
+        settings.bootstrap_admin_email = previous_email
+
+
+def test_me_bootstrap_matching_user_not_promoted_if_admin_exists(
+    client: TestClient,
+    test_session_local: sessionmaker,
+) -> None:
+    previous_enabled = settings.bootstrap_admin_enabled
+    previous_sub = settings.bootstrap_admin_sub
+    previous_email = settings.bootstrap_admin_email
+    try:
+        settings.bootstrap_admin_enabled = True
+        settings.bootstrap_admin_sub = "kc-new-user"
+        settings.bootstrap_admin_email = None
+
+        response = client.get("/api/v1/me", headers={"Authorization": "Bearer valid-new-user-token"})
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["role"] == "employee"
+
+        with test_session_local() as session:
+            user = session.scalar(select(User).where(User.keycloak_user_id == "kc-new-user"))
+            assert user is not None
+            assert user.role == UserRole.EMPLOYEE
+    finally:
+        settings.bootstrap_admin_enabled = previous_enabled
+        settings.bootstrap_admin_sub = previous_sub
+        settings.bootstrap_admin_email = previous_email
+
+
+def test_me_bootstrap_non_matching_user_stays_employee_when_no_admin_exists(
+    client: TestClient,
+    test_session_local: sessionmaker,
+) -> None:
+    previous_enabled = settings.bootstrap_admin_enabled
+    previous_sub = settings.bootstrap_admin_sub
+    previous_email = settings.bootstrap_admin_email
+    try:
+        settings.bootstrap_admin_enabled = True
+        settings.bootstrap_admin_sub = "different-subject"
+        settings.bootstrap_admin_email = None
+
+        with test_session_local() as session:
+            admin = session.scalar(select(User).where(User.keycloak_user_id == "kc-admin"))
+            assert admin is not None
+            session.delete(admin)
+            session.commit()
+
+        response = client.get("/api/v1/me", headers={"Authorization": "Bearer valid-new-user-token"})
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["role"] == "employee"
+
+        with test_session_local() as session:
+            user = session.scalar(select(User).where(User.keycloak_user_id == "kc-new-user"))
+            assert user is not None
+            assert user.role == UserRole.EMPLOYEE
+    finally:
+        settings.bootstrap_admin_enabled = previous_enabled
+        settings.bootstrap_admin_sub = previous_sub
+        settings.bootstrap_admin_email = previous_email
+
+
+def test_me_provisions_new_user_into_configured_tenant_slug(
+    client: TestClient,
+    test_session_local: sessionmaker,
+) -> None:
+    previous_slug = settings.provisioning_tenant_slug
+    try:
+        settings.provisioning_tenant_slug = "test"
+
+        response = client.get("/api/v1/me", headers={"Authorization": "Bearer valid-new-user-token"})
+        assert response.status_code == 200
+        payload = response.json()
+
+        with test_session_local() as session:
+            user = session.scalar(select(User).where(User.keycloak_user_id == "kc-new-user"))
+            target_tenant = session.scalar(select(Tenant).where(Tenant.slug == "test"))
+            assert user is not None
+            assert target_tenant is not None
+            assert user.tenant_id == target_tenant.id
+            assert payload["tenant_id"] == target_tenant.id
+    finally:
+        settings.provisioning_tenant_slug = previous_slug
