@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'team_lead' | 'employee';
+export type UserRole = 'system_admin' | 'admin' | 'team_lead' | 'employee';
 
 export type Me = {
   user_id: number;
@@ -155,6 +155,32 @@ export type EmployeeUserOption = {
   keycloak_user_id: string;
   role: UserRole;
   has_employee: boolean;
+};
+
+export type TenantType = 'company' | 'demo';
+
+export type SystemTenant = {
+  id: number;
+  name: string;
+  slug: string;
+  active: boolean;
+  type: TenantType;
+  timezone: string;
+  default_holiday_set_id: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SystemUser = {
+  id: number;
+  tenant_id: number;
+  email: string;
+  full_name: string;
+  keycloak_user_id: string;
+  role: UserRole;
+  has_employee_profile: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
 export type WorkingTimeModel = {

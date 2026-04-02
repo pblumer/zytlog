@@ -5,6 +5,7 @@ class UserRole(str, enum.Enum):
     EMPLOYEE = "employee"
     TEAM_LEAD = "team_lead"
     ADMIN = "admin"
+    SYSTEM_ADMIN = "system_admin"
 
 
 class TenantType(str, enum.Enum):

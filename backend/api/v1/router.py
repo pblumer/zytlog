@@ -14,6 +14,8 @@ from backend.api.v1.endpoints import (
     non_working_period_sets_router,
     openholidays_router,
     reports_router,
+    system_users_router,
+    tenants_router,
     time_stamps_router,
     working_time_models_router,
 )
@@ -28,6 +30,8 @@ router.include_router(holiday_sets_router)
 router.include_router(holidays_router)
 router.include_router(non_working_period_sets_router)
 router.include_router(openholidays_router)
+router.include_router(system_users_router)
+router.include_router(tenants_router)
 router.include_router(absences_router)
 router.include_router(admin_absences_router)
 router.include_router(time_stamps_router)

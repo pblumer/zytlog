@@ -128,11 +128,21 @@ def require_role(*allowed_roles: UserRole) -> Callable[[AuthContext], AuthContex
     return _enforce_role
 
 
-def require_admin(context: AuthContext = Depends(require_role(UserRole.ADMIN))) -> AuthContext:
+def require_admin(
+    context: AuthContext=Depends(require_role(UserRole.ADMIN, UserRole.SYSTEM_ADMIN)),
+) -> AuthContext:
+    return context
+
+
+def require_system_admin(
+    context: AuthContext=Depends(require_role(UserRole.SYSTEM_ADMIN)),
+) -> AuthContext:
     return context
 
 
 def require_team_lead_or_admin(
-    context: AuthContext = Depends(require_role(UserRole.TEAM_LEAD, UserRole.ADMIN)),
+    context: AuthContext=Depends(
+        require_role(UserRole.TEAM_LEAD, UserRole.ADMIN, UserRole.SYSTEM_ADMIN)
+    ),
 ) -> AuthContext:
     return context

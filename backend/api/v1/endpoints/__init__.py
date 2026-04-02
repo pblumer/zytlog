@@ -11,6 +11,8 @@ from backend.api.v1.endpoints.holidays import router as holidays_router
 from backend.api.v1.endpoints.non_working_period_sets import router as non_working_period_sets_router
 from backend.api.v1.endpoints.openholidays import router as openholidays_router
 from backend.api.v1.endpoints.reports import router as reports_router
+from backend.api.v1.endpoints.system_users import router as system_users_router
+from backend.api.v1.endpoints.tenants import router as tenants_router
 from backend.api.v1.endpoints.time_stamps import router as time_stamps_router
 from backend.api.v1.endpoints.working_time_models import router as working_time_models_router
 
@@ -26,6 +28,8 @@ __all__ = [
     "non_working_period_sets_router",
     "openholidays_router",
     "exports_router",
+    "system_users_router",
+    "tenants_router",
     "working_time_models_router",
     "time_stamps_router",
     "daily_accounts_router",

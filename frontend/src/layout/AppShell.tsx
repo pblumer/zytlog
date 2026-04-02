@@ -24,7 +24,13 @@ const adminNavItems: NavItem[] = [
   { to: '/admin-absences', label: 'Abwesenheiten' },
 ];
 
+const systemAdminNavItems: NavItem[] = [
+  { to: '/system-admin', label: 'Systemverwaltung' },
+  ...adminNavItems,
+];
+
 function getNavItemsByRole(role?: UserRole): NavItem[] {
+  if (role === 'system_admin') return systemAdminNavItems;
   if (role === 'admin') return adminNavItems;
   return employeeNavItems;
 }
@@ -38,7 +44,7 @@ export function AppShell() {
       <aside className="sidebar">
         <div className="brand">Zytlog</div>
         <ul className="nav-list">
-          {user?.role === 'admin' ? <li className="meta">Verwaltung</li> : null}
+          {user?.role === 'admin' || user?.role === 'system_admin' ? <li className="meta">Verwaltung</li> : null}
           {navItems.map((item) => (
             <li key={item.to}>
               <NavLink to={item.to} end={item.to === '/'} className={({ isActive }: NavLinkRenderProps) => `nav-link${isActive ? ' active' : ''}`}>

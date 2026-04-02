@@ -110,9 +110,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
     if (!keycloakEnabled) return;
 
     const keycloak = new Keycloak({
-      url: KEYCLOAK_URL,
-      realm: KEYCLOAK_REALM,
-      clientId: KEYCLOAK_CLIENT_ID,
+      url: KEYCLOAK_URL!,
+      realm: KEYCLOAK_REALM!,
+      clientId: KEYCLOAK_CLIENT_ID!,
     });
 
     keycloakRef.current = keycloak;

@@ -48,6 +48,11 @@ import {
   createAdminAbsence,
   updateAdminAbsence,
   deleteAdminAbsence,
+  getSystemTenants,
+  createSystemTenant,
+  updateSystemTenant,
+  getSystemUsers,
+  updateSystemUser,
   type CreateEmployeePayload,
   type CreateHolidayPayload,
   type CreateHolidaySetPayload,
@@ -572,6 +577,62 @@ export function useCreateAdminAbsenceMutation() {
         queryClient.invalidateQueries({ queryKey: ['my-absences'] }),
         queryClient.invalidateQueries({ queryKey: ['daily-account'] }),
         queryClient.invalidateQueries({ queryKey: ['month-report'] }),
+      ]);
+    },
+  });
+}
+
+export function useSystemTenants(enabled: boolean) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['system-tenants'],
+    queryFn: () => getSystemTenants(token),
+    enabled,
+  });
+}
+
+export function useSystemUsers(enabled: boolean) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['system-users'],
+    queryFn: () => getSystemUsers(token),
+    enabled,
+  });
+}
+
+export function useCreateSystemTenantMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: (payload: Parameters<typeof createSystemTenant>[0]) => createSystemTenant(payload, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['system-tenants'] });
+    },
+  });
+}
+
+export function useUpdateSystemTenantMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: ({ tenantId, payload }: { tenantId: number; payload: Parameters<typeof updateSystemTenant>[1] }) =>
+      updateSystemTenant(tenantId, payload, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['system-tenants'] });
+    },
+  });
+}
+
+export function useUpdateSystemUserMutation() {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: ({ userId, payload }: { userId: number; payload: Parameters<typeof updateSystemUser>[1] }) =>
+      updateSystemUser(userId, payload, token),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['system-users'] }),
+        queryClient.invalidateQueries({ queryKey: ['system-tenants'] }),
       ]);
     },
   });
