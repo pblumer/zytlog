@@ -82,9 +82,11 @@ Implementierte Rollen (Systemstand):
 - `employee`
 - `team_lead`
 - `admin`
+- `system_admin`
 
 Aktueller MVP-Verhaltensstand:
-- Admin-Endpunkte sind auf `admin` eingeschränkt.
+- Systemweite Verwaltungsendpunkte sind auf `system_admin` eingeschränkt.
+- Tenant-lokale Admin-Endpunkte erlauben `admin` und `system_admin`.
 - Self-Service-Endpunkte sind für authentifizierte Nutzer verfügbar.
 - Für Korrektur-/Löschvorgänge gilt derzeit fachlich: `admin` kann tenant-weit, Nicht-Admins nur eigene Ereignisse.
 - Die Rolle `team_lead` ist technisch weiterhin Teil des Rollenmodells, wird im aktuellen UI/Use-Case aber nicht als eigenständige Fachrolle ausgebaut.
@@ -132,6 +134,7 @@ Admin-Domänen:
 - Holiday Sets + Holidays: `/api/v1/holiday-sets`, `/api/v1/holidays`
 - Non-Working Period Sets: `/api/v1/non-working-period-sets`
 - Absences: `/api/v1/my/absences`, `/api/v1/admin/absences`
+- System Administration: `/api/v1/system/tenants`, `/api/v1/system/users`
 
 OpenHolidays:
 - Manuelle Preview/Commit-Importstrecke unter `/api/v1/admin/.../openholidays/...`.
