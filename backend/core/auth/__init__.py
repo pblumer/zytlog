@@ -5,6 +5,7 @@ from backend.core.auth.dependencies import (
     require_admin,
     require_authenticated_user,
     require_role,
+    require_system_admin,
     require_team_lead_or_admin,
 )
 
@@ -15,5 +16,6 @@ __all__ = [
     "require_admin",
     "require_authenticated_user",
     "require_role",
+    "require_system_admin",
     "require_team_lead_or_admin",
 ]

@@ -78,6 +78,7 @@ Sichtbare Kontexte:
 
 ## Relevante Admin-Sichten
 
+- **Systemverwaltung** (`system_admin`): tenant-übergreifende Verwaltung von Tenants und internen Benutzern, inkl. Rollenwechsel und kontrollierter Tenant-Zuordnung.
 - **Employees**: Mitarbeitenden-Stammdaten inkl. Zuordnung zu Working-Time-, Holiday- und Non-Working-Period-Sets.
 - **Working Time Models**: Jahresziel + Standard-Wochentagsmuster.
 - **Holiday Sets / Holidays**: Feiertagsdaten inkl. OpenHolidays-Import (Preview/Commit).

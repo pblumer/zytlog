@@ -17,6 +17,7 @@ import { UnauthorizedPage } from '../pages/UnauthorizedPage';
 import { WeekPage } from '../pages/WeekPage';
 import { WorkingTimeModelsPage } from '../pages/WorkingTimeModelsPage';
 import { YearPage } from '../pages/YearPage';
+import { SystemAdminPage } from '../pages/SystemAdminPage';
 
 export const router = createBrowserRouter([
   { path: '/unauthorized', element: <UnauthorizedPage /> },
@@ -40,6 +41,7 @@ export const router = createBrowserRouter([
           { path: 'holidays', element: <HolidaysPage /> },
           { path: 'non-working-period-sets', element: <NonWorkingPeriodSetsPage /> },
           { path: 'admin-absences', element: <AdminAbsencesPage /> },
+          { path: 'system-admin', element: <SystemAdminPage /> },
           { path: '*', element: <NotFoundPage /> },
         ],
       },

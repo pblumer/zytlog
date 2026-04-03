@@ -22,6 +22,8 @@ import type {
   OpenHolidaysSubdivision,
   NonWorkingPeriodSet,
   NonWorkingPeriod,
+  SystemTenant,
+  SystemUser,
 } from '../types/api';
 
 export type { OpenHolidaysImportPayload } from '../types/api';
@@ -309,3 +311,29 @@ export const updateAdminAbsence = (absenceId: number, payload: UpdateAbsencePayl
 
 export const deleteAdminAbsence = (absenceId: number, token?: string | null) =>
   apiDelete<void>(`/admin/absences/${absenceId}`, token);
+
+export type CreateSystemTenantPayload = {
+  name: string;
+  slug: string;
+  active: boolean;
+  type: 'company' | 'demo';
+  timezone: string;
+  default_holiday_set_id: number | null;
+};
+
+export type UpdateSystemTenantPayload = Partial<CreateSystemTenantPayload>;
+
+export type UpdateSystemUserPayload = {
+  tenant_id?: number;
+  role?: 'system_admin' | 'admin' | 'team_lead' | 'employee';
+};
+
+export const getSystemTenants = (token?: string | null) => apiGet<SystemTenant[]>('/system/tenants', token);
+export const createSystemTenant = (payload: CreateSystemTenantPayload, token?: string | null) =>
+  apiPost<SystemTenant>('/system/tenants', payload, token);
+export const updateSystemTenant = (tenantId: number, payload: UpdateSystemTenantPayload, token?: string | null) =>
+  apiPatch<SystemTenant>(`/system/tenants/${tenantId}`, payload, token);
+
+export const getSystemUsers = (token?: string | null) => apiGet<SystemUser[]>('/system/users', token);
+export const updateSystemUser = (userId: number, payload: UpdateSystemUserPayload, token?: string | null) =>
+  apiPatch<SystemUser>(`/system/users/${userId}`, payload, token);

@@ -31,6 +31,18 @@ class StubJWTValidator:
                     "resource_roles": {"zytlog-api": ["admin"]},
                 },
             )()
+        if token == "valid-system-admin-token":
+            return type(
+                "Claims",
+                (),
+                {
+                    "sub": "kc-system-admin",
+                    "preferred_username": "system.admin",
+                    "email": "system.admin@zytlog.local",
+                    "realm_roles": ["system_admin"],
+                    "resource_roles": {"zytlog-api": ["system_admin"]},
+                },
+            )()
         if token == "valid-employee-token":
             return type(
                 "Claims",
@@ -101,6 +113,13 @@ def test_session_local() -> sessionmaker:
                     full_name="Employee User",
                     keycloak_user_id="kc-employee",
                     role=UserRole.EMPLOYEE,
+                ),
+                User(
+                    tenant_id=demo_tenant.id,
+                    email="system.admin@zytlog.local",
+                    full_name="System Admin",
+                    keycloak_user_id="kc-system-admin",
+                    role=UserRole.SYSTEM_ADMIN,
                 ),
             ]
         )
@@ -174,6 +193,31 @@ def test_employee_create_requires_admin_role(client: TestClient) -> None:
     )
     assert response.status_code == 403
     assert response.json()["detail"] == "Insufficient role for this resource"
+
+
+def test_system_admin_can_access_admin_only_endpoint(client: TestClient) -> None:
+    response = client.get(
+        "/api/v1/employees",
+        headers={"Authorization": "Bearer valid-system-admin-token"},
+    )
+    assert response.status_code == 200
+
+
+def test_me_returns_system_admin_context(
+    client: TestClient,
+    test_session_local: sessionmaker,
+) -> None:
+    response = client.get("/api/v1/me", headers={"Authorization": "Bearer valid-system-admin-token"})
+    assert response.status_code == 200
+    payload = response.json()
+
+    with test_session_local() as session:
+        user = session.scalar(select(User).where(User.keycloak_user_id == "kc-system-admin"))
+        assert user is not None
+        assert payload["email"] == "system.admin@zytlog.local"
+        assert payload["role"] == "system_admin"
+        assert payload["user_id"] == user.id
+        assert payload["tenant_id"] == user.tenant_id
 
 
 def test_me_returns_authenticated_user_context_for_existing_user(
