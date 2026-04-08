@@ -46,6 +46,19 @@ export function AppShell() {
     setMenuOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [menuOpen]);
+
   return (
     <div className="app-shell">
       {menuOpen ? <button type="button" className="nav-backdrop" aria-label="Menü schliessen" onClick={() => setMenuOpen(false)} /> : null}
