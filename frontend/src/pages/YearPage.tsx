@@ -120,6 +120,8 @@ export function YearPage() {
                   const overallStatus = getMonthOverallStatus(month);
                   const balanceClass = month.balance_minutes > 0 ? 'balance-positive' : month.balance_minutes < 0 ? 'balance-negative' : 'balance-neutral';
                   const monthDays = monthCalendars.get(month.month) ?? [];
+                  const firstOfMonth = new Date(Date.UTC(year, month.month - 1, 1));
+                  const firstWeekday = (firstOfMonth.getUTCDay() + 6) % 7;
 
                   return (
                     <button
@@ -156,6 +158,9 @@ export function YearPage() {
 
                       <div className="year-mini-grid-wrap">
                         <div className="year-mini-grid">
+                          {Array.from({ length: firstWeekday }, (_, index) => (
+                            <span key={`placeholder-${month.month}-${index}`} className="year-mini-dot year-mini-dot-placeholder" aria-hidden="true" />
+                          ))}
                           {monthDays.map((day) => {
                             const dotStatus = getDayDotStatus(day);
                             const absenceLabel = formatAbsenceLabel(day);
