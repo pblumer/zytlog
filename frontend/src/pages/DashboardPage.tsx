@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { DashboardMonthCalendar } from '../components/DashboardMonthCalendar';
 import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader, StatusBadge, SummaryCard } from '../components/common';
@@ -81,15 +81,12 @@ export function DashboardPage() {
   const todayEvents = [...(events.data ?? [])].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   const lastEvent = todayEvents[0];
 
-  const guidance = useMemo(() => {
-    if (status === 'clocked_in') {
-      return 'Du bist aktuell eingestempelt. Nicht vergessen: beim Gehen ausstempeln.';
-    }
-    if ((dailyAccount.data?.status ?? 'empty') === 'incomplete') {
-      return 'Heute ist noch unvollständig. Ergänze fehlende Stempel über die Nacherfassung.';
-    }
-    return 'Alles bereit für die Zeiterfassung. Du kannst direkt stempeln oder nacherfassen.';
-  }, [dailyAccount.data?.status, status]);
+  const guidance =
+    status === 'clocked_in'
+      ? 'Du bist aktuell eingestempelt. Nicht vergessen: beim Gehen ausstempeln.'
+      : (dailyAccount.data?.status ?? 'empty') === 'incomplete'
+        ? 'Heute ist noch unvollständig. Ergänze fehlende Stempel über die Nacherfassung.'
+        : 'Alles bereit für die Zeiterfassung. Du kannst direkt stempeln oder nacherfassen.';
 
   const submitManual = async () => {
     const parsed = toIsoOrNull(manualTimestamp);
