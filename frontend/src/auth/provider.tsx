@@ -197,8 +197,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
   });
 
   const login = () => {
+    setAccessToken(null);
     if (keycloakRef.current) {
-      void keycloakRef.current.login();
+      void keycloakRef.current.login({ prompt: 'login' });
       return;
     }
     window.location.assign('/');
