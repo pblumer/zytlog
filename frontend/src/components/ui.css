@@ -808,7 +808,7 @@ a:focus-visible,
 
 .year-mini-grid {
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0.22rem;
 }
 
@@ -819,6 +819,10 @@ a:focus-visible,
   border-radius: 2px;
   background: #d7dce5;
   overflow: hidden;
+}
+
+.year-mini-dot-placeholder {
+  background: transparent;
 }
 
 .year-mini-dot-valid {
