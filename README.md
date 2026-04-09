@@ -26,11 +26,16 @@ cd backend
 alembic upgrade head
 ```
 
-4. Optional Demo-Daten laden:
+4. Optional Demo-Daten laden (empfohlen für reproduzierbare lokale Tests):
 
 ```bash
 python -m backend.scripts.seed_demo
 ```
+
+Demo identities (Keycloak + DB mapping):
+- sysadmin@demo.local / sysadmin (role: system_admin)
+- admin@demo.local / admin (role: admin)
+- employee@demo.local / employee (role: employee)
 
 Lokale URLs:
 - Frontend: http://localhost:5173

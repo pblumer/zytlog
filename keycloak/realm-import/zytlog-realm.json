@@ -28,6 +28,22 @@
   ],
   "users": [
     {
+      "id": "demo-sysadmin-sub",
+      "username": "sysadmin@demo.local",
+      "email": "sysadmin@demo.local",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "SysAdmin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "sysadmin",
+          "temporary": false
+        }
+      ]
+    },
+    {
       "id": "demo-admin-sub",
       "username": "admin@demo.local",
       "email": "admin@demo.local",
