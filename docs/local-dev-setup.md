@@ -1,23 +1,15 @@
 # Local Development Setup (Docker Compose)
 
-This guide documents a reproducible local setup for `zytlog` with full auth flow (Frontend + Backend + Keycloak + Postgres).
+This guide describes a reproducible local setup for zytlog (Frontend + Backend + Keycloak + Postgres) without machine-specific defaults.
 
 ## 1) Prerequisites
 
 - Docker Engine + Docker Compose plugin
 - Git
-- A host name that matches your frontend/keycloak URLs (recommended)
 
-Recommended local host mapping (example):
+Optional (LAN testing): local DNS or /etc/hosts entry for your chosen dev host.
 
-```bash
-# /etc/hosts
-192.168.1.203 pi-server-03.home
-```
-
-If you use a different hostname/IP, update all related config consistently (see Troubleshooting section).
-
-## 2) Clone and start services
+## 2) Default local start (localhost)
 
 ```bash
 git clone <repo-url>
@@ -25,121 +17,87 @@ cd zytlog
 docker compose up -d
 ```
 
-Check container status:
-
-```bash
-docker compose ps
-```
-
-Expected services:
-- `frontend` on `:5173`
-- `backend` on `:8000`
-- `keycloak` on `:8080`
-- `db` and `keycloak-db`
+Default endpoints:
+- Frontend: http://localhost:5173
+- Backend health: http://localhost:8000/health
+- Keycloak realm metadata: http://localhost:8080/realms/zytlog/.well-known/openid-configuration
 
 ## 3) Initialize backend database (required)
 
-Important: backend tables are not guaranteed to exist after a fresh start unless migrations are applied.
-
-Run migrations:
+After fresh startup, run migrations and seed demo data:
 
 ```bash
 docker compose exec -T backend bash -lc "alembic -c backend/alembic.ini upgrade head"
-```
-
-Seed demo data:
-
-```bash
 docker compose exec -T backend bash -lc "PYTHONPATH=/app python backend/scripts/seed_demo.py"
 ```
 
-This creates/updates demo tenant and users:
-- `sysadmin@demo.local` / `sysadmin`
-- `admin@demo.local` / `admin`
-- `employee@demo.local` / `employee`
+Demo users:
+- sysadmin@demo.local / sysadmin
+- admin@demo.local / admin
+- employee@demo.local / employee
 
-## 4) Open the app
+## 4) Non-localhost setup (custom dev host/IP)
 
-- Frontend: `http://pi-server-03.home:5173`
-- Keycloak realm metadata: `http://pi-server-03.home:8080/realms/zytlog/.well-known/openid-configuration`
-- Backend health: `http://pi-server-03.home:8000/health`
+If you use a custom hostname/IP (for example LAN testing), override compose variables before startup:
 
-Log in with one of the demo users above.
+```bash
+export DEV_VITE_API_BASE_URL="http://<your-host>:8000/api/v1"
+export DEV_VITE_KEYCLOAK_URL="http://<your-host>:8080"
+export DEV_KEYCLOAK_ISSUER="http://<your-host>:8080/realms/zytlog"
+export DEV_CORS_ALLOWED_ORIGINS="http://<your-host>:5173,http://localhost:5173,http://127.0.0.1:5173"
 
-## 5) Day-to-day developer workflow
+docker compose up -d
+```
 
-Start/stop:
+Notes:
+- Backend validates token issuer against DEV_KEYCLOAK_ISSUER.
+- Backend CORS is configured from DEV_CORS_ALLOWED_ORIGINS.
+- Frontend API/Keycloak URLs come from DEV_VITE_* vars.
+
+## 5) Day-to-day workflow
 
 ```bash
 docker compose up -d
 docker compose down
-```
 
-Backend logs:
-
-```bash
 docker compose logs -f backend
-```
-
-Frontend logs:
-
-```bash
 docker compose logs -f frontend
-```
-
-Keycloak logs:
-
-```bash
 docker compose logs -f keycloak
 ```
 
 ## 6) Troubleshooting
 
-### A) Login loop / white screen after Keycloak redirect
+### A) Login loop or white screen after Keycloak redirect
 
-Typical cause:
-- CORS preflight (`OPTIONS /api/v1/me`) fails with `400`.
+Usually CORS preflight failure (`OPTIONS /api/v1/me`).
 
-Checks:
-
+Check:
 ```bash
 docker compose logs --tail=200 backend
 ```
 
 Fix:
-- Ensure backend CORS `allow_origins` includes your actual frontend origin(s), e.g.:
-  - `http://localhost:5173`
-  - `http://pi-server-03.home:5173`
-  - `http://192.168.1.203:5173`
+- Ensure DEV_CORS_ALLOWED_ORIGINS contains the exact frontend origin in use.
 
-### B) Always redirected to Unauthorized ("not authenticated for this tenant context")
+### B) Redirected to Unauthorized (tenant context)
 
 Common causes:
-1. Backend DB not initialized (`users` table missing)
-2. Backend token issuer mismatch
+1) DB not initialized (missing tables)
+2) Issuer mismatch (token `iss` != backend expected issuer)
 
-Checks:
-- Backend errors like `relation "users" does not exist`
-- `/api/v1/me` returns `401 Invalid or expired token`
+Fix:
+- Run migrations + seed (section 3)
+- Ensure DEV_KEYCLOAK_ISSUER matches the URL used by browser tokens
 
-Fixes:
-1. Run migrations + seed (section 3)
-2. Ensure backend issuer matches real token issuer (in compose env):
-   - `KEYCLOAK_ISSUER=http://pi-server-03.home:8080/realms/zytlog`
+### C) Keycloak login succeeds but app still fails
 
-### C) Keycloak login works, but app still fails
-
-Verify Keycloak client `zytlog-frontend` has correct:
-- Redirect URIs (e.g. `http://pi-server-03.home:5173/*`)
-- Web Origins (e.g. `http://pi-server-03.home:5173`)
-
-### D) Frontend runtime error after login
-
-If you hit an "Unexpected Application Error" in Vite dev mode, inspect frontend logs and browser console first; this is usually a frontend hook/runtime bug and not auth infrastructure.
+Verify Keycloak client `zytlog-frontend` includes your frontend origin:
+- Redirect URI: `http://<your-host>:5173/*`
+- Web Origin: `http://<your-host>:5173`
 
 ## 7) Full reset (clean local state)
 
-Warning: removes local DB data.
+Warning: removes local DB volumes.
 
 ```bash
 docker compose down -v
@@ -148,14 +106,8 @@ docker compose exec -T backend bash -lc "alembic -c backend/alembic.ini upgrade 
 docker compose exec -T backend bash -lc "PYTHONPATH=/app python backend/scripts/seed_demo.py"
 ```
 
-## 8) Configuration consistency checklist
+## 8) Scope and safety
 
-When changing hostnames/IPs, keep these in sync:
-
-- Frontend runtime config (`VITE_*` values in compose)
-- Backend auth env (`KEYCLOAK_ISSUER`, optionally JWKS URL)
-- Backend CORS origins
-- Keycloak client redirect URIs + web origins
-- Local DNS/hosts entry
-
-If one of these is inconsistent, auth issues are likely.
+- These settings are for local Docker Compose development only.
+- Production deployment must use its own explicit environment and domain configuration.
+- Do not reuse DEV_* defaults for production.

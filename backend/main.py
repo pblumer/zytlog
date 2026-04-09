@@ -10,11 +10,7 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "http://localhost:5173",
-            "http://pi-server-03.home:5173",
-            "http://192.168.1.203:5173",
-        ],
+        allow_origins=settings.cors_allowed_origins_list,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
