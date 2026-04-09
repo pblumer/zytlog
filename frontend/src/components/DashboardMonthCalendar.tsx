@@ -4,6 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import type { CalendarMonthDay, CalendarDayStatus } from '../types/api';
 import { formatMinutes } from '../utils/date';
 
+type DayContextInfo = {
+  holidayName?: string | null;
+  nonWorkingLabel?: string | null;
+};
+
 type Props = {
   year: number;
   month: number;
@@ -12,6 +17,8 @@ type Props = {
   onSelectDate?: (date: string) => void;
   title?: string;
   subtitle?: string;
+  embedded?: boolean;
+  contextByDate?: Record<string, DayContextInfo>;
 };
 
 const WEEKDAY_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
@@ -69,6 +76,8 @@ export function DashboardMonthCalendar({
   onSelectDate,
   title = 'Monatsübersicht',
   subtitle = 'Status pro Tag, klickbar zur Tagesansicht',
+  embedded = false,
+  contextByDate,
 }: Props) {
   const navigate = useNavigate();
   const byDate = useMemo(() => new Map(days.map((day) => [day.date, day])), [days]);
@@ -86,6 +95,16 @@ export function DashboardMonthCalendar({
     const day = byDate.get(iso);
     const status = day?.status ?? 'no_data';
     const absenceLabel = day ? formatAbsenceLabel(day) : null;
+    const holidayName = contextByDate?.[iso]?.holidayName ?? null;
+    const nonWorkingLabel = contextByDate?.[iso]?.nonWorkingLabel ?? null;
+
+    const contextText = [
+      absenceLabel ? `Abwesenheit: ${absenceLabel}` : null,
+      holidayName ? `Feiertag: ${holidayName}` : null,
+      nonWorkingLabel ? `Arbeitsfrei: ${nonWorkingLabel}` : null,
+    ]
+      .filter(Boolean)
+      .join(' · ');
 
     cells.push(
       <button
@@ -93,8 +112,8 @@ export function DashboardMonthCalendar({
         type="button"
         className={`calendar-tile ${statusClassName(status)} ${iso === todayIso ? 'calendar-tile-today' : ''} ${iso === selectedDate ? 'calendar-tile-selected' : ''}`}
         onClick={() => (onSelectDate ? onSelectDate(iso) : navigate(`/day?date=${iso}`))}
-        title={`${iso} · ${statusText(status)}${absenceLabel ? ` · ${absenceLabel}` : ''}`}
-        aria-label={`${iso}. Status: ${statusText(status)}.${absenceLabel ? ` Abwesenheit: ${absenceLabel}.` : ''}${iso === todayIso ? ' Heute.' : ''}${iso === selectedDate ? ' Ausgewählt.' : ''}`}
+        title={`${iso} · ${statusText(status)}${contextText ? ` · ${contextText}` : ''}`}
+        aria-label={`${iso}. Status: ${statusText(status)}.${contextText ? ` ${contextText}.` : ''}${iso === todayIso ? ' Heute.' : ''}${iso === selectedDate ? ' Ausgewählt.' : ''}`}
         aria-current={iso === todayIso ? 'date' : undefined}
         aria-pressed={onSelectDate ? iso === selectedDate : undefined}
       >
@@ -103,16 +122,16 @@ export function DashboardMonthCalendar({
           <span className={statusDotClassName(status)} aria-hidden="true" />
         </span>
         <span className="calendar-day-status-text">{statusText(status)}</span>
-        {absenceLabel ? (
-          <span className={`calendar-absence-badge calendar-absence-${day?.absence?.type}`}>{absenceLabel}</span>
-        ) : null}
+        {absenceLabel ? <span className={`calendar-absence-badge calendar-absence-${day?.absence?.type}`}>{absenceLabel}</span> : null}
+        {holidayName ? <span className="calendar-context-badge calendar-context-holiday">Feiertag</span> : null}
+        {nonWorkingLabel ? <span className="calendar-context-badge calendar-context-non-working">Arbeitsfrei</span> : null}
         <span className="calendar-day-minutes">{day ? formatMinutes(day.actual_minutes) : '—'}</span>
       </button>,
     );
   }
 
   return (
-    <section className="card" style={{ marginTop: '1rem' }}>
+    <section className={embedded ? 'dashboard-calendar-embedded' : 'card dashboard-calendar-card'}>
       <div className="calendar-header">
         <h3>{title}</h3>
         <p className="meta">{subtitle}</p>

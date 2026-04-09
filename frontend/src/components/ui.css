@@ -393,6 +393,28 @@ a:focus-visible,
   padding: 0.08rem 0.4rem;
   border: 1px solid;
 }
+
+.calendar-context-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  font-size: 0.65rem;
+  border-radius: 999px;
+  padding: 0.06rem 0.35rem;
+  border: 1px solid;
+}
+
+.calendar-context-holiday {
+  color: #6b3a9a;
+  background: #f2e9fc;
+  border-color: #d8c3ee;
+}
+
+.calendar-context-non-working {
+  color: #6a4e22;
+  background: #fbf2df;
+  border-color: #e9d7aa;
+}
 .calendar-absence-vacation {
   color: #1f4f82;
   background: #eaf2fc;
@@ -523,6 +545,59 @@ a:focus-visible,
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.dashboard-context-card h3,
+.dashboard-calendar-header h3 {
+  margin-bottom: 0.35rem;
+}
+
+.dashboard-context-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.dashboard-context-chip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  font-size: 0.72rem;
+  border-radius: 999px;
+  padding: 0.12rem 0.5rem;
+  border: 1px solid;
+}
+
+.dashboard-context-holiday {
+  color: #6b3a9a;
+  background: #f2e9fc;
+  border-color: #d8c3ee;
+}
+
+.dashboard-context-non-working {
+  color: #6a4e22;
+  background: #fbf2df;
+  border-color: #e9d7aa;
+}
+
+.dashboard-calendar-shell {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.dashboard-context-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.dashboard-calendar-embedded {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.dashboard-calendar-card {
+  margin-top: 1rem;
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
@@ -581,6 +656,10 @@ a:focus-visible,
   }
 
   .dashboard-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-context-summary {
     grid-template-columns: 1fr;
   }
 
