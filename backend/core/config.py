@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     keycloak_audience: str | None = None
     keycloak_verify_audience: bool = False
     openholidays_base_url: str = "https://openholidaysapi.org"
+    cors_allowed_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+
+    @computed_field
+    @property
+    def cors_allowed_origins_list(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_allowed_origins.split(",") if origin.strip()]
 
     @computed_field
     @property
