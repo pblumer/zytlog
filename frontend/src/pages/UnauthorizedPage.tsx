@@ -1,13 +1,17 @@
 import { useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 
 import { PageHeader } from '../components/common';
 import { useAuth } from '../auth/provider';
 
 export function UnauthorizedPage() {
-  const { login, restartAuth } = useAuth();
+  const { login, restartAuth, isAuthenticated } = useAuth();
   const location = useLocation();
   const isAuthRecovery = useMemo(() => new URLSearchParams(location.search).get('reason') === 'auth-recovery', [location.search]);
+
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <section className="card" style={{ maxWidth: 560, margin: '4rem auto' }}>
