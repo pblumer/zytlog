@@ -165,10 +165,10 @@ export function NonWorkingPeriodSetsPage() {
       <PageHeader title="Arbeitsfreie Zeiträume" subtitle="Set-basierte Verwaltung von schulferienbedingten arbeitsfreien Zeiträumen" />
 
       <DataSection title={editingSetId ? 'Arbeitsfrei-Set bearbeiten' : 'Arbeitsfrei-Set anlegen'}>
-        <form className="grid" onSubmit={onSubmitSet}>
+        <form className="app-form" onSubmit={onSubmitSet}>
           <label>Name<input value={setForm.name} onChange={(e) => setSetForm((p) => ({ ...p, name: e.target.value }))} required /></label>
           <label>Beschreibung<input value={setForm.description} onChange={(e) => setSetForm((p) => ({ ...p, description: e.target.value }))} /></label>
-          <label><input type="checkbox" checked={setForm.active} onChange={(e) => setSetForm((p) => ({ ...p, active: e.target.checked }))} /> Aktiv</label>
+          <label className="app-form-check"><input type="checkbox" checked={setForm.active} onChange={(e) => setSetForm((p) => ({ ...p, active: e.target.checked }))} /> Aktiv</label>
           <div className="actions"><button type="submit" className="btn primary">Speichern</button></div>
         </form>
       </DataSection>
@@ -189,7 +189,7 @@ export function NonWorkingPeriodSetsPage() {
         </label>
         {selectedSetId ? (
           <>
-            <form className="grid" onSubmit={onSubmitPeriod}>
+            <form className="app-form" onSubmit={onSubmitPeriod}>
               <label>Von<input type="date" value={periodForm.start_date} onChange={(e) => setPeriodForm((p) => ({ ...p, start_date: e.target.value }))} required /></label>
               <label>Bis<input type="date" value={periodForm.end_date} onChange={(e) => setPeriodForm((p) => ({ ...p, end_date: e.target.value }))} required /></label>
               <label>Label<input value={periodForm.name} onChange={(e) => setPeriodForm((p) => ({ ...p, name: e.target.value }))} required /></label>

@@ -25,7 +25,7 @@ export function MyAbsencesPage() {
     <>
       <PageHeader title="My Absences" subtitle="Eigene Abwesenheiten erfassen und einsehen" />
       <DataSection title="Neue Abwesenheit">
-        <form className="grid" onSubmit={onSubmit}>
+        <form className="app-form" onSubmit={onSubmit}>
           <label>Typ
             <select value={form.absence_type} onChange={(e) => setForm((p) => ({ ...p, absence_type: e.target.value as 'vacation' | 'sickness' }))}>
               <option value="vacation">Vacation</option>

@@ -251,7 +251,7 @@ export function HolidaySetsPage() {
     <>
       <PageHeader title="Feiertagssätze" subtitle="Wiederverwendbare Feiertagssätze pro Tenant verwalten" />
       <DataSection title={editingHolidaySetId ? 'Feiertagssatz bearbeiten' : 'Feiertagssatz anlegen'}>
-        <form className="grid" onSubmit={onSubmit}>
+        <form className="app-form" onSubmit={onSubmit}>
           <label>
             Name
             <input value={formState.name} onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))} required />
@@ -264,7 +264,7 @@ export function HolidaySetsPage() {
             Quelle
             <input value={formState.source} onChange={(event) => setFormState((prev) => ({ ...prev, source: event.target.value }))} />
           </label>
-          <label>
+          <label className="app-form-check">
             <input type="checkbox" checked={formState.active} onChange={(event) => setFormState((prev) => ({ ...prev, active: event.target.checked }))} /> Aktiv
           </label>
           <div className="actions">

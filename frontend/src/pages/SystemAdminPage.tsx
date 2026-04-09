@@ -206,7 +206,7 @@ export function SystemAdminPage() {
       <PageHeader title="Systemverwaltung" subtitle="Tenant- und Benutzerverwaltung für System-Administratoren" />
 
       <DataSection title={editingTenantId ? 'Tenant bearbeiten' : 'Tenant anlegen'}>
-        <form className="form-grid" onSubmit={handleTenantSubmit}>
+        <form className="app-form" onSubmit={handleTenantSubmit}>
           <label>
             <span>Name</span>
             <input value={tenantForm.name} onChange={(event) => setTenantForm((current) => ({ ...current, name: event.target.value }))} required />
@@ -229,7 +229,7 @@ export function SystemAdminPage() {
             <span>Timezone</span>
             <input value={tenantForm.timezone} onChange={(event) => setTenantForm((current) => ({ ...current, timezone: event.target.value }))} required />
           </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label className="app-form-check">
             <input type="checkbox" checked={tenantForm.active} onChange={(event) => setTenantForm((current) => ({ ...current, active: event.target.checked }))} />
             <span>Aktiv</span>
           </label>
