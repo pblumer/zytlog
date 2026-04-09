@@ -121,6 +121,15 @@ Wenn Keycloak für SSO verwendet wird:
 - Aktiviere Account-Lockout nach mehreren Fehlversuchen
 - Überwache Login-Versuche
 
+#### DEV-only Web Crypto fallback
+
+Für lokale Entwicklung existiert im Frontend ein **DEV-only** Fallback für unvollständige Web-Crypto-Umgebungen (z. B. fehlendes `crypto.getRandomValues`, `crypto.randomUUID` oder `crypto.subtle.digest`).
+
+Wichtig:
+- Der Fallback ist nur für lokale Entwicklung gedacht.
+- In Production darf kein schwacher Crypto-Fallback aktiv sein.
+- Ziel ist ausschließlich, Keycloak PKCE (`S256`) im lokalen Setup stabil zu initialisieren.
+
 ### Deployment
 
 - Secrets nie im Code-Repository
