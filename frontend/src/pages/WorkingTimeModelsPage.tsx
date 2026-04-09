@@ -208,7 +208,7 @@ export function WorkingTimeModelsPage() {
     <>
       <PageHeader title="Arbeitszeitmodelle" subtitle="Jahresarbeitszeit und Standard-Arbeitstage pro Modell" />
       <DataSection title={editingModelId ? 'Arbeitszeitmodell bearbeiten' : 'Modell anlegen'}>
-        <form className="grid" onSubmit={onSubmit}>
+        <form className="app-form" onSubmit={onSubmit}>
           <label>
             Modellname
             <input value={formState.name} onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))} required />
@@ -225,12 +225,12 @@ export function WorkingTimeModelsPage() {
             />
           </label>
           <p className="meta">Jahresarbeitszeit ist die führende Sollgrösse des Modells.</p>
-          <label>
+          <label className="app-form-check">
             <input
               checked={formState.active}
               onChange={(event) => setFormState((prev) => ({ ...prev, active: event.target.checked }))}
               type="checkbox"
-            />{' '}
+            />
             Aktiv
           </label>
           <div>

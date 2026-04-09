@@ -261,7 +261,7 @@ export function EmployeesPage() {
         </p>
       </DataSection>
       <DataSection title={editingEmployee ? 'Mitarbeiter bearbeiten' : 'Mitarbeiter anlegen'}>
-        <form className="employee-form" onSubmit={onSubmit}>
+        <form className="app-form employee-form" onSubmit={onSubmit}>
           {!editingEmployee ? (
             <label className="employee-form-field employee-form-field-wide">
               <span>Benutzer</span>

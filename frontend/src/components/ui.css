@@ -100,6 +100,48 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
+.app-form {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  align-items: start;
+}
+
+.app-form > label {
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.app-form > label > input,
+.app-form > label > select,
+.app-form > label > textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.4rem;
+  box-sizing: border-box;
+}
+
+.app-form > .actions,
+.app-form > .inline-error,
+.app-form > .meta {
+  grid-column: 1 / -1;
+}
+
+.app-form-check {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.4rem;
+  color: var(--text) !important;
+  font-size: 0.92rem !important;
+  font-weight: 500 !important;
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--border);

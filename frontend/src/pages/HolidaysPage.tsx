@@ -164,7 +164,7 @@ export function HolidaysPage() {
       </DataSection>
 
       <DataSection title={editingHolidayId ? 'Feiertag bearbeiten' : 'Feiertag anlegen'}>
-        <form className="grid" onSubmit={onSubmit}>
+        <form className="app-form" onSubmit={onSubmit}>
           <label>
             Datum
             <input type="date" value={formState.date} onChange={(event) => setFormState((prev) => ({ ...prev, date: event.target.value }))} required />
@@ -173,7 +173,7 @@ export function HolidaysPage() {
             Name
             <input value={formState.name} onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))} required />
           </label>
-          <label>
+          <label className="app-form-check">
             <input type="checkbox" checked={formState.active} onChange={(event) => setFormState((prev) => ({ ...prev, active: event.target.checked }))} /> Aktiv
           </label>
           <div className="actions">

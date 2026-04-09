@@ -40,7 +40,7 @@ export function AdminAbsencesPage() {
     <>
       <PageHeader title="Abwesenheiten" subtitle="Stage-1 Verwaltung für Vacation/Sickness" />
       <DataSection title="Abwesenheit anlegen">
-        <form className="grid" onSubmit={onSubmit}>
+        <form className="app-form" onSubmit={onSubmit}>
           <label>Mitarbeiter
             <select required value={form.employee_id} onChange={(e) => setForm((p) => ({ ...p, employee_id: e.target.value }))}>
               <option value="">Bitte wählen</option>
