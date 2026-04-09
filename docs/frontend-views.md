@@ -28,17 +28,21 @@ Sichtbare Kontexte:
 - heutige Absenz,
 - Kalenderstatus inkl. Non-Working-Period-Hinweise.
 
-### My Time
+### Zeitkonto (`/my-time`)
 
 Fokus:
-- persönlicher Schnellzugriff pro Tag,
-- Kombination aus Monatskalender + Ereignisliste.
+- persönliche Analyse- und Review-Sicht,
+- Kombination aus Monatskalender + Ereignisliste für den ausgewählten Tag.
 
 Sichtbare Kontexte:
 - ausgewählter Tag mit Soll/Ist/Pause/Saldo,
 - Absenzkontext,
 - Statusbadge,
 - schneller Sprung in Day.
+
+Abgrenzung zum Dashboard:
+- **Dashboard** = operative Erfassung (Stempeln, Nacherfassung, aktueller Handlungsbedarf)
+- **Zeitkonto** = Rückblick/Prüfung (Tag auswählen, Einträge nachvollziehen)
 
 ### Day
 

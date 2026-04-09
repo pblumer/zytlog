@@ -5,7 +5,6 @@ import { DashboardMonthCalendar } from '../components/DashboardMonthCalendar';
 import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
 import type { DataGridColumn } from '../components/DataGrid';
 import { DataGrid } from '../components/DataGrid';
-import { QuickStampCard } from '../components/QuickStampCard';
 import { TableStatusBadge } from '../components/TableStatusBadge';
 import { useCurrentStatus, useDailyAccount, useDashboardCalendarMonth, useTimeStamps } from '../hooks/useZytlogApi';
 import type { TimeStampEvent } from '../types/api';
@@ -34,7 +33,6 @@ export function MyTimePage() {
   if (currentStatus.isLoading || selectedDayAccount.isLoading || selectedDayEvents.isLoading || calendar.isLoading) return <LoadingBlock />;
   if (currentStatus.error || selectedDayAccount.error || selectedDayEvents.error || calendar.error) return <ErrorState message="Zeitdaten konnten nicht geladen werden." />;
 
-  const activeStatus = currentStatus.data?.status ?? 'clocked_out';
   const selectedAbsence = selectedDayAccount.data?.absence;
   const selectedAbsenceLabel = selectedAbsence
     ? `${selectedAbsence.label}${selectedAbsence.duration_type === 'half_day_am' ? ' (AM)' : selectedAbsence.duration_type === 'half_day_pm' ? ' (PM)' : ''}`
@@ -42,9 +40,13 @@ export function MyTimePage() {
 
   return (
     <>
-      <PageHeader title="Meine Zeit" subtitle="Schneller Tageszugriff und Monatsinspektion" />
+      <PageHeader title="Zeitkonto" subtitle="Persönliche Analyse: Tag auswählen, Einträge prüfen, in Day vertiefen" />
 
-      <QuickStampCard status={activeStatus} lastEventTimestamp={currentStatus.data?.last_event_timestamp} />
+      <section className="card" style={{ marginTop: '0.75rem' }} aria-label="Hinweis zur Erfassung">
+        <p className="meta" style={{ margin: 0 }}>
+          Stempeln und Nacherfassung findest du im <strong>Dashboard</strong>. Diese Sicht ist für Rückblick und Kontrolle deiner Zeitdaten.
+        </p>
+      </section>
 
       <section className="grid" style={{ marginTop: '1rem' }} aria-label="Zusammenfassung ausgewählter Tag">
         <SummaryCard title="Ausgewählter Tag" value={selectedDate} hint={<TableStatusBadge status={selectedDayAccount.data?.status ?? 'empty'} />} />
@@ -97,7 +99,7 @@ export function MyTimePage() {
         ) : null}
       </section>
 
-      <DataSection title="Zeitereignisliste">
+      <DataSection title="Ereignisliste (ausgewählter Tag)">
         <p className="meta">
           Einträge für <strong>{selectedDate}</strong>. <Link to={`/day?date=${selectedDate}`}>Tag öffnen</Link> für ausführliche Erfassung.
         </p>

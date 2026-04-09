@@ -4,7 +4,7 @@ export type NavItem = { to: string; label: string };
 
 const employeeNavItems: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard' },
-  { to: '/my-time', label: 'My Time' },
+  { to: '/my-time', label: 'Zeitkonto' },
   { to: '/day', label: 'Day' },
   { to: '/week', label: 'Week' },
   { to: '/month', label: 'Month' },
