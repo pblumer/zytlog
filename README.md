@@ -32,6 +32,8 @@ alembic upgrade head
 python -m backend.scripts.seed_demo
 ```
 
+Der Seed ist idempotent und kann mehrfach ausgeführt werden; bestehende Demo-User werden dabei auf den erwarteten Stand synchronisiert.
+
 Demo identities (Keycloak + DB mapping):
 - sysadmin@demo.local / sysadmin (role: system_admin)
 - admin@demo.local / admin (role: admin)
