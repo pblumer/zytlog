@@ -1,45 +1,14 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Outlet, useLocation, type NavLinkRenderProps } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate, type NavLinkRenderProps } from 'react-router-dom';
 
 import { useAuth } from '../auth/provider';
-import type { UserRole } from '../types/api';
-
-type NavItem = { to: string; label: string };
-
-const employeeNavItems: NavItem[] = [
-  { to: '/', label: 'Dashboard' },
-  { to: '/my-time', label: 'My Time' },
-  { to: '/day', label: 'Day' },
-  { to: '/week', label: 'Week' },
-  { to: '/month', label: 'Month' },
-  { to: '/year', label: 'Year' },
-  { to: '/my-absences', label: 'My Absences' },
-];
-
-const adminNavItems: NavItem[] = [
-  { to: '/employees', label: 'Employees' },
-  { to: '/working-time-models', label: 'Working Time Models' },
-  { to: '/holiday-sets', label: 'Feiertagssätze' },
-  { to: '/holidays', label: 'Feiertage' },
-  { to: '/non-working-period-sets', label: 'Arbeitsfreie Zeiträume' },
-  { to: '/admin-absences', label: 'Abwesenheiten' },
-];
-
-const systemAdminNavItems: NavItem[] = [
-  { to: '/system-admin', label: 'Systemverwaltung' },
-  ...adminNavItems,
-];
-
-function getNavItemsByRole(role?: UserRole): NavItem[] {
-  if (role === 'system_admin') return systemAdminNavItems;
-  if (role === 'admin') return adminNavItems;
-  return employeeNavItems;
-}
+import { getDefaultRouteForRole, getNavItemsByRole, isManagedAppPath, isPathAllowedForRole } from '../auth/roleRouting';
 
 export function AppShell() {
   const { user, logout } = useAuth();
   const navItems = getNavItemsByRole(user?.role);
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -59,6 +28,22 @@ export function AppShell() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [menuOpen]);
 
+  useEffect(() => {
+    if (!user?.role) {
+      return;
+    }
+
+    if (!isManagedAppPath(pathname)) {
+      return;
+    }
+
+    if (isPathAllowedForRole(pathname, user.role)) {
+      return;
+    }
+
+    navigate(getDefaultRouteForRole(user.role), { replace: true });
+  }, [navigate, pathname, user?.role]);
+
   return (
     <div className="app-shell">
       {menuOpen ? <button type="button" className="nav-backdrop" aria-label="Menü schliessen" onClick={() => setMenuOpen(false)} /> : null}
@@ -76,7 +61,7 @@ export function AppShell() {
             <li key={item.to}>
               <NavLink
                 to={item.to}
-                end={item.to === '/'}
+                end
                 className={({ isActive }: NavLinkRenderProps) => `nav-link${isActive ? ' active' : ''}`}
                 onClick={() => setMenuOpen(false)}
               >

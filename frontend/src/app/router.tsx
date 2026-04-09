@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 
 import { ProtectedRoute } from './ProtectedRoute';
+import { RoleHomeRedirect } from './RoleHomeRedirect';
 import { AppShell } from '../layout/AppShell';
 import { AdminAbsencesPage } from '../pages/AdminAbsencesPage';
 import { DashboardPage } from '../pages/DashboardPage';
@@ -28,7 +29,8 @@ export const router = createBrowserRouter([
         path: '/',
         element: <AppShell />,
         children: [
-          { index: true, element: <DashboardPage /> },
+          { index: true, element: <RoleHomeRedirect /> },
+          { path: 'dashboard', element: <DashboardPage /> },
           { path: 'my-time', element: <MyTimePage /> },
           { path: 'day', element: <DayPage /> },
           { path: 'week', element: <WeekPage /> },
