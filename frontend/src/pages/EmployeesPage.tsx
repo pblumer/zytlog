@@ -261,10 +261,10 @@ export function EmployeesPage() {
         </p>
       </DataSection>
       <DataSection title={editingEmployee ? 'Mitarbeiter bearbeiten' : 'Mitarbeiter anlegen'}>
-        <form className="grid" onSubmit={onSubmit}>
+        <form className="employee-form" onSubmit={onSubmit}>
           {!editingEmployee ? (
-            <label>
-              Benutzer
+            <label className="employee-form-field employee-form-field-wide">
+              <span>Benutzer</span>
               <select
                 value={form.userId}
                 onChange={(event) => setForm((prev) => ({ ...prev, userId: event.target.value }))}
@@ -279,23 +279,23 @@ export function EmployeesPage() {
               </select>
             </label>
           ) : null}
-          <label>
-            MitarbeiterNr.
+          <label className="employee-form-field">
+            <span>MitarbeiterNr.</span>
             <input
               value={form.employeeNumber}
               onChange={(event) => setForm((prev) => ({ ...prev, employeeNumber: event.target.value }))}
             />
           </label>
-          <label>
-            Vorname
+          <label className="employee-form-field">
+            <span>Vorname</span>
             <input value={form.firstName} onChange={(event) => setForm((prev) => ({ ...prev, firstName: event.target.value }))} required />
           </label>
-          <label>
-            Nachname
+          <label className="employee-form-field">
+            <span>Nachname</span>
             <input value={form.lastName} onChange={(event) => setForm((prev) => ({ ...prev, lastName: event.target.value }))} required />
           </label>
-          <label>
-            Arbeitspensum
+          <label className="employee-form-field">
+            <span>Arbeitspensum</span>
             <input
               value={form.employmentPercentage}
               onChange={(event) => setForm((prev) => ({ ...prev, employmentPercentage: event.target.value }))}
@@ -306,8 +306,8 @@ export function EmployeesPage() {
               required
             />
           </label>
-          <label>
-            Arbeitszeitmodell
+          <label className="employee-form-field">
+            <span>Arbeitszeitmodell</span>
             <select
               value={form.workingTimeModelId}
               onChange={(event) => setForm((prev) => ({ ...prev, workingTimeModelId: event.target.value }))}
@@ -321,8 +321,8 @@ export function EmployeesPage() {
               ))}
             </select>
           </label>
-          <label>
-            Feiertagssatz
+          <label className="employee-form-field">
+            <span>Feiertagssatz</span>
             <select
               value={form.holidaySetId}
               onChange={(event) => setForm((prev) => ({ ...prev, holidaySetId: event.target.value }))}
@@ -335,8 +335,8 @@ export function EmployeesPage() {
               ))}
             </select>
           </label>
-          <label>
-            Arbeitsfrei-Set
+          <label className="employee-form-field">
+            <span>Arbeitsfrei-Set</span>
             <select
               value={form.nonWorkingPeriodSetId}
               onChange={(event) => setForm((prev) => ({ ...prev, nonWorkingPeriodSetId: event.target.value }))}
@@ -349,30 +349,30 @@ export function EmployeesPage() {
               ))}
             </select>
           </label>
-          <label>
-            Eintrittsdatum
+          <label className="employee-form-field">
+            <span>Eintrittsdatum</span>
             <input value={form.entryDate} onChange={(event) => setForm((prev) => ({ ...prev, entryDate: event.target.value }))} type="date" required />
           </label>
-          <label>
-            Austrittsdatum
+          <label className="employee-form-field">
+            <span>Austrittsdatum</span>
             <input value={form.exitDate} onChange={(event) => setForm((prev) => ({ ...prev, exitDate: event.target.value }))} type="date" />
           </label>
-          <label>
-            Team
+          <label className="employee-form-field">
+            <span>Team</span>
             <input value={form.team} onChange={(event) => setForm((prev) => ({ ...prev, team: event.target.value }))} />
           </label>
-          <label>
+          <label className="employee-form-toggle">
             <input
               type="checkbox"
               checked={form.overridesEnabled}
               onChange={(event) => setForm((prev) => ({ ...prev, overridesEnabled: event.target.checked }))}
-            />{' '}
-            Individuelle Arbeitstage
+            />
+            <span>Individuelle Arbeitstage</span>
           </label>
-          <div>
+          <div className="employee-form-overrides">
             <strong>{form.overridesEnabled ? 'Individuelle Arbeitstage' : 'Standard-Arbeitstage'}</strong>
             {form.overridesEnabled ? (
-              <div className="actions" style={{ marginTop: '0.35rem' }}>
+              <div className="actions employee-form-weekdays" style={{ marginTop: '0.35rem' }}>
                 {weekdays.map((weekday) => (
                   <label key={weekday.key}>
                     <input
@@ -395,7 +395,7 @@ export function EmployeesPage() {
               </p>
             )}
           </div>
-          <div className="actions">
+          <div className="actions employee-form-actions">
             <button type="submit" className="btn primary" disabled={isPending}>
               {editingEmployee ? 'Änderungen speichern' : 'Mitarbeiter speichern'}
             </button>
@@ -413,10 +413,10 @@ export function EmployeesPage() {
             ) : null}
           </div>
           {createMutation.error || updateMutation.error ? (
-            <p className="inline-error">Mitarbeiter konnte nicht gespeichert werden.</p>
+            <p className="inline-error employee-form-feedback">Mitarbeiter konnte nicht gespeichert werden.</p>
           ) : null}
           {!editingEmployee && userOptionsQuery.data && userOptionsQuery.data.length === 0 ? (
-            <p className="meta">Aktuell sind keine Benutzer ohne Mitarbeiterprofil verfügbar.</p>
+            <p className="meta employee-form-feedback">Aktuell sind keine Benutzer ohne Mitarbeiterprofil verfügbar.</p>
           ) : null}
         </form>
       </DataSection>
