@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { DashboardMonthCalendar } from '../components/DashboardMonthCalendar';
-import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader, StatusBadge, SummaryCard } from '../components/common';
+import { EmptyState, ErrorState, LoadingBlock, PageHeader, StatusBadge, SummaryCard } from '../components/common';
 import { QuickStampCard } from '../components/QuickStampCard';
 import {
   useCurrentStatus,
@@ -87,6 +87,33 @@ export function DashboardPage() {
       : (dailyAccount.data?.status ?? 'empty') === 'incomplete'
         ? 'Heute ist noch unvollständig. Ergänze fehlende Stempel über die Nacherfassung.'
         : 'Alles bereit für die Zeiterfassung. Du kannst direkt stempeln oder nacherfassen.';
+
+  const monthDays = monthReport.data?.days ?? [];
+  const todayContext = monthDays.find((day) => day.date === today) ?? null;
+
+  const monthContextCounts = monthDays.reduce(
+    (acc, day) => {
+      if (day.absence) acc.absences += 1;
+      if (day.is_holiday) acc.holidays += 1;
+      if (day.is_in_non_working_period) acc.nonWorking += 1;
+      return acc;
+    },
+    { absences: 0, holidays: 0, nonWorking: 0 },
+  );
+
+  const calendarContextByDate = useMemo(
+    () =>
+      monthDays.reduce<Record<string, { holidayName?: string | null; nonWorkingLabel?: string | null }>>((acc, day) => {
+        if (day.holiday_name || day.non_working_period_label) {
+          acc[day.date] = {
+            holidayName: day.holiday_name,
+            nonWorkingLabel: day.non_working_period_label,
+          };
+        }
+        return acc;
+      }, {}),
+    [monthDays],
+  );
 
   const submitManual = async () => {
     const parsed = toIsoOrNull(manualTimestamp);
@@ -255,14 +282,47 @@ export function DashboardPage() {
               />
             </div>
           </section>
+
+          <section className="card dashboard-context-card" aria-label="Tageskontext">
+            <h3>Kontext heute</h3>
+            {todayContext?.absence || todayContext?.is_holiday || todayContext?.is_in_non_working_period ? (
+              <div className="dashboard-context-chips">
+                {todayContext?.absence ? (
+                  <span className={`absence-badge absence-badge-${todayContext.absence.type}`}>{todayContext.absence.label}</span>
+                ) : null}
+                {todayContext?.is_holiday ? <span className="dashboard-context-chip dashboard-context-holiday">Feiertag: {todayContext.holiday_name}</span> : null}
+                {todayContext?.is_in_non_working_period ? (
+                  <span className="dashboard-context-chip dashboard-context-non-working">Arbeitsfrei: {todayContext.non_working_period_label}</span>
+                ) : null}
+              </div>
+            ) : (
+              <p className="meta">Keine Abwesenheit, kein Feiertag und kein arbeitsfreier Zeitraum für heute.</p>
+            )}
+          </section>
         </div>
       </section>
 
       {calendar.data ? (
-        <DataSection title="Monatskalender">
-          <p className="meta">Schneller Sprung in die Tagesansicht über die Kacheln.</p>
-          <DashboardMonthCalendar year={calendar.data.year} month={calendar.data.month} days={calendar.data.days} />
-        </DataSection>
+        <section className="card dashboard-calendar-shell" aria-label="Monatskalender und Kontexte">
+          <div className="dashboard-calendar-header">
+            <h3>Monatsübersicht</h3>
+            <p className="meta">Schneller Sprung in die Tagesansicht mit sichtbaren Kontexten (Abwesenheit, Feiertag, Arbeitsfrei).</p>
+          </div>
+          <div className="dashboard-context-summary">
+            <SummaryCard title="Abwesenheitstage" value={monthContextCounts.absences} />
+            <SummaryCard title="Feiertage" value={monthContextCounts.holidays} />
+            <SummaryCard title="Arbeitsfreie Tage" value={monthContextCounts.nonWorking} />
+          </div>
+          <DashboardMonthCalendar
+            embedded
+            year={calendar.data.year}
+            month={calendar.data.month}
+            days={calendar.data.days}
+            contextByDate={calendarContextByDate}
+            title="Kalender"
+            subtitle="Status + Kontexte pro Tag"
+          />
+        </section>
       ) : null}
     </>
   );
