@@ -9,9 +9,12 @@ Dieses Repository dokumentiert den aktuell implementierten MVP-Stand (Backend + 
 1. Umgebungsdateien kopieren:
 
 ```bash
+cp .env.example .env          # Quickstart for docker-compose DEV_* overrides
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
+
+Kurz-Hinweis: Wenn du nicht mit `localhost` arbeitest, passe danach die Werte in `.env` an.
 
 2. Stack starten:
 
