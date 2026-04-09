@@ -10,7 +10,7 @@ Diese Doku ordnet die zentralen Frontend-Sichten fachlich ein: welche Informatio
 
 Rollenbasierte Einstiegsseiten (nach Login/Session-Recovery):
 - `employee` / `team_lead` → `/dashboard`
-- `admin` → `/employees`
+- `admin` → `/dashboard` (mit Zugriff auf Employee- und Admin-Navigation)
 - `system_admin` → `/system-admin`
 
 Wenn ein Benutzer auf einer für seine Rolle nicht vorgesehenen Seite landet (z. B. durch vorherige Session-URL), wird automatisch auf die passende Einstiegsseite umgeleitet.

@@ -12,7 +12,7 @@ const employeeNavItems: NavItem[] = [
   { to: '/my-absences', label: 'My Absences' },
 ];
 
-const adminNavItems: NavItem[] = [
+const adminManagementNavItems: NavItem[] = [
   { to: '/employees', label: 'Employees' },
   { to: '/working-time-models', label: 'Working Time Models' },
   { to: '/holiday-sets', label: 'Feiertagssätze' },
@@ -20,6 +20,8 @@ const adminNavItems: NavItem[] = [
   { to: '/non-working-period-sets', label: 'Arbeitsfreie Zeiträume' },
   { to: '/admin-absences', label: 'Abwesenheiten' },
 ];
+
+const adminNavItems: NavItem[] = [...employeeNavItems, ...adminManagementNavItems];
 
 const systemAdminNavItems: NavItem[] = [{ to: '/system-admin', label: 'Systemverwaltung' }];
 
