@@ -38,7 +38,14 @@ Demo users:
 
 ## 4) Non-localhost setup (custom dev host/IP)
 
-If you use a custom hostname/IP (for example LAN testing), override compose variables before startup:
+Preferred: copy `.env.example` to `.env` and edit values:
+
+```bash
+cp .env.example .env
+# edit .env with your host/IP values
+```
+
+If you prefer shell exports, override compose variables before startup:
 
 ```bash
 export DEV_VITE_API_BASE_URL="http://<your-host>:8000/api/v1"
