@@ -1178,6 +1178,20 @@ a:focus-visible,
   background: #d08770;
 }
 
+.year-mini-dot-actual {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  font-size: 0.3rem;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.55);
+  text-align: center;
+  font-weight: 600;
+  pointer-events: none;
+}
+
 .year-month-meta {
   margin: 0;
   color: var(--muted);

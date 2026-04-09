@@ -11,8 +11,7 @@ import { useReportExport } from '../hooks/useReportExport';
 import { useYearReport } from '../hooks/useZytlogApi';
 import type { CalendarMonthDay, MonthlySummaryRow } from '../types/api';
 import { formatMinutes } from '../utils/date';
-
-const now = new Date();
+import { formatMinutesShort } from '../components/DashboardMonthCalendar';
 
 const monthLabelFormatter = new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric' });
 
@@ -171,6 +170,7 @@ export function YearPage() {
                             const visualStatusClass = showNonWorkingPeriodStyle ? 'year-mini-dot-non-working-period' : `year-mini-dot-${dotStatus}`;
                             const contextParts = [dotStatus, absenceLabel, nonWorkingPeriodLabel].filter(Boolean);
                             const contextLabel = contextParts.join(' · ');
+                            const actualLabel = formatMinutesShort(day.actual_minutes);
                             return (
                               <span
                                 key={day.date}
@@ -185,6 +185,7 @@ export function YearPage() {
                                     className={`year-mini-dot-absence-layer year-mini-dot-absence-${side} year-mini-dot-absence-${day.absence?.type}`}
                                   />
                                 ))}
+                                {actualLabel && actualLabel.length > 0 && <span className="year-mini-dot-actual">{actualLabel}</span>}
                               </span>
                             );
                           })}

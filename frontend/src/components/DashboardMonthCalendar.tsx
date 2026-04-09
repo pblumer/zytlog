@@ -4,6 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import type { CalendarMonthDay, CalendarDayStatus } from '../types/api';
 import { formatMinutes } from '../utils/date';
 
+/** Format actual minutes for compact inline display (e.g. in year mini dots). */
+export function formatMinutesShort(value: number): string {
+  if (value <= 0) return '';
+  const h = Math.floor(value / 60);
+  const m = value % 60;
+  return `${h}:${m.toString()}`;
+}
+
 type DayContextInfo = {
   holidayName?: string | null;
   nonWorkingLabel?: string | null;
