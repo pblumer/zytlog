@@ -24,6 +24,7 @@ class _YearCalculationContext:
     holidays_by_date: dict[date, str]
     non_working_period_by_date: dict[date, NonWorkingPeriod]
     relevant_workdays: int
+    daily_target_minutes_by_date: dict[date, int]
 
 
 class DailyAccountService:
@@ -212,12 +213,7 @@ class DailyAccountService:
         if relevant_workdays <= 0:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid working day configuration")
 
-        annual_minutes = Decimal(str(model.annual_target_hours)) * Decimal("60")
-        percentage = Decimal(str(employee.employment_percentage)) / Decimal("100")
-        effective_annual_minutes = annual_minutes * percentage
-
-        daily_minutes = effective_annual_minutes / Decimal(str(relevant_workdays))
-        return int(daily_minutes.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+        return resolved_context.daily_target_minutes_by_date.get(target_date, 0)
 
     def _build_year_calculation_context(self, *, employee: Employee, year: int) -> _YearCalculationContext:
         period_start = max(employee.entry_date, date(year, 1, 1))
@@ -235,6 +231,7 @@ class DailyAccountService:
                 holidays_by_date={},
                 non_working_period_by_date={},
                 relevant_workdays=0,
+                daily_target_minutes_by_date={},
             )
 
         holidays = self.holiday_service.get_active_holidays_for_employee(
@@ -250,12 +247,18 @@ class DailyAccountService:
             to_date=period_end,
         )
 
-        relevant_workdays = self._count_relevant_workdays_for_year(
+        holiday_dates = set(holidays.keys())
+        non_working_period_dates = set(non_working_period_by_date.keys())
+        relevant_workday_dates = self._list_relevant_workdays_for_year(
             period_start=period_start,
             period_end=period_end,
             workday_pattern=workday_pattern,
-            holiday_dates=set(holidays.keys()),
-            non_working_period_dates=set(non_working_period_by_date.keys()),
+            holiday_dates=holiday_dates,
+            non_working_period_dates=non_working_period_dates,
+        )
+        daily_target_minutes_by_date = self._build_daily_target_distribution(
+            employee=employee,
+            relevant_workday_dates=relevant_workday_dates,
         )
         holidays_by_date = {day: holiday.name for day, holiday in holidays.items()}
 
@@ -266,10 +269,11 @@ class DailyAccountService:
             workday_pattern=workday_pattern,
             holidays_by_date=holidays_by_date,
             non_working_period_by_date=non_working_period_by_date,
-            relevant_workdays=relevant_workdays,
+            relevant_workdays=len(relevant_workday_dates),
+            daily_target_minutes_by_date=daily_target_minutes_by_date,
         )
 
-    def _count_relevant_workdays_for_year(
+    def _list_relevant_workdays_for_year(
         self,
         *,
         period_start: date,
@@ -277,11 +281,11 @@ class DailyAccountService:
         workday_pattern: list[bool],
         holiday_dates: set[date],
         non_working_period_dates: set[date],
-    ) -> int:
+    ) -> list[date]:
         if period_start > period_end:
-            return 0
+            return []
 
-        total = 0
+        relevant_days: list[date] = []
         cursor = period_start
         while cursor <= period_end:
             if (
@@ -289,10 +293,41 @@ class DailyAccountService:
                 and cursor not in holiday_dates
                 and cursor not in non_working_period_dates
             ):
-                total += 1
+                relevant_days.append(cursor)
             cursor += timedelta(days=1)
 
-        return total
+        return relevant_days
+
+    def _build_daily_target_distribution(
+        self,
+        *,
+        employee: Employee,
+        relevant_workday_dates: list[date],
+    ) -> dict[date, int]:
+        if not relevant_workday_dates:
+            return {}
+
+        model = employee.working_time_model
+        if model is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Missing working time model for employee",
+            )
+
+        annual_minutes = Decimal(str(model.annual_target_hours)) * Decimal("60")
+        percentage = Decimal(str(employee.employment_percentage)) / Decimal("100")
+        effective_annual_minutes = (annual_minutes * percentage).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+        effective_annual_minutes_int = int(effective_annual_minutes)
+
+        total_days = len(relevant_workday_dates)
+        base_daily_minutes = effective_annual_minutes_int // total_days
+        remainder_minutes = effective_annual_minutes_int % total_days
+
+        distribution: dict[date, int] = {}
+        for index, target_day in enumerate(relevant_workday_dates):
+            distribution[target_day] = base_daily_minutes + (1 if index < remainder_minutes else 0)
+
+        return distribution
 
     def _resolve_employee_workday_pattern(self, *, employee: Employee) -> list[bool]:
         model = employee.working_time_model

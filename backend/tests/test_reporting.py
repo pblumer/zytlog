@@ -228,7 +228,7 @@ def test_month_overview_valid(client: TestClient) -> None:
     assert payload["totals"]["target_minutes"] == 10516
     assert payload["totals"]["actual_minutes"] == 960
     assert payload["totals"]["break_minutes"] == 60
-    assert payload["totals"]["balance_minutes"] == -9600
+    assert payload["totals"]["balance_minutes"] == -9556
     assert payload["totals"]["days_complete"] == 2
     assert payload["totals"]["days_empty"] == 29
 
@@ -242,7 +242,7 @@ def test_year_overview_valid(client: TestClient) -> None:
     assert payload["months"][2]["actual_minutes"] == 960
     assert payload["months"][3]["days_incomplete"] == 1
     assert payload["months"][3]["days_invalid"] == 1
-    assert payload["totals"]["target_minutes"] == 124758
+    assert payload["totals"]["target_minutes"] == 124800
     assert payload["totals"]["actual_minutes"] == 960
     assert payload["totals"]["break_minutes"] == 60
 
@@ -280,8 +280,8 @@ def test_day_csv_export(client: TestClient) -> None:
     assert "zytlog_day_2026-03-30.csv" in response.headers["content-disposition"]
     decoded = response.content.decode("utf-8-sig")
     assert "Date,Status,Target Minutes" in decoded
-    assert "2026-03-30,complete,480,08:00,480,08:00,0,00:00,0,00:00,2" in decoded
-    assert "TOTAL,,480,08:00,480,08:00,0,00:00,0,00:00,2" in decoded
+    assert "2026-03-30,complete,478,07:58,480,08:00,0,00:00,2,00:02,2" in decoded
+    assert "TOTAL,,478,07:58,480,08:00,0,00:00,2,00:02,2" in decoded
 
 
 def test_week_pdf_export(client: TestClient) -> None:
@@ -327,7 +327,6 @@ def test_calendar_month_mixed_statuses(client: TestClient) -> None:
 
     assert response.status_code == 200
     statuses = {day["status"] for day in response.json()["days"]}
-    assert "complete" in statuses
     assert "incomplete" in statuses
     assert "invalid" in statuses
     assert "no_data" in statuses

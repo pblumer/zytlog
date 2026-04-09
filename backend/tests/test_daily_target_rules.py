@@ -26,7 +26,13 @@ from backend.services.non_working_period_set_service import NonWorkingPeriodSetS
 from backend.services.reporting_service import ReportingService
 
 
-def _build_service(*, employee_percentage: float = 100, employee_overrides: dict | None = None, exit_date: date | None = None):
+def _build_service(
+    *,
+    employee_percentage: float = 100,
+    employee_overrides: dict | None = None,
+    exit_date: date | None = None,
+    annual_target_hours: float = 2100,
+):
     engine = create_engine(
         "sqlite+pysqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -63,7 +69,7 @@ def _build_service(*, employee_percentage: float = 100, employee_overrides: dict
         default_workday_friday=True,
         default_workday_saturday=False,
         default_workday_sunday=False,
-        annual_target_hours=2100,
+        annual_target_hours=annual_target_hours,
         active=True,
     )
     session.add(model)
@@ -150,8 +156,8 @@ def test_holidays_reduce_relevant_workdays_and_raise_daily_target_distribution()
 
     account = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 1, 5))
 
-    # 2100h / (261 - 2 Feiertage) = 486.49min -> 486min
-    assert account.target_minutes == 486
+    # Jahresziel wird exakt verteilt: frühe Tage können den +1 Rest erhalten.
+    assert account.target_minutes == 487
     session.close()
 
 
@@ -170,7 +176,7 @@ def test_80_percent_employee_with_weekday_override_distributes_annual_target_equ
     monday_account = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 3, 30))
     wednesday_account = service.get_daily_account(tenant_id=tenant_id, employee=employee, target_date=date(2026, 4, 1))
 
-    assert monday_account.target_minutes == 482
+    assert monday_account.target_minutes == 483
     assert wednesday_account.target_minutes == 0
     session.close()
 
@@ -198,6 +204,23 @@ def test_reporting_uses_same_daily_target_logic_consistently() -> None:
     assert tuesday.target_minutes == 0
     assert tuesday.is_holiday is True
     assert wednesday.target_minutes == 0
+    session.close()
+
+
+def test_yearly_target_total_is_exact_for_part_time_employee() -> None:
+    session, tenant_id, employee, service, _ = _build_service(
+        employee_percentage=50,
+        annual_target_hours=2122,
+    )
+
+    yearly = ReportingService(service).get_year_overview(
+        tenant_id=tenant_id,
+        employee=employee,
+        year=2026,
+    )
+
+    # 2122h * 50% = 1061h => 63_660 minutes
+    assert yearly.totals.target_minutes == 63_660
     session.close()
 
 
