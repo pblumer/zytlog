@@ -8,6 +8,13 @@ Diese Doku ordnet die zentralen Frontend-Sichten fachlich ein: welche Informatio
 
 ## Navigationssichten
 
+Rollenbasierte Einstiegsseiten (nach Login/Session-Recovery):
+- `employee` / `team_lead` → `/dashboard`
+- `admin` → `/employees`
+- `system_admin` → `/system-admin`
+
+Wenn ein Benutzer auf einer für seine Rolle nicht vorgesehenen Seite landet (z. B. durch vorherige Session-URL), wird automatisch auf die passende Einstiegsseite umgeleitet.
+
 ### Dashboard
 
 Fokus:
@@ -79,7 +86,7 @@ Sichtbare Kontexte:
 ## Relevante Admin-Sichten
 
 - **Systemverwaltung** (`system_admin`): tenant-übergreifende Verwaltung von Tenants und internen Benutzern, inkl. Rollenwechsel und kontrollierter Tenant-Zuordnung.
-- **Employees**: Mitarbeitenden-Stammdaten inkl. Zuordnung zu Working-Time-, Holiday- und Non-Working-Period-Sets.
+- **Employees** (`admin`): Mitarbeitenden-Stammdaten inkl. Zuordnung zu Working-Time-, Holiday- und Non-Working-Period-Sets.
 - **Working Time Models**: Jahresziel + Standard-Wochentagsmuster.
 - **Holiday Sets / Holidays**: Feiertagsdaten inkl. OpenHolidays-Import (Preview/Commit).
 - **Non-Working Period Sets**: Sets und Zeiträume für organisatorische Freiperioden.
