@@ -20,14 +20,12 @@ export function UnauthorizedPage() {
         }
       />
       <div style={{ display: 'flex', gap: '0.75rem' }}>
-        <button className="btn primary" onClick={isAuthRecovery ? restartAuth : login}>
-          {isAuthRecovery ? 'Restart Login' : 'Go to Login'}
+        <button className="btn primary" onClick={restartAuth}>
+          {isAuthRecovery ? 'Restart Login' : 'Reset Session & Login'}
         </button>
-        {isAuthRecovery ? (
-          <button className="btn outline" onClick={login}>
-            Try Login
-          </button>
-        ) : null}
+        <button className="btn outline" onClick={login}>
+          Try Login
+        </button>
       </div>
     </section>
   );
