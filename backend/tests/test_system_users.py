@@ -180,3 +180,23 @@ def test_promoting_employee_profile_user_to_system_admin_is_rejected(client: Tes
     )
     assert response.status_code == 409
     assert response.json()["detail"] == "Cannot promote users with an employee profile to system_admin"
+
+
+def test_tenant_reassignment_for_existing_system_admin_is_rejected(client: TestClient) -> None:
+    response = client.patch(
+        "/api/v1/system/users/1",
+        headers={"Authorization": "Bearer system-admin-token"},
+        json={"tenant_id": 2},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "System admin users are managed system-wide and cannot have tenant reassignment"
+
+
+def test_tenant_reassignment_is_rejected_when_promoting_to_system_admin(client: TestClient) -> None:
+    response = client.patch(
+        "/api/v1/system/users/4",
+        headers={"Authorization": "Bearer system-admin-token"},
+        json={"role": "system_admin", "tenant_id": 2},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "System admin users are managed system-wide and cannot have tenant reassignment"

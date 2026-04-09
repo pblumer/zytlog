@@ -38,7 +38,14 @@ class SystemUserAdminService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
         target_tenant_id = payload.tenant_id
+        resulting_role = payload.role if payload.role is not None else user.role
         if target_tenant_id is not None:
+            if resulting_role == UserRole.SYSTEM_ADMIN:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="System admin users are managed system-wide and cannot have tenant reassignment",
+                )
+
             tenant = self.tenant_repository.get_by_id(target_tenant_id)
             if tenant is None:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid tenant_id")

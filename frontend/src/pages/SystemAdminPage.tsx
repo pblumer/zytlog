@@ -90,7 +90,11 @@ export function SystemAdminPage() {
     () => [
       { id: 'full_name', header: 'Name', cell: (row) => row.full_name, searchableText: (row) => `${row.full_name} ${row.email}`, sortable: true, sortValue: (row) => row.full_name },
       { id: 'email', header: 'E-Mail', cell: (row) => row.email, searchableText: (row) => row.email },
-      { id: 'tenant', header: 'Tenant', cell: (row) => tenantsById.get(row.tenant_id) ?? `#${row.tenant_id}` },
+      {
+        id: 'tenant',
+        header: 'Tenant',
+        cell: (row) => (row.role === 'system_admin' ? 'Systemweit' : (tenantsById.get(row.tenant_id) ?? `#${row.tenant_id}`)),
+      },
       { id: 'role', header: 'Rolle', cell: (row) => row.role },
       { id: 'employee_profile', header: 'Mitarbeiterprofil', cell: (row) => (row.has_employee_profile ? 'Ja' : 'Nein') },
       {
@@ -122,28 +126,34 @@ export function SystemAdminPage() {
       {
         id: 'tenant_action',
         header: 'Tenant ändern',
-        cell: (row) => (
-          <select
-            value={row.tenant_id}
-            onChange={async (event) => {
-              setUserError(null);
-              try {
-                await updateUserMutation.mutateAsync({
-                  userId: row.id,
-                  payload: { tenant_id: Number(event.target.value) },
-                });
-              } catch (error) {
-                setUserError(error instanceof ApiError ? error.message : 'Tenant konnte nicht aktualisiert werden.');
-              }
-            }}
-          >
-            {(tenantsQuery.data ?? []).map((tenant) => (
-              <option key={tenant.id} value={tenant.id}>
-                {tenant.name}
-              </option>
-            ))}
-          </select>
-        ),
+        cell: (row) => {
+          if (row.role === 'system_admin') {
+            return <span className="meta">Nicht verfügbar für system_admin</span>;
+          }
+
+          return (
+            <select
+              value={row.tenant_id}
+              onChange={async (event) => {
+                setUserError(null);
+                try {
+                  await updateUserMutation.mutateAsync({
+                    userId: row.id,
+                    payload: { tenant_id: Number(event.target.value) },
+                  });
+                } catch (error) {
+                  setUserError(error instanceof ApiError ? error.message : 'Tenant konnte nicht aktualisiert werden.');
+                }
+              }}
+            >
+              {(tenantsQuery.data ?? []).map((tenant) => (
+                <option key={tenant.id} value={tenant.id}>
+                  {tenant.name}
+                </option>
+              ))}
+            </select>
+          );
+        },
       },
     ],
     [tenantsById, tenantsQuery.data, updateUserMutation],
