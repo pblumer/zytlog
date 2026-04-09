@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { DashboardMonthCalendar } from '../components/DashboardMonthCalendar';
 import { EmptyState, ErrorState, LoadingBlock, PageHeader, StatusBadge, SummaryCard } from '../components/common';
@@ -101,18 +101,17 @@ export function DashboardPage() {
     { absences: 0, holidays: 0, nonWorking: 0 },
   );
 
-  const calendarContextByDate = useMemo(
-    () =>
-      monthDays.reduce<Record<string, { holidayName?: string | null; nonWorkingLabel?: string | null }>>((acc, day) => {
-        if (day.holiday_name || day.non_working_period_label) {
-          acc[day.date] = {
-            holidayName: day.holiday_name,
-            nonWorkingLabel: day.non_working_period_label,
-          };
-        }
-        return acc;
-      }, {}),
-    [monthDays],
+  const calendarContextByDate = monthDays.reduce<Record<string, { holidayName?: string | null; nonWorkingLabel?: string | null }>>(
+    (acc, day) => {
+      if (day.holiday_name || day.non_working_period_label) {
+        acc[day.date] = {
+          holidayName: day.holiday_name,
+          nonWorkingLabel: day.non_working_period_label,
+        };
+      }
+      return acc;
+    },
+    {},
   );
 
   const submitManual = async () => {

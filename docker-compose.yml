@@ -28,7 +28,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://zytlog:zytlog@db:5432/zytlog
       AUTH_ENABLED: "true"
-      KEYCLOAK_ISSUER: http://localhost:8080/realms/zytlog
+      KEYCLOAK_ISSUER: http://pi-server-03.home:8080/realms/zytlog
       KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/zytlog/protocol/openid-connect/certs
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_REALM: zytlog
@@ -45,9 +45,12 @@ services:
   frontend:
     image: node:22-alpine
     working_dir: /app
-    command: sh -lc "cd frontend && npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    command: sh -lc "cd frontend && npm install && npm i @rollup/rollup-linux-arm64-musl --no-save && npm run dev -- --host 0.0.0.0 --port 5173"
     environment:
-      VITE_API_BASE_URL: http://localhost:8000/api/v1
+      VITE_API_BASE_URL: http://pi-server-03.home:8000/api/v1
+      VITE_KEYCLOAK_URL: http://pi-server-03.home:8080
+      VITE_KEYCLOAK_REALM: zytlog
+      VITE_KEYCLOAK_CLIENT_ID: zytlog-frontend
     volumes:
       - ./frontend:/app/frontend
     ports:
