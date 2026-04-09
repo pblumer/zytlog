@@ -1,4 +1,4 @@
-"""Seed pragmatic local demo data for Zytlog MVP.
+"""Seed reproducible local demo data for Zytlog.
 
 Usage:
     python -m backend.scripts.seed_demo
@@ -6,6 +6,7 @@ Usage:
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import select
@@ -17,6 +18,48 @@ from backend.models.tenant import Tenant
 from backend.models.time_stamp_event import TimeStampEvent
 from backend.models.user import User
 from backend.models.working_time_model import WorkingTimeModel
+
+
+@dataclass(frozen=True)
+class DemoIdentity:
+    email: str
+    full_name: str
+    keycloak_sub: str
+    role: UserRole
+    employee_number: str
+    first_name: str
+    last_name: str
+
+
+DEMO_IDENTITIES: tuple[DemoIdentity, ...] = (
+    DemoIdentity(
+        email="sysadmin@demo.local",
+        full_name="Demo System Admin",
+        keycloak_sub="demo-sysadmin-sub",
+        role=UserRole.SYSTEM_ADMIN,
+        employee_number="E-9000",
+        first_name="Demo",
+        last_name="SysAdmin",
+    ),
+    DemoIdentity(
+        email="admin@demo.local",
+        full_name="Demo Admin",
+        keycloak_sub="demo-admin-sub",
+        role=UserRole.ADMIN,
+        employee_number="E-1000",
+        first_name="Demo",
+        last_name="Admin",
+    ),
+    DemoIdentity(
+        email="employee@demo.local",
+        full_name="Demo Employee",
+        keycloak_sub="demo-employee-sub",
+        role=UserRole.EMPLOYEE,
+        employee_number="E-2000",
+        first_name="Demo",
+        last_name="Employee",
+    ),
+)
 
 
 def _find_or_create_tenant(slug: str = "demo-co") -> Tenant:
@@ -36,44 +79,6 @@ def _find_or_create_tenant(slug: str = "demo-co") -> Tenant:
         session.commit()
         session.refresh(tenant)
         return tenant
-
-
-def _find_or_create_admin(tenant_id: int) -> User:
-    with SessionLocal() as session:
-        admin = session.scalar(select(User).where(User.email == "admin@demo.local"))
-        if admin:
-            return admin
-
-        admin = User(
-            tenant_id=tenant_id,
-            email="admin@demo.local",
-            full_name="Demo Admin",
-            keycloak_user_id="demo-admin-sub",
-            role=UserRole.ADMIN,
-        )
-        session.add(admin)
-        session.commit()
-        session.refresh(admin)
-        return admin
-
-
-def _find_or_create_employee_user(tenant_id: int) -> User:
-    with SessionLocal() as session:
-        user = session.scalar(select(User).where(User.email == "employee@demo.local"))
-        if user:
-            return user
-
-        user = User(
-            tenant_id=tenant_id,
-            email="employee@demo.local",
-            full_name="Demo Employee",
-            keycloak_user_id="demo-employee-sub",
-            role=UserRole.EMPLOYEE,
-        )
-        session.add(user)
-        session.commit()
-        session.refresh(user)
-        return user
 
 
 def _find_or_create_model(tenant_id: int) -> WorkingTimeModel:
@@ -106,22 +111,76 @@ def _find_or_create_model(tenant_id: int) -> WorkingTimeModel:
         return model
 
 
-def _find_or_create_employee(tenant_id: int, user_id: int, model_id: int) -> Employee:
+def _find_or_create_user(tenant_id: int, identity: DemoIdentity) -> User:
     with SessionLocal() as session:
-        employee = session.scalar(select(Employee).where(Employee.user_id == user_id))
+        user = session.scalar(select(User).where(User.email == identity.email))
+        if user:
+            updated = False
+            if user.keycloak_user_id != identity.keycloak_sub:
+                user.keycloak_user_id = identity.keycloak_sub
+                updated = True
+            if user.role != identity.role:
+                user.role = identity.role
+                updated = True
+            if user.tenant_id != tenant_id:
+                user.tenant_id = tenant_id
+                updated = True
+            if user.full_name != identity.full_name:
+                user.full_name = identity.full_name
+                updated = True
+            if updated:
+                session.commit()
+                session.refresh(user)
+            return user
+
+        user = User(
+            tenant_id=tenant_id,
+            email=identity.email,
+            full_name=identity.full_name,
+            keycloak_user_id=identity.keycloak_sub,
+            role=identity.role,
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user
+
+
+def _find_or_create_employee_profile(tenant_id: int, user: User, model_id: int, identity: DemoIdentity) -> Employee:
+    with SessionLocal() as session:
+        employee = session.scalar(select(Employee).where(Employee.user_id == user.id))
         if employee:
+            updated = False
+            if employee.tenant_id != tenant_id:
+                employee.tenant_id = tenant_id
+                updated = True
+            if employee.working_time_model_id != model_id:
+                employee.working_time_model_id = model_id
+                updated = True
+            if employee.employee_number != identity.employee_number:
+                employee.employee_number = identity.employee_number
+                updated = True
+            if employee.first_name != identity.first_name:
+                employee.first_name = identity.first_name
+                updated = True
+            if employee.last_name != identity.last_name:
+                employee.last_name = identity.last_name
+                updated = True
+            if updated:
+                session.commit()
+                session.refresh(employee)
             return employee
 
         employee = Employee(
             tenant_id=tenant_id,
-            user_id=user_id,
-            employee_number="E-1000",
-            first_name="Demo",
-            last_name="Employee",
+            user_id=user.id,
+            employee_number=identity.employee_number,
+            first_name=identity.first_name,
+            last_name=identity.last_name,
             employment_percentage=100,
             entry_date=date(2026, 1, 1),
             working_time_model_id=model_id,
-            team="Operations",
+            team="Demo",
         )
         session.add(employee)
         session.commit()
@@ -176,19 +235,24 @@ def _seed_events(tenant_id: int, employee_id: int) -> int:
 
 def main() -> None:
     tenant = _find_or_create_tenant()
-    _find_or_create_admin(tenant.id)
-    employee_user = _find_or_create_employee_user(tenant.id)
     model = _find_or_create_model(tenant.id)
-    employee = _find_or_create_employee(tenant.id, employee_user.id, model.id)
-    created_events = _seed_events(tenant.id, employee.id)
+
+    users: list[User] = []
+    employee_profiles: dict[str, Employee] = {}
+
+    for identity in DEMO_IDENTITIES:
+        user = _find_or_create_user(tenant.id, identity)
+        users.append(user)
+        employee_profiles[identity.email] = _find_or_create_employee_profile(tenant.id, user, model.id, identity)
+
+    created_events = _seed_events(tenant.id, employee_profiles["employee@demo.local"].id)
 
     print("Seed completed")
     print(f"Tenant slug: {tenant.slug}")
     print("Users:")
-    print("  - admin@demo.local (role=admin, keycloak_user_id=demo-admin-sub)")
-    print("  - employee@demo.local (role=employee, keycloak_user_id=demo-employee-sub)")
-    print(f"Employee id: {employee.id}")
-    print(f"Events inserted this run: {created_events}")
+    for identity in DEMO_IDENTITIES:
+        print(f"  - {identity.email} (role={identity.role.value}, keycloak_user_id={identity.keycloak_sub})")
+    print(f"Events inserted for employee@demo.local this run: {created_events}")
 
 
 if __name__ == "__main__":
