@@ -1,6 +1,6 @@
 # Fachlichkeit: Working-Time-Model (annual target als führende Sollgrösse)
 
-Stand: 01.04.2026
+Stand: 09.04.2026
 
 ## Ziel dieses Dokuments
 
@@ -55,6 +55,11 @@ Wenn eine Bedingung nicht erfüllt ist, gilt für diesen Tag `target_minutes = 0
 - Eigene Domain über `non_working_period_sets` und `non_working_periods`.
 - Zuordnung über `employee.non_working_period_set_id`.
 - Wirkung: `target_minutes = 0`, Tag ist nicht target-bearing.
+
+
+## 5.1) Exakte Sollzeit-Verteilung
+
+Bei der Verteilung der jährlichen Sollzeit auf target-bearing Tage wird sichergestellt, dass die Summe der gerundeten täglichen Sollzeiten exakt der effektiven Jahres-Sollzeit entspricht (z. B. 2122h @ 50% ergibt exakt 1061:00 statt 1060:02 durch intelligente Verteilung des Rundungsrests).
 
 ## 5) Vorarbeitungs-Effekt
 

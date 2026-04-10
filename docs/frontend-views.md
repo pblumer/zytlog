@@ -1,6 +1,6 @@
 # Frontend-Views: fachlich-technischer Überblick
 
-Stand: 01.04.2026
+Stand: 09.04.2026
 
 ## Ziel
 
@@ -83,6 +83,7 @@ Fokus:
 - Jahresübersicht mit Monatskarten, Summen und Mini-Rastern.
 
 Sichtbare Kontexte:
+- tägliche Dot-Indikatoren zeigen zusätzlich die tatsächlich geleisteten Stunden als kleines Label an
 - Monatsstatus,
 - tägliche Dot-Indikatoren,
 - Absenz-Layer und Non-Working-Period-Styling in dichter Darstellung.
