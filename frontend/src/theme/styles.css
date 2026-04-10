@@ -1,4 +1,5 @@
 :root {
+  /* === EXISTING VARS - DO NOT CHANGE === */
   --bg: #eceff4;
   --surface: #ffffff;
   --surface-alt: #e5e9f0;
@@ -11,6 +12,58 @@
   --warning: #ebcb8b;
   --danger: #bf616a;
   --radius: 10px;
+
+  /* === NEW: Spacing === */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+
+  /* === NEW: Typography === */
+  --text-xs: 0.7rem;
+  --text-sm: 0.8rem;
+  --text-base: 0.92rem;
+  --text-md: 1rem;
+  --text-lg: 1.1rem;
+  --text-xl: 1.25rem;
+
+  /* === NEW: Semantic Colors === */
+  --color-balance-positive: #2e7d32;
+  --color-balance-negative: #b3261e;
+  --color-status-success-bg: #eaf7e0;
+  --color-status-success-text: #2e7d32;
+  --color-status-info-bg: #e8f0fe;
+  --color-status-info-text: #1a73e8;
+  --color-status-warning-bg: #fff5dd;
+  --color-status-warning-text: #b8860b;
+  --color-status-danger-bg: #fdecef;
+  --color-status-danger-text: #a73645;
+  --color-danger-hover: #8f2d3b;
+  --color-editing-row: #eef3fb;
+  --color-overlay: rgba(13, 22, 35, 0.42);
+
+  /* === NEW: Calendar Status Colors === */
+  --color-cal-complete: #a3be8c;
+  --color-cal-complete-bg: #eaf7e0;
+  --color-cal-incomplete: #d08770;
+  --color-cal-incomplete-bg: #fde8d8;
+  --color-cal-invalid: #bf616a;
+  --color-cal-invalid-bg: #fdecef;
+  --color-cal-empty: #d8dee9;
+  --color-cal-holiday: #81a1c1;
+  --color-cal-holiday-bg: #e8f0fe;
+  --color-cal-absence: #b48ead;
+  --color-cal-absence-bg: #f4e8f4;
+  --color-cal-nonwork: #ebcb8b;
+  --color-cal-nonwork-bg: #fff5dd;
+
+  /* === NEW: Border-Radius Scale === */
+  --radius-sm: 6px;
+  --radius-md: var(--radius);
+  --radius-lg: 14px;
+  --radius-full: 999px;
 }
 
 * {
