@@ -52,7 +52,10 @@ export function AppShell() {
         <div className="sidebar-head">
           <div className="brand">Zytlog</div>
           <button type="button" className="btn outline sidebar-close" onClick={() => setMenuOpen(false)} aria-label="Menü schliessen">
-            ✕
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
         <ul className="nav-list">
@@ -83,7 +86,11 @@ export function AppShell() {
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((open) => !open)}
             >
-              ☰
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
             </button>
             <div>
               <strong>{user?.username ?? user?.email}</strong>

@@ -780,7 +780,7 @@ a:focus-visible,
   }
 
   .calendar-day-status-text {
-    display: none;
+    font-size: 0.7rem;
   }
 }
 
