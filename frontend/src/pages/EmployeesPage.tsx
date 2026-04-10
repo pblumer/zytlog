@@ -252,11 +252,11 @@ export function EmployeesPage() {
           Neue Benutzer werden aktuell zuerst in Keycloak angelegt. Nach dem ersten Login wird der Benutzer in Zytlog
           automatisch erstellt. Anschliessend kann das Mitarbeiterprofil hier ergänzt oder bearbeitet werden.
         </p>
-        <p className="meta" style={{ marginTop: '0.35rem' }}>
+        <p className="meta section-gap-xs">
           Falls eine Person bereits in Keycloak existiert, aber hier noch nicht vollständig gepflegt ist, kann das
           Mitarbeiterprofil hier ergänzt werden.
         </p>
-        <p className="meta" style={{ marginTop: '0.35rem' }}>
+        <p className="meta section-gap-xs">
           Wichtig: Die Keycloak-UUID ist nicht identisch mit der internen Zytlog-User-ID.
         </p>
       </DataSection>
@@ -372,7 +372,7 @@ export function EmployeesPage() {
           <div className="employee-form-overrides">
             <strong>{form.overridesEnabled ? 'Individuelle Arbeitstage' : 'Standard-Arbeitstage'}</strong>
             {form.overridesEnabled ? (
-              <div className="actions employee-form-weekdays" style={{ marginTop: '0.35rem' }}>
+              <div className="actions employee-form-weekdays section-gap-xs">
                 {weekdays.map((weekday) => (
                   <label key={weekday.key}>
                     <input
@@ -390,7 +390,7 @@ export function EmployeesPage() {
                 ))}
               </div>
             ) : (
-              <p className="meta" style={{ marginTop: '0.25rem' }}>
+              <p className="meta section-gap-xs">
                 Es gelten die Standard-Arbeitstage aus dem Arbeitszeitmodell.
               </p>
             )}

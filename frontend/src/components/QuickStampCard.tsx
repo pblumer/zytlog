@@ -34,7 +34,7 @@ export function QuickStampCard({ status, lastEventTimestamp, title = 'Schnellerf
   }, [successMessage]);
 
   return (
-    <section className="card" style={{ marginTop: '1rem' }}>
+    <section className="card section-gap">
       <h3>{title}</h3>
       <p className="meta">
         Aktueller Status: <StatusBadge status={status} />

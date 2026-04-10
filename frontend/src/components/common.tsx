@@ -7,7 +7,7 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
       <h1>{title}</h1>
       {subtitle ? <p>{subtitle}</p> : null}
       {actions ? (
-        <div className="actions page-header-actions" style={{ marginTop: '0.75rem' }} aria-label={`${title} Aktionen`}>
+        <div className="actions page-header-actions section-gap-sm" aria-label={`${title} Aktionen`}>
           {actions}
         </div>
       ) : null}
@@ -19,7 +19,7 @@ export function SummaryCard({ title, value, hint }: { title: string; value: Reac
   return (
     <article className="card">
       <h3>{title}</h3>
-      <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>{value}</div>
+      <div className="heading-lg">{value}</div>
       {hint ? <div className="meta">{hint}</div> : null}
     </article>
   );

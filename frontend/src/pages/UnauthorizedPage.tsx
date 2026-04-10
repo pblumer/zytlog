@@ -14,7 +14,7 @@ export function UnauthorizedPage() {
   }
 
   return (
-    <section className="card" style={{ maxWidth: 560, margin: '4rem auto' }}>
+    <section className="card centered-card">
       <PageHeader
         title={isAuthRecovery ? 'Authentication Recovery Required' : 'Unauthorized'}
         subtitle={
@@ -23,7 +23,7 @@ export function UnauthorizedPage() {
             : 'You are not authenticated for this tenant context.'
         }
       />
-      <div style={{ display: 'flex', gap: '0.75rem' }}>
+      <div className="flex-row">
         <button className="btn primary" onClick={restartAuth}>
           {isAuthRecovery ? 'Restart Login' : 'Reset Session & Login'}
         </button>

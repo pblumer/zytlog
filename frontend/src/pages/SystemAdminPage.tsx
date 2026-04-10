@@ -233,7 +233,7 @@ export function SystemAdminPage() {
             <input type="checkbox" checked={tenantForm.active} onChange={(event) => setTenantForm((current) => ({ ...current, active: event.target.checked }))} />
             <span>Aktiv</span>
           </label>
-          <div className="actions" style={{ gridColumn: '1 / -1' }}>
+          <div className="actions full-span">
             <button type="submit" className="btn" disabled={createTenantMutation.isPending || updateTenantMutation.isPending}>
               {editingTenantId ? 'Tenant speichern' : 'Tenant anlegen'}
             </button>
@@ -265,7 +265,7 @@ export function SystemAdminPage() {
       </DataSection>
 
       <DataSection title="Interne Benutzer">
-        {userError ? <div className="inline-error" style={{ marginBottom: '0.75rem' }}>{userError}</div> : null}
+        {userError ? <div className="inline-error mb-sm">{userError}</div> : null}
         <DataGrid<SystemUser>
           data={usersQuery.data ?? []}
           columns={userColumns}
