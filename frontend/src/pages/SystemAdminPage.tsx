@@ -1,6 +1,7 @@
 import { FormEvent, useMemo, useState } from 'react';
 
 import { ApiError } from '../api/client';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader } from '../components/common';
 import type { DataGridColumn } from '../components/DataGrid';
 import { DataGrid } from '../components/DataGrid';
@@ -46,6 +47,7 @@ export function SystemAdminPage() {
   const [editingTenantId, setEditingTenantId] = useState<number | null>(null);
   const [tenantError, setTenantError] = useState<string | null>(null);
   const [userError, setUserError] = useState<string | null>(null);
+  const [pendingRoleChange, setPendingRoleChange] = useState<{ userId: number; newRole: string; userName: string } | null>(null);
 
   const tenantsById = useMemo(
     () => new Map((tenantsQuery.data ?? []).map((tenant) => [tenant.id, tenant.name])),
@@ -103,17 +105,7 @@ export function SystemAdminPage() {
         cell: (row) => (
           <select
             value={row.role}
-            onChange={async (event) => {
-              setUserError(null);
-              try {
-                await updateUserMutation.mutateAsync({
-                  userId: row.id,
-                  payload: { role: event.target.value as UserRole },
-                });
-              } catch (error) {
-                setUserError(error instanceof ApiError ? error.message : 'Rolle konnte nicht aktualisiert werden.');
-              }
-            }}
+            onChange={(event) => setPendingRoleChange({ userId: row.id, newRole: event.target.value, userName: row.email })}
           >
             {userRoles.map((role) => (
               <option key={role} value={role}>
@@ -259,6 +251,7 @@ export function SystemAdminPage() {
         <DataGrid<SystemTenant>
           data={tenantsQuery.data ?? []}
           columns={tenantColumns}
+          rowId={(row) => row.id}
           emptyTitle="Keine Tenants vorhanden"
           emptyDescription="Lege den ersten Tenant oben an."
         />
@@ -269,10 +262,26 @@ export function SystemAdminPage() {
         <DataGrid<SystemUser>
           data={usersQuery.data ?? []}
           columns={userColumns}
+          rowId={(row) => row.id}
           emptyTitle="Keine Benutzer vorhanden"
           emptyDescription="Sobald Benutzer sich anmelden oder manuell erstellt werden, erscheinen sie hier."
         />
       </DataSection>
+
+      <ConfirmDialog
+        open={pendingRoleChange !== null}
+        title="Rolle ändern"
+        message={`Rolle für ${pendingRoleChange?.userName} auf "${pendingRoleChange?.newRole}" ändern?`}
+        variant="warning"
+        confirmLabel="Rolle ändern"
+        onConfirm={() => {
+          if (pendingRoleChange) {
+            updateUserMutation.mutate({ userId: pendingRoleChange.userId, payload: { role: pendingRoleChange.newRole as UserRole } });
+          }
+          setPendingRoleChange(null);
+        }}
+        onCancel={() => setPendingRoleChange(null)}
+      />
     </>
   );
 }

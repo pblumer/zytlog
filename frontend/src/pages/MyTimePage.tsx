@@ -106,7 +106,7 @@ export function MyTimePage() {
         {!selectedDayEvents.data?.length ? (
           <EmptyState title="Keine Einträge für diesen Tag" description="Nutze Schnellerfassung oder öffne die Tagesansicht zur Nacherfassung." />
         ) : (
-          <DataGrid columns={columns} data={selectedDayEvents.data} searchPlaceholder="Ereignisse durchsuchen…" />
+          <DataGrid columns={columns} data={selectedDayEvents.data} rowId={(row) => row.id} searchPlaceholder="Ereignisse durchsuchen…" />
         )}
       </DataSection>
     </>

@@ -196,7 +196,7 @@ export function HolidaysPage() {
         {holidaySetsQuery.isLoading || query.isLoading ? <LoadingBlock /> : null}
         {holidaySetsQuery.error || query.error ? <ErrorState message="Feiertage konnten nicht geladen werden." /> : null}
         {selectedHolidaySetId === null ? <EmptyState title="Kein Feiertagssatz ausgewählt" description="Wählen Sie einen Feiertagssatz, um Feiertage zu verwalten." /> : null}
-        {query.data ? <DataGrid columns={columns} data={query.data} searchPlaceholder="Feiertage suchen…" /> : null}
+        {query.data ? <DataGrid columns={columns} data={query.data} rowId={(row) => row.id} searchPlaceholder="Feiertage suchen…" /> : null}
       </DataSection>
     </>
   );

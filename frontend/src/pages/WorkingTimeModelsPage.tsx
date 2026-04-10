@@ -278,7 +278,7 @@ export function WorkingTimeModelsPage() {
       {query.error ? <ErrorState message="Arbeitszeitmodelle konnten nicht geladen werden." /> : null}
       {query.data ? (
         <DataSection title="Modelle">
-          <DataGrid columns={columns} data={query.data} searchPlaceholder="Arbeitszeitmodelle suchen…" />
+          <DataGrid columns={columns} data={query.data} rowId={(row) => row.id} searchPlaceholder="Arbeitszeitmodelle suchen…" />
         </DataSection>
       ) : null}
     </>

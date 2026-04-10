@@ -176,7 +176,7 @@ export function NonWorkingPeriodSetsPage() {
       <DataSection title="Arbeitsfrei-Sets">
         {setsQuery.isLoading ? <LoadingBlock /> : null}
         {setsQuery.error ? <ErrorState message="Arbeitsfrei-Sets konnten nicht geladen werden." /> : null}
-        {setsQuery.data ? <DataGrid columns={setColumns} data={setsQuery.data} searchPlaceholder="Arbeitsfrei-Set suchen…" /> : null}
+        {setsQuery.data ? <DataGrid columns={setColumns} data={setsQuery.data} rowId={(row) => row.id} searchPlaceholder="Arbeitsfrei-Set suchen…" /> : null}
       </DataSection>
 
       <DataSection title="Zeiträume pro Set">

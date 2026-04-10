@@ -467,6 +467,7 @@ export function DayPage() {
             <DataGrid
               columns={columns}
               data={events.data}
+              rowId={(row) => row.id}
               searchPlaceholder="Zeitereignisse durchsuchen…"
               initialPageSize={20}
               getRowClassName={(row) => (row.id === editingRowId || row.id === deletingRowId ? 'is-editing' : undefined)}

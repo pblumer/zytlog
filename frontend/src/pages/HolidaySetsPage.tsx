@@ -396,7 +396,7 @@ export function HolidaySetsPage() {
       <DataSection title="Feiertagssätze">
         {query.isLoading ? <LoadingBlock /> : null}
         {query.error ? <ErrorState message="Feiertagssätze konnten nicht geladen werden." /> : null}
-        {query.data ? <DataGrid columns={columns} data={query.data} searchPlaceholder="Feiertagssätze suchen…" /> : null}
+        {query.data ? <DataGrid columns={columns} data={query.data} rowId={(row) => row.id} searchPlaceholder="Feiertagssätze suchen…" /> : null}
       </DataSection>
     </>
   );

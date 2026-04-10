@@ -20,6 +20,7 @@ export type DataGridProps<TData> = {
   searchPlaceholder?: string;
   toolbarRight?: ReactNode;
   initialPageSize?: number;
+  rowId?: (row: TData) => string | number;
   getRowClassName?: (row: TData) => string | undefined;
 };
 
@@ -33,6 +34,7 @@ export function DataGrid<TData>({
   searchPlaceholder = 'Search rows…',
   toolbarRight,
   initialPageSize = 10,
+  rowId,
   getRowClassName,
 }: DataGridProps<TData>) {
   const [search, setSearch] = useState('');
@@ -151,7 +153,7 @@ export function DataGrid<TData>({
               </tr>
             ) : (
               pageRows.map((row, rowIndex) => (
-                <tr key={rowIndex} className={getRowClassName?.(row)}>
+                <tr key={rowId ? rowId(row) : rowIndex} className={getRowClassName?.(row)}>
                   {columns.map((column) => (
                     <td key={column.id}>{column.cell(row)}</td>
                   ))}

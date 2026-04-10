@@ -424,7 +424,7 @@ export function EmployeesPage() {
       {query.error ? <ErrorState message="Mitarbeiter konnten nicht geladen werden." /> : null}
       {query.data ? (
         <DataSection title="Mitarbeiter">
-          <DataGrid columns={columns} data={query.data} searchPlaceholder="Mitarbeiter suchen…" />
+          <DataGrid columns={columns} data={query.data} rowId={(row) => row.id} searchPlaceholder="Mitarbeiter suchen…" />
         </DataSection>
       ) : null}
     </>
