@@ -261,9 +261,9 @@ export function EmployeesPage() {
         </p>
       </DataSection>
       <DataSection title={editingEmployee ? 'Mitarbeiter bearbeiten' : 'Mitarbeiter anlegen'}>
-        <form className="app-form employee-form" onSubmit={onSubmit}>
+        <form className="app-form" onSubmit={onSubmit}>
           {!editingEmployee ? (
-            <label className="employee-form-field employee-form-field-wide">
+            <label className="app-form-field app-form-field-wide">
               <span>Benutzer</span>
               <select
                 value={form.userId}
@@ -279,22 +279,22 @@ export function EmployeesPage() {
               </select>
             </label>
           ) : null}
-          <label className="employee-form-field">
+          <label className="app-form-field">
             <span>MitarbeiterNr.</span>
             <input
               value={form.employeeNumber}
               onChange={(event) => setForm((prev) => ({ ...prev, employeeNumber: event.target.value }))}
             />
           </label>
-          <label className="employee-form-field">
+          <label className="app-form-field">
             <span>Vorname</span>
             <input value={form.firstName} onChange={(event) => setForm((prev) => ({ ...prev, firstName: event.target.value }))} required />
           </label>
-          <label className="employee-form-field">
+          <label className="app-form-field">
             <span>Nachname</span>
             <input value={form.lastName} onChange={(event) => setForm((prev) => ({ ...prev, lastName: event.target.value }))} required />
           </label>
-          <label className="employee-form-field">
+          <label className="app-form-field">
             <span>Arbeitspensum</span>
             <input
               value={form.employmentPercentage}
@@ -306,7 +306,7 @@ export function EmployeesPage() {
               required
             />
           </label>
-          <label className="employee-form-field">
+          <label className="app-form-field">
             <span>Arbeitszeitmodell</span>
             <select
               value={form.workingTimeModelId}
@@ -321,7 +321,7 @@ export function EmployeesPage() {
               ))}
             </select>
           </label>
-          <label className="employee-form-field">
+          <label className="app-form-field">
             <span>Feiertagssatz</span>
             <select
               value={form.holidaySetId}
@@ -335,7 +335,7 @@ export function EmployeesPage() {
               ))}
             </select>
           </label>
-          <label className="employee-form-field">
+          <label className="app-form-field">
             <span>Arbeitsfrei-Set</span>
             <select
               value={form.nonWorkingPeriodSetId}
@@ -349,19 +349,19 @@ export function EmployeesPage() {
               ))}
             </select>
           </label>
-          <label className="employee-form-field">
+          <label className="app-form-field">
             <span>Eintrittsdatum</span>
             <input value={form.entryDate} onChange={(event) => setForm((prev) => ({ ...prev, entryDate: event.target.value }))} type="date" required />
           </label>
-          <label className="employee-form-field">
+          <label className="app-form-field">
             <span>Austrittsdatum</span>
             <input value={form.exitDate} onChange={(event) => setForm((prev) => ({ ...prev, exitDate: event.target.value }))} type="date" />
           </label>
-          <label className="employee-form-field">
+          <label className="app-form-field">
             <span>Team</span>
             <input value={form.team} onChange={(event) => setForm((prev) => ({ ...prev, team: event.target.value }))} />
           </label>
-          <label className="employee-form-toggle">
+          <label className="app-form-field app-form-field-toggle">
             <input
               type="checkbox"
               checked={form.overridesEnabled}
@@ -369,10 +369,10 @@ export function EmployeesPage() {
             />
             <span>Individuelle Arbeitstage</span>
           </label>
-          <div className="employee-form-overrides">
+          <div className="app-form-overrides">
             <strong>{form.overridesEnabled ? 'Individuelle Arbeitstage' : 'Standard-Arbeitstage'}</strong>
             {form.overridesEnabled ? (
-              <div className="actions employee-form-weekdays section-gap-xs">
+<div className="actions app-form-weekdays section-gap-xs">
                 {weekdays.map((weekday) => (
                   <label key={weekday.key}>
                     <input
@@ -395,7 +395,7 @@ export function EmployeesPage() {
               </p>
             )}
           </div>
-          <div className="actions employee-form-actions">
+<div className="actions">
             <button type="submit" className="btn primary" disabled={isPending}>
               {editingEmployee ? 'Änderungen speichern' : 'Mitarbeiter speichern'}
             </button>
@@ -413,10 +413,10 @@ export function EmployeesPage() {
             ) : null}
           </div>
           {createMutation.error || updateMutation.error ? (
-            <p className="inline-error employee-form-feedback">Mitarbeiter konnte nicht gespeichert werden.</p>
+            <p className="inline-error">Mitarbeiter konnte nicht gespeichert werden.</p>
           ) : null}
           {!editingEmployee && userOptionsQuery.data && userOptionsQuery.data.length === 0 ? (
-            <p className="meta employee-form-feedback">Aktuell sind keine Benutzer ohne Mitarbeiterprofil verfügbar.</p>
+            <p className="meta">Aktuell sind keine Benutzer ohne Mitarbeiterprofil verfügbar.</p>
           ) : null}
         </form>
       </DataSection>

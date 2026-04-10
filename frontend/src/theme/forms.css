@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Forms -- app-form, inline-form, employee-form styles
+   Forms -- app-form, inline-form styles
    ========================================================================== */
 
 .app-form {
@@ -34,6 +34,58 @@
   grid-column: 1 / -1;
 }
 
+.app-form-field {
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.app-form-field > input,
+.app-form-field > select,
+.app-form-field > textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.4rem;
+  box-sizing: border-box;
+}
+
+.app-form-field-wide {
+  grid-column: 1 / -1;
+}
+
+.app-form-field.app-form-field-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.4rem;
+  font-weight: 600;
+  grid-column: 1 / -1;
+}
+
+.app-form-overrides {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: var(--surface-alt);
+  grid-column: 1 / -1;
+}
+
+.app-form-weekdays label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
 .app-form-check {
   display: inline-flex !important;
   align-items: center;
@@ -62,69 +114,4 @@
 .inline-form-row input,
 .inline-form-row select {
   max-width: 100%;
-}
-
-.employee-form {
-  display: grid;
-  gap: 0.9rem;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  align-items: start;
-}
-
-.employee-form-field {
-  display: grid;
-  gap: 0.35rem;
-  min-width: 0;
-}
-
-.employee-form-field > span {
-  font-size: 0.82rem;
-  color: var(--muted);
-  font-weight: 600;
-}
-
-.employee-form-field > input,
-.employee-form-field > select {
-  width: 100%;
-  min-width: 0;
-  min-height: 2.4rem;
-  box-sizing: border-box;
-}
-
-.employee-form-field-wide {
-  grid-column: 1 / -1;
-}
-
-.employee-form-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  min-height: 2.4rem;
-  font-weight: 600;
-  grid-column: 1 / -1;
-}
-
-.employee-form-overrides {
-  display: grid;
-  gap: 0.4rem;
-  padding: 0.55rem 0.65rem;
-  border: 1px dashed var(--border);
-  border-radius: 10px;
-  background: var(--surface-alt);
-  grid-column: 1 / -1;
-}
-
-.employee-form-weekdays label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.2rem 0.45rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-}
-
-.employee-form-actions,
-.employee-form-feedback {
-  grid-column: 1 / -1;
 }
