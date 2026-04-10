@@ -1,3 +1,3 @@
 export function NotFoundPage() {
-  return <section className="card">Page not found.</section>;
+  return <section className="card">Seite nicht gefunden.</section>;
 }
