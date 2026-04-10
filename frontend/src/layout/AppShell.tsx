@@ -4,6 +4,25 @@ import { NavLink, Outlet, useLocation, useNavigate, type NavLinkRenderProps } fr
 import { useAuth } from '../auth/provider';
 import { getDefaultRouteForRole, getNavItemsByRole, isManagedAppPath, isPathAllowedForRole } from '../auth/roleRouting';
 
+function HamburgerIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <line x1="3" y1="5" x2="17" y2="5" />
+      <line x1="3" y1="10" x2="17" y2="10" />
+      <line x1="3" y1="15" x2="17" y2="15" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <line x1="5" y1="5" x2="15" y2="15" />
+      <line x1="15" y1="5" x2="5" y2="15" />
+    </svg>
+  );
+}
+
 export function AppShell() {
   const { user, logout } = useAuth();
   const navItems = getNavItemsByRole(user?.role);
@@ -46,13 +65,17 @@ export function AppShell() {
 
   return (
     <div className="app-shell">
+      <a href="#main-content" className="skip-link">
+        Zum Hauptinhalt springen
+      </a>
+
       {menuOpen ? <button type="button" className="nav-backdrop" aria-label="Menü schliessen" onClick={() => setMenuOpen(false)} /> : null}
 
       <aside className={`sidebar${menuOpen ? ' open' : ''}`} id="main-navigation">
         <div className="sidebar-head">
           <div className="brand">Zytlog</div>
           <button type="button" className="btn outline sidebar-close" onClick={() => setMenuOpen(false)} aria-label="Menü schliessen">
-            ✕
+            <CloseIcon />
           </button>
         </div>
         <ul className="nav-list">
@@ -83,7 +106,7 @@ export function AppShell() {
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((open) => !open)}
             >
-              ☰
+              <HamburgerIcon />
             </button>
             <div>
               <strong>{user?.username ?? user?.email}</strong>
@@ -95,7 +118,7 @@ export function AppShell() {
           </button>
         </header>
 
-        <main className="page">
+        <main className="page" id="main-content">
           <Outlet />
         </main>
       </div>

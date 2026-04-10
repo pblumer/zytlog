@@ -41,24 +41,24 @@ export function AdminAbsencesPage() {
       <PageHeader title="Abwesenheiten" subtitle="Stage-1 Verwaltung für Vacation/Sickness" />
       <DataSection title="Abwesenheit anlegen">
         <form className="app-form" onSubmit={onSubmit}>
-          <label>Mitarbeiter
-            <select required value={form.employee_id} onChange={(e) => setForm((p) => ({ ...p, employee_id: e.target.value }))}>
+          <label htmlFor="abs-employee">Mitarbeiter
+            <select id="abs-employee" required value={form.employee_id} onChange={(e) => setForm((p) => ({ ...p, employee_id: e.target.value }))}>
               <option value="">Bitte wählen</option>
               {(employees.data ?? []).map((employee) => <option key={employee.id} value={employee.id}>{employee.first_name} {employee.last_name}</option>)}
             </select>
           </label>
-          <label>Typ<select value={form.absence_type} onChange={(e) => setForm((p) => ({ ...p, absence_type: e.target.value as 'vacation' | 'sickness' }))}><option value="vacation">Vacation</option><option value="sickness">Sickness</option></select></label>
-          <label>Von<input required type="date" value={form.start_date} onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))} /></label>
-          <label>Bis<input required type="date" value={form.end_date} onChange={(e) => setForm((p) => ({ ...p, end_date: e.target.value }))} /></label>
-          <label>Dauer<select value={form.duration_type} onChange={(e) => setForm((p) => ({ ...p, duration_type: e.target.value as 'full_day' | 'half_day_am' | 'half_day_pm' }))}><option value="full_day">Full day</option><option value="half_day_am">Half day AM</option><option value="half_day_pm">Half day PM</option></select></label>
-          <label>Notiz<input value={form.note} onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))} /></label>
+          <label htmlFor="abs-type">Typ<select id="abs-type" value={form.absence_type} onChange={(e) => setForm((p) => ({ ...p, absence_type: e.target.value as 'vacation' | 'sickness' }))}><option value="vacation">Vacation</option><option value="sickness">Sickness</option></select></label>
+          <label htmlFor="abs-from">Von<input id="abs-from" required type="date" value={form.start_date} onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))} /></label>
+          <label htmlFor="abs-to">Bis<input id="abs-to" required type="date" value={form.end_date} onChange={(e) => setForm((p) => ({ ...p, end_date: e.target.value }))} /></label>
+          <label htmlFor="abs-duration">Dauer<select id="abs-duration" value={form.duration_type} onChange={(e) => setForm((p) => ({ ...p, duration_type: e.target.value as 'full_day' | 'half_day_am' | 'half_day_pm' }))}><option value="full_day">Full day</option><option value="half_day_am">Half day AM</option><option value="half_day_pm">Half day PM</option></select></label>
+          <label htmlFor="abs-note">Notiz<input id="abs-note" value={form.note} onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))} /></label>
           <button type="submit" className="btn primary">Speichern</button>
           {error ? <p className="inline-error">{error}</p> : null}
         </form>
       </DataSection>
       <DataSection title="Vorhandene Abwesenheiten">
-        <label>Filter Mitarbeiter
-          <select value={employeeId ?? ''} onChange={(e) => setEmployeeId(e.target.value ? Number(e.target.value) : undefined)}>
+        <label htmlFor="abs-filter">Filter Mitarbeiter
+          <select id="abs-filter" value={employeeId ?? ''} onChange={(e) => setEmployeeId(e.target.value ? Number(e.target.value) : undefined)}>
             <option value="">Alle</option>
             {(employees.data ?? []).map((employee) => <option key={employee.id} value={employee.id}>{employee.first_name} {employee.last_name}</option>)}
           </select>
