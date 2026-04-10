@@ -201,13 +201,13 @@ a:focus-visible,
 }
 
 .btn.danger {
-  background: #a73645;
+  background: var(--color-status-danger-text);
   color: white;
   transition: background-color 0.15s ease-in-out;
 }
 
 .btn.danger:hover:not(:disabled) {
-  background: #8f2d3b;
+  background: var(--color-danger-hover);
 }
 
 .status {
@@ -218,10 +218,10 @@ a:focus-visible,
   text-transform: capitalize;
 }
 
-.status.success { background: #eaf7e0; color: #4f6a3f; }
-.status.info { background: #e8f0fe; color: #2b5da8; }
-.status.warning { background: #fff5dd; color: #8a6a21; }
-.status.danger { background: #fdecef; color: #8b3d4a; }
+.status.success { background: var(--color-status-success-bg); color: #4f6a3f; }
+.status.info { background: var(--color-status-info-bg); color: #2b5da8; }
+.status.warning { background: var(--color-status-warning-bg); color: #8a6a21; }
+.status.danger { background: var(--color-status-danger-bg); color: #8b3d4a; }
 .status.neutral { background: var(--surface-alt); color: var(--muted); }
 
 .table-wrap { overflow-x: auto; }
@@ -329,7 +329,7 @@ a:focus-visible,
 }
 
 .table tr.is-editing {
-  background: #eef3fb;
+  background: var(--color-editing-row);
 }
 
 .meta { color: var(--muted); font-size: 0.9rem; }
@@ -337,8 +337,8 @@ a:focus-visible,
   font-variant-numeric: tabular-nums;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
 }
-.balance-positive { color: #2e7d32; }
-.balance-negative { color: #b3261e; }
+.balance-positive { color: var(--color-balance-positive); }
+.balance-negative { color: var(--color-balance-negative); }
 .balance-neutral { color: var(--text); }
 .comment-placeholder { color: #8b95a5; }
 .comment-text {
@@ -599,7 +599,7 @@ a:focus-visible,
 
 .quick-stamp-success {
   margin: 0.4rem 0 0;
-  color: #2e7d32;
+  color: var(--color-status-success-text);
   font-weight: 600;
   animation: fade-in 0.2s ease-in;
 }
@@ -753,7 +753,7 @@ a:focus-visible,
     inset: 0;
     z-index: 25;
     border: 0;
-    background: rgba(13, 22, 35, 0.42);
+    background: var(--color-overlay);
   }
 
   .quick-stamp-btn { width: 100%; }
@@ -984,7 +984,7 @@ a:focus-visible,
 }
 
 .day-timeline-flag.danger {
-  background: #fdecef;
+  background: var(--color-status-danger-bg);
   border-color: #e8b1b8;
   color: #8b3d4a;
 }
@@ -998,7 +998,7 @@ a:focus-visible,
 }
 
 .day-timeline-connector.is-invalid {
-  background: #bf616a;
+  background: var(--color-cal-invalid);
 }
 
 .day-intervals {
@@ -1076,7 +1076,7 @@ a:focus-visible,
 }
 
 .year-status-valid {
-  color: #2e7d32;
+  color: var(--color-status-success-text);
   background: #edf7ed;
 }
 
@@ -1310,7 +1310,7 @@ a:focus-visible,
 }
 
 .month-day-status-dot-invalid {
-  background: #bf616a;
+  background: var(--color-cal-invalid);
 }
 
 .month-day-status-dot-empty {
