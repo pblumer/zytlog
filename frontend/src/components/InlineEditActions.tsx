@@ -12,10 +12,10 @@ export function InlineEditActions({
   return (
     <div className="actions">
       <button type="button" className="btn primary" onClick={onSave} disabled={saveDisabled || saving}>
-        {saving ? 'Saving…' : 'Save'}
+        {saving ? 'Speichere…' : 'Speichern'}
       </button>
       <button type="button" className="btn outline" onClick={onCancel}>
-        Cancel
+        Abbrechen
       </button>
     </div>
   );

@@ -28,9 +28,9 @@ export function DataGrid<TData>({
   data,
   loading,
   error,
-  emptyTitle = 'No records found',
+  emptyTitle = 'Keine Einträge gefunden',
   emptyDescription,
-  searchPlaceholder = 'Search rows…',
+  searchPlaceholder = 'Zeilen suchen…',
   toolbarRight,
   initialPageSize = 10,
   getRowClassName,
@@ -97,7 +97,7 @@ export function DataGrid<TData>({
             setPage(0);
           }}
           placeholder={searchPlaceholder}
-          aria-label="Search table rows"
+          aria-label="Tabellenzeilen suchen"
         />
         {toolbarRight ? <div>{toolbarRight}</div> : null}
       </div>
@@ -131,7 +131,7 @@ export function DataGrid<TData>({
             {loading ? (
               <tr>
                 <td colSpan={colSpan}>
-                  <div className="table-state">Loading rows…</div>
+                  <div className="table-state">Zeilen werden geladen…</div>
                 </td>
               </tr>
             ) : error ? (
@@ -164,11 +164,11 @@ export function DataGrid<TData>({
 
       <div className="data-grid-pagination">
         <span className="meta">
-          Showing {pageRows.length} of {sortedRows.length} filtered rows
+          Anzeige {pageRows.length} von {sortedRows.length} gefilterte Zeilen
         </span>
         <div className="actions">
           <button type="button" className="btn outline" onClick={() => setPage((current) => Math.max(0, current - 1))} disabled={safePage <= 0}>
-            Previous
+            Zurück
           </button>
           <button
             type="button"
@@ -176,7 +176,7 @@ export function DataGrid<TData>({
             onClick={() => setPage((current) => Math.min(totalPages - 1, current + 1))}
             disabled={safePage >= totalPages - 1}
           >
-            Next
+            Weiter
           </button>
           <select
             value={pageSize}
@@ -188,7 +188,7 @@ export function DataGrid<TData>({
           >
             {[10, 20, 50].map((size) => (
               <option key={size} value={size}>
-                {size} / page
+                {size} pro Seite
               </option>
             ))}
           </select>

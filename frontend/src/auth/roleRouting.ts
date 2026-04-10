@@ -5,16 +5,16 @@ export type NavItem = { to: string; label: string };
 const employeeNavItems: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/my-time', label: 'Zeitkonto' },
-  { to: '/day', label: 'Day' },
-  { to: '/week', label: 'Week' },
-  { to: '/month', label: 'Month' },
-  { to: '/year', label: 'Year' },
-  { to: '/my-absences', label: 'My Absences' },
+  { to: '/day', label: 'Tag' },
+  { to: '/week', label: 'Woche' },
+  { to: '/month', label: 'Monat' },
+  { to: '/year', label: 'Jahr' },
+  { to: '/my-absences', label: 'Meine Abwesenheiten' },
 ];
 
 const adminManagementNavItems: NavItem[] = [
-  { to: '/employees', label: 'Employees' },
-  { to: '/working-time-models', label: 'Working Time Models' },
+  { to: '/employees', label: 'Mitarbeitende' },
+  { to: '/working-time-models', label: 'Arbeitszeitmodelle' },
   { to: '/holiday-sets', label: 'Feiertagssätze' },
   { to: '/holidays', label: 'Feiertage' },
   { to: '/non-working-period-sets', label: 'Arbeitsfreie Zeiträume' },

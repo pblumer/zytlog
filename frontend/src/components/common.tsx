@@ -30,13 +30,13 @@ export function StatusBadge({ status }: { status: string }) {
 }
 
 export function LoadingBlock() {
-  return <div className="card" role="status" aria-live="polite">Loading…</div>;
+  return <div className="card" role="status" aria-live="polite">Laden…</div>;
 }
 
 export function ErrorState({ message }: { message?: string }) {
   return (
     <div className="card inline-error" role="alert">
-      Error: {message ?? 'Something went wrong.'}
+      Fehler: {message ?? 'Etwas ist schiefgelaufen.'}
     </div>
   );
 }
