@@ -2,6 +2,7 @@ import { FormEvent, useMemo, useState } from 'react';
 
 import { useAuth } from '../auth/provider';
 import { ApiError } from '../api/client';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader } from '../components/common';
 import type { DataGridColumn } from '../components/DataGrid';
 import { DataGrid } from '../components/DataGrid';
@@ -36,6 +37,7 @@ export function HolidaysPage() {
   const [editingHolidayId, setEditingHolidayId] = useState<number | null>(null);
   const [formState, setFormState] = useState<HolidayFormState>(defaultFormState);
   const [mutationError, setMutationError] = useState<string | null>(null);
+  const [confirmDeleteHoliday, setConfirmDeleteHoliday] = useState<{id: number; name: string} | null>(null);
 
   const holidaySetsQuery = useHolidaySets(isAdmin);
   const query = useHolidays(isAdmin && selectedHolidaySetId !== null, selectedYear, selectedHolidaySetId ?? undefined);
@@ -88,18 +90,8 @@ export function HolidaysPage() {
             <button
               type="button"
               className="btn danger"
-              onClick={async () => {
-                if (!window.confirm(`Feiertag „${row.name}“ löschen?`)) return;
-                setMutationError(null);
-                try {
-                  await deleteMutation.mutateAsync(row.id);
-                  if (editingHolidayId === row.id) {
-                    setEditingHolidayId(null);
-                    setFormState(defaultFormState);
-                  }
-                } catch (error) {
-                  setMutationError(error instanceof Error ? error.message : 'Feiertag konnte nicht gelöscht werden.');
-                }
+              onClick={() => {
+                setConfirmDeleteHoliday({ id: row.id, name: row.name });
               }}
             >
               Feiertag löschen
@@ -108,7 +100,7 @@ export function HolidaysPage() {
         ),
       },
     ],
-    [deleteMutation, editingHolidayId],
+    [deleteMutation],
   );
 
   const onSubmit = async (event: FormEvent) => {
@@ -198,6 +190,28 @@ export function HolidaysPage() {
         {selectedHolidaySetId === null ? <EmptyState title="Kein Feiertagssatz ausgewählt" description="Wählen Sie einen Feiertagssatz, um Feiertage zu verwalten." /> : null}
         {query.data ? <DataGrid columns={columns} data={query.data} searchPlaceholder="Feiertage suchen…" /> : null}
       </DataSection>
+      <ConfirmDialog
+        open={confirmDeleteHoliday !== null}
+        title="Löschen bestätigen"
+        message={confirmDeleteHoliday ? `Feiertag „${confirmDeleteHoliday.name}" löschen?` : ''}
+        variant="danger"
+        confirmLabel="Löschen"
+        onConfirm={async () => {
+          if (!confirmDeleteHoliday) return;
+          setMutationError(null);
+          try {
+            await deleteMutation.mutateAsync(confirmDeleteHoliday.id);
+            if (editingHolidayId === confirmDeleteHoliday.id) {
+              setEditingHolidayId(null);
+              setFormState(defaultFormState);
+            }
+          } catch (error) {
+            setMutationError(error instanceof Error ? error.message : 'Feiertag konnte nicht gelöscht werden.');
+          }
+          setConfirmDeleteHoliday(null);
+        }}
+        onCancel={() => setConfirmDeleteHoliday(null)}
+      />
     </>
   );
 }

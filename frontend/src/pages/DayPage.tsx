@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader, SummaryCard } from '../components/common';
 import type { DataGridColumn } from '../components/DataGrid';
 import { DataGrid } from '../components/DataGrid';
@@ -54,6 +55,7 @@ export function DayPage() {
   const [editError, setEditError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deletingRowId, setDeletingRowId] = useState<number | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
 
   const dailyAccount = useDailyAccount(date);
   const events = useTimeStamps(date, date);
@@ -114,15 +116,17 @@ export function DayPage() {
     }
   };
 
-  const deleteEvent = async (event: TimeStampEvent) => {
-    const confirmed = window.confirm('Wirklich löschen?');
-    if (!confirmed) return;
+  const deleteEvent = (event: TimeStampEvent) => {
+    setConfirmDelete(event.id);
+  };
 
+  const confirmDeleteEvent = async () => {
+    if (confirmDelete === null) return;
     setDeleteError(null);
-    setDeletingRowId(event.id);
+    setDeletingRowId(confirmDelete);
     try {
-      await deleteMutation.mutateAsync(event.id);
-      if (editingRowId === event.id) {
+      await deleteMutation.mutateAsync(confirmDelete);
+      if (editingRowId === confirmDelete) {
         cancelEdit();
       }
     } catch (error) {
@@ -130,6 +134,7 @@ export function DayPage() {
       setDeleteError(message);
     } finally {
       setDeletingRowId(null);
+      setConfirmDelete(null);
     }
   };
 
@@ -474,6 +479,15 @@ export function DayPage() {
           </div>
         )}
       </DataSection>
+      <ConfirmDialog
+        open={confirmDelete !== null}
+        title="Löschen bestätigen"
+        message="Wirklich löschen?"
+        variant="danger"
+        confirmLabel="Löschen"
+        onConfirm={confirmDeleteEvent}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </>
   );
 }

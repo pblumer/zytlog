@@ -2,6 +2,7 @@ import { FormEvent, useMemo, useState } from 'react';
 
 import { useAuth } from '../auth/provider';
 import { ApiError } from '../api/client';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader } from '../components/common';
 import { DataGrid } from '../components/DataGrid';
 import type { DataGridColumn } from '../components/DataGrid';
@@ -31,6 +32,8 @@ export function NonWorkingPeriodSetsPage() {
   const [editingPeriodId, setEditingPeriodId] = useState<number | null>(null);
   const [periodForm, setPeriodForm] = useState<PeriodForm>(defaultPeriodForm);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDeleteSet, setConfirmDeleteSet] = useState<{id: number; name: string} | null>(null);
+  const [confirmDeletePeriod, setConfirmDeletePeriod] = useState<{periodSetId: number; periodId: number; name: string} | null>(null);
 
   const setsQuery = useNonWorkingPeriodSets(isAdmin);
   const periodsQuery = useNonWorkingPeriods(selectedSetId, isAdmin && selectedSetId !== null);
@@ -65,14 +68,8 @@ export function NonWorkingPeriodSetsPage() {
             <button
               type="button"
               className="btn danger"
-              onClick={async () => {
-                if (!window.confirm(`Arbeitsfrei-Set „${row.name}“ löschen?`)) return;
-                try {
-                  await deleteSet.mutateAsync(row.id);
-                  if (selectedSetId === row.id) setSelectedSetId(null);
-                } catch (e) {
-                  setError(e instanceof Error ? e.message : 'Set konnte nicht gelöscht werden.');
-                }
+              onClick={() => {
+                setConfirmDeleteSet({ id: row.id, name: row.name });
               }}
             >
               Löschen
@@ -108,10 +105,9 @@ export function NonWorkingPeriodSetsPage() {
             <button
               type="button"
               className="btn danger"
-              onClick={async () => {
+              onClick={() => {
                 if (!selectedSetId) return;
-                if (!window.confirm(`Zeitraum „${row.name}“ löschen?`)) return;
-                await deletePeriod.mutateAsync({ periodSetId: selectedSetId, periodId: row.id });
+                setConfirmDeletePeriod({ periodSetId: selectedSetId, periodId: row.id, name: row.name });
               }}
             >
               Löschen
@@ -205,6 +201,41 @@ export function NonWorkingPeriodSetsPage() {
         )}
         {error ? <p className="inline-error">{error}</p> : null}
       </DataSection>
+      <ConfirmDialog
+        open={confirmDeleteSet !== null}
+        title="Löschen bestätigen"
+        message={confirmDeleteSet ? `Arbeitsfrei-Set „${confirmDeleteSet.name}" löschen?` : ''}
+        variant="danger"
+        confirmLabel="Löschen"
+        onConfirm={async () => {
+          if (!confirmDeleteSet) return;
+          try {
+            await deleteSet.mutateAsync(confirmDeleteSet.id);
+            if (selectedSetId === confirmDeleteSet.id) setSelectedSetId(null);
+          } catch (e) {
+            setError(e instanceof Error ? e.message : 'Set konnte nicht gelöscht werden.');
+          }
+          setConfirmDeleteSet(null);
+        }}
+        onCancel={() => setConfirmDeleteSet(null)}
+      />
+      <ConfirmDialog
+        open={confirmDeletePeriod !== null}
+        title="Löschen bestätigen"
+        message={confirmDeletePeriod ? `Zeitraum „${confirmDeletePeriod.name}" löschen?` : ''}
+        variant="danger"
+        confirmLabel="Löschen"
+        onConfirm={async () => {
+          if (!confirmDeletePeriod) return;
+          try {
+            await deletePeriod.mutateAsync({ periodSetId: confirmDeletePeriod.periodSetId, periodId: confirmDeletePeriod.periodId });
+          } catch (e) {
+            setError(e instanceof Error ? e.message : 'Zeitraum konnte nicht gelöscht werden.');
+          }
+          setConfirmDeletePeriod(null);
+        }}
+        onCancel={() => setConfirmDeletePeriod(null)}
+      />
     </>
   );
 }

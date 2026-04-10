@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '../auth/provider';
 import { ApiError } from '../api/client';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader } from '../components/common';
 import { DataGrid } from '../components/DataGrid';
 import type { DataGridColumn } from '../components/DataGrid';
@@ -60,6 +61,7 @@ export function HolidaySetsPage() {
   const [editingHolidaySetId, setEditingHolidaySetId] = useState<number | null>(null);
   const [formState, setFormState] = useState<HolidaySetFormState>(defaultFormState);
   const [mutationError, setMutationError] = useState<string | null>(null);
+  const [confirmDeleteSet, setConfirmDeleteSet] = useState<{id: number; name: string} | null>(null);
 
   const [selectedImportHolidaySet, setSelectedImportHolidaySet] = useState<HolidaySet | null>(null);
   const [importFormState, setImportFormState] = useState<ImportFormState>(defaultImportState);
@@ -131,13 +133,8 @@ export function HolidaySetsPage() {
             <button
               type="button"
               className="btn danger"
-              onClick={async () => {
-                if (!window.confirm(`Feiertagssatz „${row.name}“ löschen?`)) return;
-                try {
-                  await deleteMutation.mutateAsync(row.id);
-                } catch (error) {
-                  setMutationError(error instanceof Error ? error.message : 'Feiertagssatz konnte nicht gelöscht werden.');
-                }
+              onClick={() => {
+                setConfirmDeleteSet({ id: row.id, name: row.name });
               }}
             >
               Feiertagssatz löschen
@@ -398,6 +395,23 @@ export function HolidaySetsPage() {
         {query.error ? <ErrorState message="Feiertagssätze konnten nicht geladen werden." /> : null}
         {query.data ? <DataGrid columns={columns} data={query.data} searchPlaceholder="Feiertagssätze suchen…" /> : null}
       </DataSection>
+      <ConfirmDialog
+        open={confirmDeleteSet !== null}
+        title="Löschen bestätigen"
+        message={confirmDeleteSet ? `Feiertagssatz „${confirmDeleteSet.name}" löschen?` : ''}
+        variant="danger"
+        confirmLabel="Löschen"
+        onConfirm={async () => {
+          if (!confirmDeleteSet) return;
+          try {
+            await deleteMutation.mutateAsync(confirmDeleteSet.id);
+          } catch (error) {
+            setMutationError(error instanceof Error ? error.message : 'Feiertagssatz konnte nicht gelöscht werden.');
+          }
+          setConfirmDeleteSet(null);
+        }}
+        onCancel={() => setConfirmDeleteSet(null)}
+      />
     </>
   );
 }

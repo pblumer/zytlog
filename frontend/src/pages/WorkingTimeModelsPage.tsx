@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useState } from 'react';
 
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader } from '../components/common';
 import type { DataGridColumn } from '../components/DataGrid';
 import { DataGrid } from '../components/DataGrid';
@@ -84,6 +85,7 @@ export function WorkingTimeModelsPage() {
   const [formState, setFormState] = useState<ModelFormState>(defaultFormState);
   const [editingModelId, setEditingModelId] = useState<number | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
+  const [confirmDeleteModel, setConfirmDeleteModel] = useState<{id: number; name: string} | null>(null);
 
   const columns = useMemo<DataGridColumn<WorkingTimeModel>[]>(
     () => [
@@ -140,25 +142,8 @@ export function WorkingTimeModelsPage() {
               type="button"
               className="btn danger"
               disabled={deleteMutation.isPending}
-              onClick={async () => {
-                const shouldDelete = window.confirm(`Arbeitszeitmodell „${row.name}“ wirklich löschen?`);
-                if (!shouldDelete) {
-                  return;
-                }
-                setMutationError(null);
-                try {
-                  await deleteMutation.mutateAsync(row.id);
-                  if (editingModelId === row.id) {
-                    setEditingModelId(null);
-                    setFormState(defaultFormState);
-                  }
-                } catch (error) {
-                  if (error instanceof ApiError) {
-                    setMutationError(error.message);
-                    return;
-                  }
-                  setMutationError('Arbeitszeitmodell konnte nicht gelöscht werden.');
-                }
+              onClick={() => {
+                setConfirmDeleteModel({ id: row.id, name: row.name });
               }}
             >
               Löschen
@@ -167,7 +152,7 @@ export function WorkingTimeModelsPage() {
         ),
       },
     ],
-    [deleteMutation, editingModelId],
+    [deleteMutation],
   );
 
   const onSubmit = async (event: FormEvent) => {
@@ -281,6 +266,32 @@ export function WorkingTimeModelsPage() {
           <DataGrid columns={columns} data={query.data} searchPlaceholder="Arbeitszeitmodelle suchen…" />
         </DataSection>
       ) : null}
+      <ConfirmDialog
+        open={confirmDeleteModel !== null}
+        title="Löschen bestätigen"
+        message={confirmDeleteModel ? `Arbeitszeitmodell „${confirmDeleteModel.name}" wirklich löschen?` : ''}
+        variant="danger"
+        confirmLabel="Löschen"
+        onConfirm={async () => {
+          if (!confirmDeleteModel) return;
+          setMutationError(null);
+          try {
+            await deleteMutation.mutateAsync(confirmDeleteModel.id);
+            if (editingModelId === confirmDeleteModel.id) {
+              setEditingModelId(null);
+              setFormState(defaultFormState);
+            }
+          } catch (error) {
+            if (error instanceof ApiError) {
+              setMutationError(error.message);
+            } else {
+              setMutationError('Arbeitszeitmodell konnte nicht gelöscht werden.');
+            }
+          }
+          setConfirmDeleteModel(null);
+        }}
+        onCancel={() => setConfirmDeleteModel(null)}
+      />
     </>
   );
 }
