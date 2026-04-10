@@ -1,6 +1,7 @@
 import { FormEvent, useMemo, useState } from 'react';
 
 import { ApiError } from '../api/client';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader } from '../components/common';
 import type { DataGridColumn } from '../components/DataGrid';
 import { DataGrid } from '../components/DataGrid';
@@ -46,6 +47,7 @@ export function SystemAdminPage() {
   const [editingTenantId, setEditingTenantId] = useState<number | null>(null);
   const [tenantError, setTenantError] = useState<string | null>(null);
   const [userError, setUserError] = useState<string | null>(null);
+  const [confirmRoleChange, setConfirmRoleChange] = useState<{ userId: number; role: UserRole; userName: string } | null>(null);
 
   const tenantsById = useMemo(
     () => new Map((tenantsQuery.data ?? []).map((tenant) => [tenant.id, tenant.name])),
@@ -103,17 +105,7 @@ export function SystemAdminPage() {
         cell: (row) => (
           <select
             value={row.role}
-            onChange={async (event) => {
-              setUserError(null);
-              try {
-                await updateUserMutation.mutateAsync({
-                  userId: row.id,
-                  payload: { role: event.target.value as UserRole },
-                });
-              } catch (error) {
-                setUserError(error instanceof ApiError ? error.message : 'Rolle konnte nicht aktualisiert werden.');
-              }
-            }}
+            onChange={(event) => setConfirmRoleChange({ userId: row.id, role: event.target.value as UserRole, userName: row.full_name })}
           >
             {userRoles.map((role) => (
               <option key={role} value={role}>
@@ -273,6 +265,28 @@ export function SystemAdminPage() {
           emptyDescription="Sobald Benutzer sich anmelden oder manuell erstellt werden, erscheinen sie hier."
         />
       </DataSection>
+
+      <ConfirmDialog
+        open={confirmRoleChange !== null}
+        title="Rolle ändern"
+        message={confirmRoleChange ? `Rolle von „${confirmRoleChange.userName}" zu „${confirmRoleChange.role}" ändern?` : ''}
+        confirmLabel="Ändern"
+        onConfirm={async () => {
+          if (!confirmRoleChange) return;
+          setUserError(null);
+          try {
+            await updateUserMutation.mutateAsync({
+              userId: confirmRoleChange.userId,
+              payload: { role: confirmRoleChange.role },
+            });
+          } catch (error) {
+            setUserError(error instanceof ApiError ? error.message : 'Rolle konnte nicht aktualisiert werden.');
+          } finally {
+            setConfirmRoleChange(null);
+          }
+        }}
+        onCancel={() => setConfirmRoleChange(null)}
+      />
     </>
   );
 }
