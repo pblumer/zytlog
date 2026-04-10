@@ -45,8 +45,12 @@ export function AppShell() {
   }, [navigate, pathname, user?.role]);
 
   return (
-    <div className="app-shell">
-      {menuOpen ? <button type="button" className="nav-backdrop" aria-label="Menü schliessen" onClick={() => setMenuOpen(false)} /> : null}
+    <>
+      <a href="#main-content" className="skip-link">
+        Zum Hauptinhalt springen
+      </a>
+      <div className="app-shell">
+        {menuOpen ? <button type="button" className="nav-backdrop" aria-label="Menü schliessen" onClick={() => setMenuOpen(false)} /> : null}
 
       <aside className={`sidebar${menuOpen ? ' open' : ''}`} id="main-navigation">
         <div className="sidebar-head">
@@ -95,10 +99,11 @@ export function AppShell() {
           </button>
         </header>
 
-        <main className="page">
+        <main className="page" id="main-content">
           <Outlet />
         </main>
       </div>
     </div>
+    </>
   );
 }
