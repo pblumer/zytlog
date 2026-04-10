@@ -42,13 +42,13 @@ export function MyTimePage() {
     <>
       <PageHeader title="Zeitkonto" subtitle="Persönliche Analyse: Tag auswählen, Einträge prüfen, in Day vertiefen" />
 
-      <section className="card" style={{ marginTop: '0.75rem' }} aria-label="Hinweis zur Erfassung">
-        <p className="meta" style={{ margin: 0 }}>
+      <section className="card section-gap-sm" aria-label="Hinweis zur Erfassung">
+        <p className="meta meta-reset">
           Stempeln und Nacherfassung findest du im <strong>Dashboard</strong>. Diese Sicht ist für Rückblick und Kontrolle deiner Zeitdaten.
         </p>
       </section>
 
-      <section className="grid" style={{ marginTop: '1rem' }} aria-label="Zusammenfassung ausgewählter Tag">
+      <section className="grid section-gap" aria-label="Zusammenfassung ausgewählter Tag">
         <SummaryCard title="Ausgewählter Tag" value={selectedDate} hint={<TableStatusBadge status={selectedDayAccount.data?.status ?? 'empty'} />} />
         <SummaryCard title="Ist-Zeit" value={formatMinutes(selectedDayAccount.data?.actual_minutes ?? 0)} />
         <SummaryCard title="Pausen" value={formatMinutes(selectedDayAccount.data?.break_minutes ?? 0)} />
@@ -56,8 +56,8 @@ export function MyTimePage() {
         <SummaryCard title="Abwesenheit" value={selectedAbsenceLabel} />
       </section>
 
-      <section className="card my-time-calendar-section" style={{ marginTop: '1rem' }} aria-label="Monatskalender">
-        <div className="actions" style={{ justifyContent: 'space-between' }}>
+      <section className="card my-time-calendar-section section-gap" aria-label="Monatskalender">
+        <div className="actions flex-between">
           <button
             className="btn outline"
             type="button"
@@ -70,7 +70,7 @@ export function MyTimePage() {
           >
             ← Monat zurück
           </button>
-          <p className="meta" style={{ margin: 0 }} aria-live="polite">
+          <p className="meta meta-reset" aria-live="polite">
             {monthCursor.month}.{monthCursor.year}
           </p>
           <button

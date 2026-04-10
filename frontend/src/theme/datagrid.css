@@ -1,0 +1,125 @@
+/* ==========================================================================
+   DataGrid -- data-grid, table, sort-header, pagination, week-table styles
+   ========================================================================== */
+
+.table-wrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; background: var(--surface); }
+.table th, .table td { text-align: left; padding: 0.55rem; border-bottom: 1px solid var(--border); }
+.table th { font-size: 0.8rem; text-transform: uppercase; color: var(--muted); }
+.data-grid-table tbody tr:nth-child(odd) {
+  background: #fafbfd;
+}
+
+.data-grid-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+
+.data-grid-toolbar,
+.data-grid-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.data-grid-pagination {
+  margin-top: 0.8rem;
+  margin-bottom: 0;
+}
+
+.data-grid-search {
+  min-width: 220px;
+  max-width: 360px;
+  width: 100%;
+}
+
+.sort-header,
+.plain-header {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  padding: 0;
+}
+
+.sort-header {
+  cursor: pointer;
+}
+
+.table-state {
+  display: grid;
+  gap: 0.4rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+.table-state-error {
+  color: var(--danger);
+}
+
+.table tr.is-editing {
+  background: var(--color-editing-row);
+}
+
+/* Week table (read-only data grid variant) */
+.week-table tbody tr {
+  cursor: default;
+}
+
+.week-table tbody tr.is-today {
+  outline: 2px solid #93aac9;
+  outline-offset: -2px;
+}
+
+.week-table tbody tr.needs-attention {
+  background: #fff8e8;
+}
+
+/* --- Responsive: datagrid --- */
+
+@media (max-width: 840px) {
+  .week-table thead {
+    display: none;
+  }
+
+  .week-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.4rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    padding: 0.55rem 0;
+  }
+
+  .week-table td {
+    display: grid;
+    gap: 0.12rem;
+    border-bottom: 0;
+    padding: 0;
+  }
+
+  .week-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+}
+
+@media (max-width: 680px) {
+  .data-grid-toolbar,
+  .data-grid-pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .data-grid-pagination .actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
