@@ -194,13 +194,14 @@ export function WorkingTimeModelsPage() {
       <PageHeader title="Arbeitszeitmodelle" subtitle="Jahresarbeitszeit und Standard-Arbeitstage pro Modell" />
       <DataSection title={editingModelId ? 'Arbeitszeitmodell bearbeiten' : 'Modell anlegen'}>
         <form className="app-form" onSubmit={onSubmit}>
-          <label>
+          <label htmlFor="wtm-name">
             Modellname
-            <input value={formState.name} onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))} required />
+            <input id="wtm-name" value={formState.name} onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))} required />
           </label>
-          <label>
+          <label htmlFor="wtm-annual-hours">
             Jahresarbeitszeit
             <input
+              id="wtm-annual-hours"
               value={formState.annualTargetHours}
               onChange={(event) => setFormState((prev) => ({ ...prev, annualTargetHours: event.target.value }))}
               type="number"
@@ -210,8 +211,9 @@ export function WorkingTimeModelsPage() {
             />
           </label>
           <p className="meta">Jahresarbeitszeit ist die führende Sollgrösse des Modells.</p>
-          <label className="app-form-check">
+          <label className="app-form-check" htmlFor="wtm-active">
             <input
+              id="wtm-active"
               checked={formState.active}
               onChange={(event) => setFormState((prev) => ({ ...prev, active: event.target.checked }))}
               type="checkbox"
@@ -222,8 +224,9 @@ export function WorkingTimeModelsPage() {
             <strong>Standard-Arbeitstage</strong>
             <div className="actions">
               {weekdays.map((weekday) => (
-                <label key={weekday.key}>
+                <label key={weekday.key} htmlFor={`wtm-weekday-${weekday.key}`}>
                   <input
+                    id={`wtm-weekday-${weekday.key}`}
                     type="checkbox"
                     checked={formState.selectedWeekdays[weekday.key]}
                     onChange={(event) =>

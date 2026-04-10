@@ -249,20 +249,20 @@ export function HolidaySetsPage() {
       <PageHeader title="Feiertagssätze" subtitle="Wiederverwendbare Feiertagssätze pro Tenant verwalten" />
       <DataSection title={editingHolidaySetId ? 'Feiertagssatz bearbeiten' : 'Feiertagssatz anlegen'}>
         <form className="app-form" onSubmit={onSubmit}>
-          <label>
+          <label htmlFor="holiday-set-name">
             Name
-            <input value={formState.name} onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))} required />
+            <input id="holiday-set-name" value={formState.name} onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))} required />
           </label>
-          <label>
+          <label htmlFor="holiday-set-description">
             Beschreibung
-            <input value={formState.description} onChange={(event) => setFormState((prev) => ({ ...prev, description: event.target.value }))} />
+            <input id="holiday-set-description" value={formState.description} onChange={(event) => setFormState((prev) => ({ ...prev, description: event.target.value }))} />
           </label>
-          <label>
+          <label htmlFor="holiday-set-source">
             Quelle
-            <input value={formState.source} onChange={(event) => setFormState((prev) => ({ ...prev, source: event.target.value }))} />
+            <input id="holiday-set-source" value={formState.source} onChange={(event) => setFormState((prev) => ({ ...prev, source: event.target.value }))} />
           </label>
-          <label className="app-form-check">
-            <input type="checkbox" checked={formState.active} onChange={(event) => setFormState((prev) => ({ ...prev, active: event.target.checked }))} /> Aktiv
+          <label className="app-form-check" htmlFor="holiday-set-active">
+            <input id="holiday-set-active" type="checkbox" checked={formState.active} onChange={(event) => setFormState((prev) => ({ ...prev, active: event.target.checked }))} /> Aktiv
           </label>
           <div className="actions">
             <button type="submit" className="btn primary">{editingHolidaySetId ? 'Änderungen speichern' : 'Feiertagssatz speichern'}</button>
@@ -276,9 +276,10 @@ export function HolidaySetsPage() {
             <div className="import-config-card">
               <p className="meta">1) Parameter auswählen</p>
               <div className="grid">
-                <label>
+                <label htmlFor="import-country">
                   Land
                   <select
+                    id="import-country"
                     value={importFormState.countryIsoCode}
                     onChange={(event) => setImportFormState((prev) => ({ ...prev, countryIsoCode: event.target.value, subdivisionCode: '' }))}
                   >
@@ -289,9 +290,10 @@ export function HolidaySetsPage() {
                     ))}
                   </select>
                 </label>
-                <label>
+                <label htmlFor="import-subdivision">
                   Region / Subdivision
                   <select
+                    id="import-subdivision"
                     value={importFormState.subdivisionCode}
                     onChange={(event) => setImportFormState((prev) => ({ ...prev, subdivisionCode: event.target.value }))}
                   >
@@ -303,9 +305,10 @@ export function HolidaySetsPage() {
                     ))}
                   </select>
                 </label>
-                <label>
+                <label htmlFor="import-language">
                   Sprache
                   <select
+                    id="import-language"
                     value={importFormState.languageCode}
                     onChange={(event) => setImportFormState((prev) => ({ ...prev, languageCode: event.target.value }))}
                   >
@@ -316,17 +319,18 @@ export function HolidaySetsPage() {
                     ))}
                   </select>
                 </label>
-                <label>
+                <label htmlFor="import-valid-from">
                   Gültig von
-                  <input type="date" value={importFormState.validFrom} onChange={(event) => setImportFormState((prev) => ({ ...prev, validFrom: event.target.value }))} required />
+                  <input id="import-valid-from" type="date" value={importFormState.validFrom} onChange={(event) => setImportFormState((prev) => ({ ...prev, validFrom: event.target.value }))} required />
                 </label>
-                <label>
+                <label htmlFor="import-valid-to">
                   Gültig bis
-                  <input type="date" value={importFormState.validTo} onChange={(event) => setImportFormState((prev) => ({ ...prev, validTo: event.target.value }))} required />
+                  <input id="import-valid-to" type="date" value={importFormState.validTo} onChange={(event) => setImportFormState((prev) => ({ ...prev, validTo: event.target.value }))} required />
                 </label>
-                <label>
+                <label htmlFor="import-mode">
                   Importmodus
                   <select
+                    id="import-mode"
                     value={importFormState.importMode}
                     onChange={(event) => setImportFormState((prev) => ({ ...prev, importMode: event.target.value as OpenHolidaysImportMode }))}
                   >

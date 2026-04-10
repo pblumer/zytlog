@@ -138,9 +138,10 @@ export function HolidaysPage() {
     <>
       <PageHeader title="Feiertage" subtitle="Feiertage innerhalb eines Feiertagssatzes verwalten" />
       <DataSection title="Feiertagssatz auswählen">
-        <label>
+        <label htmlFor="holiday-set-select">
           Feiertagssatz
           <select
+            id="holiday-set-select"
             value={selectedHolidaySetId ?? ''}
             onChange={(event) => setSelectedHolidaySetId(event.target.value ? Number(event.target.value) : null)}
           >
@@ -157,16 +158,16 @@ export function HolidaysPage() {
 
       <DataSection title={editingHolidayId ? 'Feiertag bearbeiten' : 'Feiertag anlegen'}>
         <form className="app-form" onSubmit={onSubmit}>
-          <label>
+          <label htmlFor="holiday-date">
             Datum
-            <input type="date" value={formState.date} onChange={(event) => setFormState((prev) => ({ ...prev, date: event.target.value }))} required />
+            <input id="holiday-date" type="date" value={formState.date} onChange={(event) => setFormState((prev) => ({ ...prev, date: event.target.value }))} required />
           </label>
-          <label>
+          <label htmlFor="holiday-name">
             Name
-            <input value={formState.name} onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))} required />
+            <input id="holiday-name" value={formState.name} onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))} required />
           </label>
-          <label className="app-form-check">
-            <input type="checkbox" checked={formState.active} onChange={(event) => setFormState((prev) => ({ ...prev, active: event.target.checked }))} /> Aktiv
+          <label className="app-form-check" htmlFor="holiday-active">
+            <input id="holiday-active" type="checkbox" checked={formState.active} onChange={(event) => setFormState((prev) => ({ ...prev, active: event.target.checked }))} /> Aktiv
           </label>
           <div className="actions">
             <button type="submit" className="btn primary">{editingHolidayId ? 'Änderungen speichern' : 'Feiertag speichern'}</button>
@@ -181,9 +182,9 @@ export function HolidaysPage() {
       </DataSection>
 
       <DataSection title="Feiertagsliste">
-        <label>
+        <label htmlFor="holiday-year">
           Jahr
-          <input type="number" min={1970} max={2100} value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} aria-label="Jahr filtern" />
+          <input id="holiday-year" type="number" min={1970} max={2100} value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} aria-label="Jahr filtern" />
         </label>
         {holidaySetsQuery.isLoading || query.isLoading ? <LoadingBlock /> : null}
         {holidaySetsQuery.error || query.error ? <ErrorState message="Feiertage konnten nicht geladen werden." /> : null}

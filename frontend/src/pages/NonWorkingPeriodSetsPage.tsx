@@ -162,9 +162,9 @@ export function NonWorkingPeriodSetsPage() {
 
       <DataSection title={editingSetId ? 'Arbeitsfrei-Set bearbeiten' : 'Arbeitsfrei-Set anlegen'}>
         <form className="app-form" onSubmit={onSubmitSet}>
-          <label>Name<input value={setForm.name} onChange={(e) => setSetForm((p) => ({ ...p, name: e.target.value }))} required /></label>
-          <label>Beschreibung<input value={setForm.description} onChange={(e) => setSetForm((p) => ({ ...p, description: e.target.value }))} /></label>
-          <label className="app-form-check"><input type="checkbox" checked={setForm.active} onChange={(e) => setSetForm((p) => ({ ...p, active: e.target.checked }))} /> Aktiv</label>
+          <label htmlFor="nwp-set-name">Name<input id="nwp-set-name" value={setForm.name} onChange={(e) => setSetForm((p) => ({ ...p, name: e.target.value }))} required /></label>
+          <label htmlFor="nwp-set-description">Beschreibung<input id="nwp-set-description" value={setForm.description} onChange={(e) => setSetForm((p) => ({ ...p, description: e.target.value }))} /></label>
+          <label className="app-form-check" htmlFor="nwp-set-active"><input id="nwp-set-active" type="checkbox" checked={setForm.active} onChange={(e) => setSetForm((p) => ({ ...p, active: e.target.checked }))} /> Aktiv</label>
           <div className="actions"><button type="submit" className="btn primary">Speichern</button></div>
         </form>
       </DataSection>
@@ -176,9 +176,9 @@ export function NonWorkingPeriodSetsPage() {
       </DataSection>
 
       <DataSection title="Zeiträume pro Set">
-        <label>
+        <label htmlFor="nwp-set-select">
           Set auswählen
-          <select value={selectedSetId ?? ''} onChange={(e) => setSelectedSetId(e.target.value ? Number(e.target.value) : null)}>
+          <select id="nwp-set-select" value={selectedSetId ?? ''} onChange={(e) => setSelectedSetId(e.target.value ? Number(e.target.value) : null)}>
             <option value="">Bitte wählen</option>
             {(setsQuery.data ?? []).map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
           </select>
@@ -186,10 +186,10 @@ export function NonWorkingPeriodSetsPage() {
         {selectedSetId ? (
           <>
             <form className="app-form" onSubmit={onSubmitPeriod}>
-              <label>Von<input type="date" value={periodForm.start_date} onChange={(e) => setPeriodForm((p) => ({ ...p, start_date: e.target.value }))} required /></label>
-              <label>Bis<input type="date" value={periodForm.end_date} onChange={(e) => setPeriodForm((p) => ({ ...p, end_date: e.target.value }))} required /></label>
-              <label>Label<input value={periodForm.name} onChange={(e) => setPeriodForm((p) => ({ ...p, name: e.target.value }))} required /></label>
-              <label>Kategorie<input value={periodForm.category} onChange={(e) => setPeriodForm((p) => ({ ...p, category: e.target.value }))} placeholder="school_break" /></label>
+              <label htmlFor="nwp-period-start">Von<input id="nwp-period-start" type="date" value={periodForm.start_date} onChange={(e) => setPeriodForm((p) => ({ ...p, start_date: e.target.value }))} required /></label>
+              <label htmlFor="nwp-period-end">Bis<input id="nwp-period-end" type="date" value={periodForm.end_date} onChange={(e) => setPeriodForm((p) => ({ ...p, end_date: e.target.value }))} required /></label>
+              <label htmlFor="nwp-period-label">Label<input id="nwp-period-label" value={periodForm.name} onChange={(e) => setPeriodForm((p) => ({ ...p, name: e.target.value }))} required /></label>
+              <label htmlFor="nwp-period-category">Kategorie<input id="nwp-period-category" value={periodForm.category} onChange={(e) => setPeriodForm((p) => ({ ...p, category: e.target.value }))} placeholder="school_break" /></label>
               <div className="actions"><button type="submit" className="btn primary">Zeitraum speichern</button></div>
             </form>
             {periodsQuery.isLoading ? <LoadingBlock /> : null}

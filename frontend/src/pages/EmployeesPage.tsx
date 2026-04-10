@@ -263,9 +263,10 @@ export function EmployeesPage() {
       <DataSection title={editingEmployee ? 'Mitarbeiter bearbeiten' : 'Mitarbeiter anlegen'}>
         <form className="app-form employee-form" onSubmit={onSubmit}>
           {!editingEmployee ? (
-            <label className="employee-form-field employee-form-field-wide">
+            <label className="employee-form-field employee-form-field-wide" htmlFor="employee-user">
               <span>Benutzer</span>
               <select
+                id="employee-user"
                 value={form.userId}
                 onChange={(event) => setForm((prev) => ({ ...prev, userId: event.target.value }))}
                 required
@@ -279,24 +280,26 @@ export function EmployeesPage() {
               </select>
             </label>
           ) : null}
-          <label className="employee-form-field">
+          <label className="employee-form-field" htmlFor="employee-number">
             <span>MitarbeiterNr.</span>
             <input
+              id="employee-number"
               value={form.employeeNumber}
               onChange={(event) => setForm((prev) => ({ ...prev, employeeNumber: event.target.value }))}
             />
           </label>
-          <label className="employee-form-field">
+          <label className="employee-form-field" htmlFor="employee-first-name">
             <span>Vorname</span>
-            <input value={form.firstName} onChange={(event) => setForm((prev) => ({ ...prev, firstName: event.target.value }))} required />
+            <input id="employee-first-name" value={form.firstName} onChange={(event) => setForm((prev) => ({ ...prev, firstName: event.target.value }))} required />
           </label>
-          <label className="employee-form-field">
+          <label className="employee-form-field" htmlFor="employee-last-name">
             <span>Nachname</span>
-            <input value={form.lastName} onChange={(event) => setForm((prev) => ({ ...prev, lastName: event.target.value }))} required />
+            <input id="employee-last-name" value={form.lastName} onChange={(event) => setForm((prev) => ({ ...prev, lastName: event.target.value }))} required />
           </label>
-          <label className="employee-form-field">
+          <label className="employee-form-field" htmlFor="employee-percentage">
             <span>Arbeitspensum</span>
             <input
+              id="employee-percentage"
               value={form.employmentPercentage}
               onChange={(event) => setForm((prev) => ({ ...prev, employmentPercentage: event.target.value }))}
               type="number"
@@ -306,9 +309,10 @@ export function EmployeesPage() {
               required
             />
           </label>
-          <label className="employee-form-field">
+          <label className="employee-form-field" htmlFor="employee-wtm">
             <span>Arbeitszeitmodell</span>
             <select
+              id="employee-wtm"
               value={form.workingTimeModelId}
               onChange={(event) => setForm((prev) => ({ ...prev, workingTimeModelId: event.target.value }))}
               required
@@ -321,9 +325,10 @@ export function EmployeesPage() {
               ))}
             </select>
           </label>
-          <label className="employee-form-field">
+          <label className="employee-form-field" htmlFor="employee-holiday-set">
             <span>Feiertagssatz</span>
             <select
+              id="employee-holiday-set"
               value={form.holidaySetId}
               onChange={(event) => setForm((prev) => ({ ...prev, holidaySetId: event.target.value }))}
             >
@@ -335,9 +340,10 @@ export function EmployeesPage() {
               ))}
             </select>
           </label>
-          <label className="employee-form-field">
+          <label className="employee-form-field" htmlFor="employee-nwp-set">
             <span>Arbeitsfrei-Set</span>
             <select
+              id="employee-nwp-set"
               value={form.nonWorkingPeriodSetId}
               onChange={(event) => setForm((prev) => ({ ...prev, nonWorkingPeriodSetId: event.target.value }))}
             >
@@ -349,20 +355,21 @@ export function EmployeesPage() {
               ))}
             </select>
           </label>
-          <label className="employee-form-field">
+          <label className="employee-form-field" htmlFor="employee-entry-date">
             <span>Eintrittsdatum</span>
-            <input value={form.entryDate} onChange={(event) => setForm((prev) => ({ ...prev, entryDate: event.target.value }))} type="date" required />
+            <input id="employee-entry-date" value={form.entryDate} onChange={(event) => setForm((prev) => ({ ...prev, entryDate: event.target.value }))} type="date" required />
           </label>
-          <label className="employee-form-field">
+          <label className="employee-form-field" htmlFor="employee-exit-date">
             <span>Austrittsdatum</span>
-            <input value={form.exitDate} onChange={(event) => setForm((prev) => ({ ...prev, exitDate: event.target.value }))} type="date" />
+            <input id="employee-exit-date" value={form.exitDate} onChange={(event) => setForm((prev) => ({ ...prev, exitDate: event.target.value }))} type="date" />
           </label>
-          <label className="employee-form-field">
+          <label className="employee-form-field" htmlFor="employee-team">
             <span>Team</span>
-            <input value={form.team} onChange={(event) => setForm((prev) => ({ ...prev, team: event.target.value }))} />
+            <input id="employee-team" value={form.team} onChange={(event) => setForm((prev) => ({ ...prev, team: event.target.value }))} />
           </label>
-          <label className="employee-form-toggle">
+          <label className="employee-form-toggle" htmlFor="employee-overrides-enabled">
             <input
+              id="employee-overrides-enabled"
               type="checkbox"
               checked={form.overridesEnabled}
               onChange={(event) => setForm((prev) => ({ ...prev, overridesEnabled: event.target.checked }))}
@@ -374,8 +381,9 @@ export function EmployeesPage() {
             {form.overridesEnabled ? (
               <div className="actions employee-form-weekdays" style={{ marginTop: '0.35rem' }}>
                 {weekdays.map((weekday) => (
-                  <label key={weekday.key}>
+                  <label key={weekday.key} htmlFor={`employee-weekday-${weekday.key}`}>
                     <input
+                      id={`employee-weekday-${weekday.key}`}
                       type="checkbox"
                       checked={form.overrideValues[weekday.key]}
                       onChange={(event) =>
