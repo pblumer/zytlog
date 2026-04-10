@@ -2,6 +2,7 @@ import { FormEvent, useMemo, useState } from 'react';
 
 import { useAuth } from '../auth/provider';
 import { ApiError } from '../api/client';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader } from '../components/common';
 import { DataGrid } from '../components/DataGrid';
 import type { DataGridColumn } from '../components/DataGrid';
@@ -31,6 +32,8 @@ export function NonWorkingPeriodSetsPage() {
   const [editingPeriodId, setEditingPeriodId] = useState<number | null>(null);
   const [periodForm, setPeriodForm] = useState<PeriodForm>(defaultPeriodForm);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDeleteSet, setConfirmDeleteSet] = useState<NonWorkingPeriodSet | null>(null);
+  const [confirmDeletePeriod, setConfirmDeletePeriod] = useState<NonWorkingPeriod | null>(null);
 
   const setsQuery = useNonWorkingPeriodSets(isAdmin);
   const periodsQuery = useNonWorkingPeriods(selectedSetId, isAdmin && selectedSetId !== null);
@@ -65,15 +68,7 @@ export function NonWorkingPeriodSetsPage() {
             <button
               type="button"
               className="btn danger"
-              onClick={async () => {
-                if (!window.confirm(`Arbeitsfrei-Set „${row.name}“ löschen?`)) return;
-                try {
-                  await deleteSet.mutateAsync(row.id);
-                  if (selectedSetId === row.id) setSelectedSetId(null);
-                } catch (e) {
-                  setError(e instanceof Error ? e.message : 'Set konnte nicht gelöscht werden.');
-                }
-              }}
+              onClick={() => setConfirmDeleteSet(row)}
             >
               Löschen
             </button>
@@ -108,11 +103,7 @@ export function NonWorkingPeriodSetsPage() {
             <button
               type="button"
               className="btn danger"
-              onClick={async () => {
-                if (!selectedSetId) return;
-                if (!window.confirm(`Zeitraum „${row.name}“ löschen?`)) return;
-                await deletePeriod.mutateAsync({ periodSetId: selectedSetId, periodId: row.id });
-              }}
+              onClick={() => setConfirmDeletePeriod(row)}
             >
               Löschen
             </button>
@@ -160,14 +151,37 @@ export function NonWorkingPeriodSetsPage() {
 
   if (!isAdmin) return <EmptyState title="Nicht verfügbar" description="Nur Admins können Arbeitsfrei-Zeiträume verwalten." />;
 
+  const handleConfirmDeleteSet = async () => {
+    if (!confirmDeleteSet) return;
+    try {
+      await deleteSet.mutateAsync(confirmDeleteSet.id);
+      if (selectedSetId === confirmDeleteSet.id) setSelectedSetId(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Set konnte nicht gelöscht werden.');
+    } finally {
+      setConfirmDeleteSet(null);
+    }
+  };
+
+  const handleConfirmDeletePeriod = async () => {
+    if (!confirmDeletePeriod || !selectedSetId) return;
+    try {
+      await deletePeriod.mutateAsync({ periodSetId: selectedSetId, periodId: confirmDeletePeriod.id });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Zeitraum konnte nicht gelöscht werden.');
+    } finally {
+      setConfirmDeletePeriod(null);
+    }
+  };
+
   return (
     <>
       <PageHeader title="Arbeitsfreie Zeiträume" subtitle="Set-basierte Verwaltung von schulferienbedingten arbeitsfreien Zeiträumen" />
 
       <DataSection title={editingSetId ? 'Arbeitsfrei-Set bearbeiten' : 'Arbeitsfrei-Set anlegen'}>
         <form className="app-form" onSubmit={onSubmitSet}>
-          <label>Name<input value={setForm.name} onChange={(e) => setSetForm((p) => ({ ...p, name: e.target.value }))} required /></label>
-          <label>Beschreibung<input value={setForm.description} onChange={(e) => setSetForm((p) => ({ ...p, description: e.target.value }))} /></label>
+          <label htmlFor="nwps-name">Name<input id="nwps-name" value={setForm.name} onChange={(e) => setSetForm((p) => ({ ...p, name: e.target.value }))} required /></label>
+          <label htmlFor="nwps-desc">Beschreibung<input id="nwps-desc" value={setForm.description} onChange={(e) => setSetForm((p) => ({ ...p, description: e.target.value }))} /></label>
           <label className="app-form-check"><input type="checkbox" checked={setForm.active} onChange={(e) => setSetForm((p) => ({ ...p, active: e.target.checked }))} /> Aktiv</label>
           <div className="actions"><button type="submit" className="btn primary">Speichern</button></div>
         </form>
@@ -176,13 +190,13 @@ export function NonWorkingPeriodSetsPage() {
       <DataSection title="Arbeitsfrei-Sets">
         {setsQuery.isLoading ? <LoadingBlock /> : null}
         {setsQuery.error ? <ErrorState message="Arbeitsfrei-Sets konnten nicht geladen werden." /> : null}
-        {setsQuery.data ? <DataGrid columns={setColumns} data={setsQuery.data} searchPlaceholder="Arbeitsfrei-Set suchen…" /> : null}
+        {setsQuery.data ? <DataGrid columns={setColumns} data={setsQuery.data} searchPlaceholder="Arbeitsfrei-Set suchen…" rowId={(row) => row.id} /> : null}
       </DataSection>
 
       <DataSection title="Zeiträume pro Set">
-        <label>
+        <label htmlFor="nwps-set-select">
           Set auswählen
-          <select value={selectedSetId ?? ''} onChange={(e) => setSelectedSetId(e.target.value ? Number(e.target.value) : null)}>
+          <select id="nwps-set-select" value={selectedSetId ?? ''} onChange={(e) => setSelectedSetId(e.target.value ? Number(e.target.value) : null)}>
             <option value="">Bitte wählen</option>
             {(setsQuery.data ?? []).map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
           </select>
@@ -190,10 +204,10 @@ export function NonWorkingPeriodSetsPage() {
         {selectedSetId ? (
           <>
             <form className="app-form" onSubmit={onSubmitPeriod}>
-              <label>Von<input type="date" value={periodForm.start_date} onChange={(e) => setPeriodForm((p) => ({ ...p, start_date: e.target.value }))} required /></label>
-              <label>Bis<input type="date" value={periodForm.end_date} onChange={(e) => setPeriodForm((p) => ({ ...p, end_date: e.target.value }))} required /></label>
-              <label>Label<input value={periodForm.name} onChange={(e) => setPeriodForm((p) => ({ ...p, name: e.target.value }))} required /></label>
-              <label>Kategorie<input value={periodForm.category} onChange={(e) => setPeriodForm((p) => ({ ...p, category: e.target.value }))} placeholder="school_break" /></label>
+              <label htmlFor="nwps-period-start">Von<input id="nwps-period-start" type="date" value={periodForm.start_date} onChange={(e) => setPeriodForm((p) => ({ ...p, start_date: e.target.value }))} required /></label>
+              <label htmlFor="nwps-period-end">Bis<input id="nwps-period-end" type="date" value={periodForm.end_date} onChange={(e) => setPeriodForm((p) => ({ ...p, end_date: e.target.value }))} required /></label>
+              <label htmlFor="nwps-period-name">Label<input id="nwps-period-name" value={periodForm.name} onChange={(e) => setPeriodForm((p) => ({ ...p, name: e.target.value }))} required /></label>
+              <label htmlFor="nwps-period-category">Kategorie<input id="nwps-period-category" value={periodForm.category} onChange={(e) => setPeriodForm((p) => ({ ...p, category: e.target.value }))} placeholder="school_break" /></label>
               <div className="actions"><button type="submit" className="btn primary">Zeitraum speichern</button></div>
             </form>
             {periodsQuery.isLoading ? <LoadingBlock /> : null}
@@ -205,6 +219,24 @@ export function NonWorkingPeriodSetsPage() {
         )}
         {error ? <p className="inline-error">{error}</p> : null}
       </DataSection>
+      <ConfirmDialog
+        open={confirmDeleteSet !== null}
+        title="Arbeitsfrei-Set löschen"
+        message={confirmDeleteSet ? `Arbeitsfrei-Set „${confirmDeleteSet.name}“ löschen?` : ''}
+        confirmLabel="Löschen"
+        variant="danger"
+        onConfirm={() => void handleConfirmDeleteSet()}
+        onCancel={() => setConfirmDeleteSet(null)}
+      />
+      <ConfirmDialog
+        open={confirmDeletePeriod !== null}
+        title="Zeitraum löschen"
+        message={confirmDeletePeriod ? `Zeitraum „${confirmDeletePeriod.name}“ löschen?` : ''}
+        confirmLabel="Löschen"
+        variant="danger"
+        onConfirm={() => void handleConfirmDeletePeriod()}
+        onCancel={() => setConfirmDeletePeriod(null)}
+      />
     </>
   );
 }

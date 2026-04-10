@@ -2,6 +2,7 @@ import { FormEvent, useMemo, useState } from 'react';
 
 import { useAuth } from '../auth/provider';
 import { ApiError } from '../api/client';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader } from '../components/common';
 import type { DataGridColumn } from '../components/DataGrid';
 import { DataGrid } from '../components/DataGrid';
@@ -36,6 +37,7 @@ export function HolidaysPage() {
   const [editingHolidayId, setEditingHolidayId] = useState<number | null>(null);
   const [formState, setFormState] = useState<HolidayFormState>(defaultFormState);
   const [mutationError, setMutationError] = useState<string | null>(null);
+  const [confirmDeleteHoliday, setConfirmDeleteHoliday] = useState<Holiday | null>(null);
 
   const holidaySetsQuery = useHolidaySets(isAdmin);
   const query = useHolidays(isAdmin && selectedHolidaySetId !== null, selectedYear, selectedHolidaySetId ?? undefined);
@@ -88,19 +90,7 @@ export function HolidaysPage() {
             <button
               type="button"
               className="btn danger"
-              onClick={async () => {
-                if (!window.confirm(`Feiertag „${row.name}“ löschen?`)) return;
-                setMutationError(null);
-                try {
-                  await deleteMutation.mutateAsync(row.id);
-                  if (editingHolidayId === row.id) {
-                    setEditingHolidayId(null);
-                    setFormState(defaultFormState);
-                  }
-                } catch (error) {
-                  setMutationError(error instanceof Error ? error.message : 'Feiertag konnte nicht gelöscht werden.');
-                }
-              }}
+              onClick={() => setConfirmDeleteHoliday(row)}
             >
               Feiertag löschen
             </button>
@@ -142,13 +132,30 @@ export function HolidaysPage() {
     return <EmptyState title="Nicht verfügbar" description="Feiertage sind nur für Administratoren sichtbar." />;
   }
 
+  const handleConfirmDeleteHoliday = async () => {
+    if (!confirmDeleteHoliday) return;
+    setMutationError(null);
+    try {
+      await deleteMutation.mutateAsync(confirmDeleteHoliday.id);
+      if (editingHolidayId === confirmDeleteHoliday.id) {
+        setEditingHolidayId(null);
+        setFormState(defaultFormState);
+      }
+    } catch (error) {
+      setMutationError(error instanceof Error ? error.message : 'Feiertag konnte nicht gelöscht werden.');
+    } finally {
+      setConfirmDeleteHoliday(null);
+    }
+  };
+
   return (
     <>
       <PageHeader title="Feiertage" subtitle="Feiertage innerhalb eines Feiertagssatzes verwalten" />
       <DataSection title="Feiertagssatz auswählen">
-        <label>
+        <label htmlFor="hol-set">
           Feiertagssatz
           <select
+            id="hol-set"
             value={selectedHolidaySetId ?? ''}
             onChange={(event) => setSelectedHolidaySetId(event.target.value ? Number(event.target.value) : null)}
           >
@@ -165,13 +172,13 @@ export function HolidaysPage() {
 
       <DataSection title={editingHolidayId ? 'Feiertag bearbeiten' : 'Feiertag anlegen'}>
         <form className="app-form" onSubmit={onSubmit}>
-          <label>
+          <label htmlFor="hol-date">
             Datum
-            <input type="date" value={formState.date} onChange={(event) => setFormState((prev) => ({ ...prev, date: event.target.value }))} required />
+            <input id="hol-date" type="date" value={formState.date} onChange={(event) => setFormState((prev) => ({ ...prev, date: event.target.value }))} required />
           </label>
-          <label>
+          <label htmlFor="hol-name">
             Name
-            <input value={formState.name} onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))} required />
+            <input id="hol-name" value={formState.name} onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))} required />
           </label>
           <label className="app-form-check">
             <input type="checkbox" checked={formState.active} onChange={(event) => setFormState((prev) => ({ ...prev, active: event.target.checked }))} /> Aktiv
@@ -189,15 +196,24 @@ export function HolidaysPage() {
       </DataSection>
 
       <DataSection title="Feiertagsliste">
-        <label>
+        <label htmlFor="hol-year">
           Jahr
-          <input type="number" min={1970} max={2100} value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} aria-label="Jahr filtern" />
+          <input id="hol-year" type="number" min={1970} max={2100} value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} aria-label="Jahr filtern" />
         </label>
         {holidaySetsQuery.isLoading || query.isLoading ? <LoadingBlock /> : null}
         {holidaySetsQuery.error || query.error ? <ErrorState message="Feiertage konnten nicht geladen werden." /> : null}
         {selectedHolidaySetId === null ? <EmptyState title="Kein Feiertagssatz ausgewählt" description="Wählen Sie einen Feiertagssatz, um Feiertage zu verwalten." /> : null}
-        {query.data ? <DataGrid columns={columns} data={query.data} searchPlaceholder="Feiertage suchen…" /> : null}
+        {query.data ? <DataGrid columns={columns} data={query.data} searchPlaceholder="Feiertage suchen…" rowId={(row) => row.id} /> : null}
       </DataSection>
+      <ConfirmDialog
+        open={confirmDeleteHoliday !== null}
+        title="Feiertag löschen"
+        message={confirmDeleteHoliday ? `Feiertag „${confirmDeleteHoliday.name}“ löschen?` : ''}
+        confirmLabel="Löschen"
+        variant="danger"
+        onConfirm={() => void handleConfirmDeleteHoliday()}
+        onCancel={() => setConfirmDeleteHoliday(null)}
+      />
     </>
   );
 }

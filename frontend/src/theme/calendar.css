@@ -475,7 +475,7 @@
 
 @media (max-width: 1024px) {
   .calendar-day-status-text {
-    display: none;
+    font-size: var(--text-xs);
   }
 }
 

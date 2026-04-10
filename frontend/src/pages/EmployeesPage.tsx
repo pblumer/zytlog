@@ -263,9 +263,10 @@ export function EmployeesPage() {
       <DataSection title={editingEmployee ? 'Mitarbeiter bearbeiten' : 'Mitarbeiter anlegen'}>
         <form className="app-form" onSubmit={onSubmit}>
           {!editingEmployee ? (
-            <label className="app-form-field app-form-field-wide">
+            <label className="app-form-field app-form-field-wide" htmlFor="emp-user">
               <span>Benutzer</span>
               <select
+                id="emp-user"
                 value={form.userId}
                 onChange={(event) => setForm((prev) => ({ ...prev, userId: event.target.value }))}
                 required
@@ -279,24 +280,26 @@ export function EmployeesPage() {
               </select>
             </label>
           ) : null}
-          <label className="app-form-field">
+          <label className="app-form-field" htmlFor="emp-number">
             <span>MitarbeiterNr.</span>
             <input
+              id="emp-number"
               value={form.employeeNumber}
               onChange={(event) => setForm((prev) => ({ ...prev, employeeNumber: event.target.value }))}
             />
           </label>
-          <label className="app-form-field">
+          <label className="app-form-field" htmlFor="emp-first">
             <span>Vorname</span>
-            <input value={form.firstName} onChange={(event) => setForm((prev) => ({ ...prev, firstName: event.target.value }))} required />
+            <input id="emp-first" value={form.firstName} onChange={(event) => setForm((prev) => ({ ...prev, firstName: event.target.value }))} required />
           </label>
-          <label className="app-form-field">
+          <label className="app-form-field" htmlFor="emp-last">
             <span>Nachname</span>
-            <input value={form.lastName} onChange={(event) => setForm((prev) => ({ ...prev, lastName: event.target.value }))} required />
+            <input id="emp-last" value={form.lastName} onChange={(event) => setForm((prev) => ({ ...prev, lastName: event.target.value }))} required />
           </label>
-          <label className="app-form-field">
+          <label className="app-form-field" htmlFor="emp-pct">
             <span>Arbeitspensum</span>
             <input
+              id="emp-pct"
               value={form.employmentPercentage}
               onChange={(event) => setForm((prev) => ({ ...prev, employmentPercentage: event.target.value }))}
               type="number"
@@ -306,9 +309,10 @@ export function EmployeesPage() {
               required
             />
           </label>
-          <label className="app-form-field">
+          <label className="app-form-field" htmlFor="emp-model">
             <span>Arbeitszeitmodell</span>
             <select
+              id="emp-model"
               value={form.workingTimeModelId}
               onChange={(event) => setForm((prev) => ({ ...prev, workingTimeModelId: event.target.value }))}
               required
@@ -321,9 +325,10 @@ export function EmployeesPage() {
               ))}
             </select>
           </label>
-          <label className="app-form-field">
+          <label className="app-form-field" htmlFor="emp-holiday-set">
             <span>Feiertagssatz</span>
             <select
+              id="emp-holiday-set"
               value={form.holidaySetId}
               onChange={(event) => setForm((prev) => ({ ...prev, holidaySetId: event.target.value }))}
             >
@@ -335,9 +340,10 @@ export function EmployeesPage() {
               ))}
             </select>
           </label>
-          <label className="app-form-field">
+          <label className="app-form-field" htmlFor="emp-nwp-set">
             <span>Arbeitsfrei-Set</span>
             <select
+              id="emp-nwp-set"
               value={form.nonWorkingPeriodSetId}
               onChange={(event) => setForm((prev) => ({ ...prev, nonWorkingPeriodSetId: event.target.value }))}
             >
@@ -349,17 +355,17 @@ export function EmployeesPage() {
               ))}
             </select>
           </label>
-          <label className="app-form-field">
+          <label className="app-form-field" htmlFor="emp-entry">
             <span>Eintrittsdatum</span>
-            <input value={form.entryDate} onChange={(event) => setForm((prev) => ({ ...prev, entryDate: event.target.value }))} type="date" required />
+            <input id="emp-entry" value={form.entryDate} onChange={(event) => setForm((prev) => ({ ...prev, entryDate: event.target.value }))} type="date" required />
           </label>
-          <label className="app-form-field">
+          <label className="app-form-field" htmlFor="emp-exit">
             <span>Austrittsdatum</span>
-            <input value={form.exitDate} onChange={(event) => setForm((prev) => ({ ...prev, exitDate: event.target.value }))} type="date" />
+            <input id="emp-exit" value={form.exitDate} onChange={(event) => setForm((prev) => ({ ...prev, exitDate: event.target.value }))} type="date" />
           </label>
-          <label className="app-form-field">
+          <label className="app-form-field" htmlFor="emp-team">
             <span>Team</span>
-            <input value={form.team} onChange={(event) => setForm((prev) => ({ ...prev, team: event.target.value }))} />
+            <input id="emp-team" value={form.team} onChange={(event) => setForm((prev) => ({ ...prev, team: event.target.value }))} />
           </label>
           <label className="app-form-field app-form-field-toggle">
             <input
@@ -424,7 +430,7 @@ export function EmployeesPage() {
       {query.error ? <ErrorState message="Mitarbeiter konnten nicht geladen werden." /> : null}
       {query.data ? (
         <DataSection title="Mitarbeiter">
-          <DataGrid columns={columns} data={query.data} searchPlaceholder="Mitarbeiter suchen…" />
+          <DataGrid columns={columns} data={query.data} searchPlaceholder="Mitarbeiter suchen…" rowId={(row) => row.id} />
         </DataSection>
       ) : null}
     </>

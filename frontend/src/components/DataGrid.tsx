@@ -34,6 +34,7 @@ export function DataGrid<TData>({
   toolbarRight,
   initialPageSize = 10,
   getRowClassName,
+  rowId,
 }: DataGridProps<TData>) {
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<{ id: string; direction: 'asc' | 'desc' } | null>(null);

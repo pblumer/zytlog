@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '../auth/provider';
 import { ApiError } from '../api/client';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DataSection, EmptyState, ErrorState, LoadingBlock, PageHeader } from '../components/common';
 import { DataGrid } from '../components/DataGrid';
 import type { DataGridColumn } from '../components/DataGrid';
@@ -66,6 +67,7 @@ export function HolidaySetsPage() {
   const [previewRows, setPreviewRows] = useState<OpenHolidaysImportPreviewRow[]>([]);
   const [importFeedback, setImportFeedback] = useState<string | null>(null);
   const [importSummary, setImportSummary] = useState<{ created: number; skipped: number; replaced: number } | null>(null);
+  const [confirmDeleteSet, setConfirmDeleteSet] = useState<HolidaySet | null>(null);
 
   const query = useHolidaySets(isAdmin);
   const createMutation = useCreateHolidaySetMutation();
@@ -131,14 +133,7 @@ export function HolidaySetsPage() {
             <button
               type="button"
               className="btn danger"
-              onClick={async () => {
-                if (!window.confirm(`Feiertagssatz „${row.name}“ löschen?`)) return;
-                try {
-                  await deleteMutation.mutateAsync(row.id);
-                } catch (error) {
-                  setMutationError(error instanceof Error ? error.message : 'Feiertagssatz konnte nicht gelöscht werden.');
-                }
-              }}
+              onClick={() => setConfirmDeleteSet(row)}
             >
               Feiertagssatz löschen
             </button>
@@ -247,22 +242,33 @@ export function HolidaySetsPage() {
     return <EmptyState title="Nicht verfügbar" description="Feiertagssätze sind nur für Administratoren sichtbar." />;
   }
 
+  const handleConfirmDeleteSet = async () => {
+    if (!confirmDeleteSet) return;
+    try {
+      await deleteMutation.mutateAsync(confirmDeleteSet.id);
+    } catch (error) {
+      setMutationError(error instanceof Error ? error.message : 'Feiertagssatz konnte nicht gelöscht werden.');
+    } finally {
+      setConfirmDeleteSet(null);
+    }
+  };
+
   return (
     <>
       <PageHeader title="Feiertagssätze" subtitle="Wiederverwendbare Feiertagssätze pro Tenant verwalten" />
       <DataSection title={editingHolidaySetId ? 'Feiertagssatz bearbeiten' : 'Feiertagssatz anlegen'}>
         <form className="app-form" onSubmit={onSubmit}>
-          <label>
+          <label htmlFor="hs-name">
             Name
-            <input value={formState.name} onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))} required />
+            <input id="hs-name" value={formState.name} onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))} required />
           </label>
-          <label>
+          <label htmlFor="hs-desc">
             Beschreibung
-            <input value={formState.description} onChange={(event) => setFormState((prev) => ({ ...prev, description: event.target.value }))} />
+            <input id="hs-desc" value={formState.description} onChange={(event) => setFormState((prev) => ({ ...prev, description: event.target.value }))} />
           </label>
-          <label>
+          <label htmlFor="hs-source">
             Quelle
-            <input value={formState.source} onChange={(event) => setFormState((prev) => ({ ...prev, source: event.target.value }))} />
+            <input id="hs-source" value={formState.source} onChange={(event) => setFormState((prev) => ({ ...prev, source: event.target.value }))} />
           </label>
           <label className="app-form-check">
             <input type="checkbox" checked={formState.active} onChange={(event) => setFormState((prev) => ({ ...prev, active: event.target.checked }))} /> Aktiv
@@ -279,9 +285,10 @@ export function HolidaySetsPage() {
             <div className="import-config-card">
               <p className="meta">1) Parameter auswählen</p>
               <div className="grid">
-                <label>
+                <label htmlFor="hs-country">
                   Land
                   <select
+                    id="hs-country"
                     value={importFormState.countryIsoCode}
                     onChange={(event) => setImportFormState((prev) => ({ ...prev, countryIsoCode: event.target.value, subdivisionCode: '' }))}
                   >
@@ -292,9 +299,10 @@ export function HolidaySetsPage() {
                     ))}
                   </select>
                 </label>
-                <label>
+                <label htmlFor="hs-subdivision">
                   Region / Subdivision
                   <select
+                    id="hs-subdivision"
                     value={importFormState.subdivisionCode}
                     onChange={(event) => setImportFormState((prev) => ({ ...prev, subdivisionCode: event.target.value }))}
                   >
@@ -306,9 +314,10 @@ export function HolidaySetsPage() {
                     ))}
                   </select>
                 </label>
-                <label>
+                <label htmlFor="hs-language">
                   Sprache
                   <select
+                    id="hs-language"
                     value={importFormState.languageCode}
                     onChange={(event) => setImportFormState((prev) => ({ ...prev, languageCode: event.target.value }))}
                   >
@@ -319,17 +328,18 @@ export function HolidaySetsPage() {
                     ))}
                   </select>
                 </label>
-                <label>
+                <label htmlFor="hs-valid-from">
                   Gültig von
-                  <input type="date" value={importFormState.validFrom} onChange={(event) => setImportFormState((prev) => ({ ...prev, validFrom: event.target.value }))} required />
+                  <input id="hs-valid-from" type="date" value={importFormState.validFrom} onChange={(event) => setImportFormState((prev) => ({ ...prev, validFrom: event.target.value }))} required />
                 </label>
-                <label>
+                <label htmlFor="hs-valid-to">
                   Gültig bis
-                  <input type="date" value={importFormState.validTo} onChange={(event) => setImportFormState((prev) => ({ ...prev, validTo: event.target.value }))} required />
+                  <input id="hs-valid-to" type="date" value={importFormState.validTo} onChange={(event) => setImportFormState((prev) => ({ ...prev, validTo: event.target.value }))} required />
                 </label>
-                <label>
+                <label htmlFor="hs-import-mode">
                   Importmodus
                   <select
+                    id="hs-import-mode"
                     value={importFormState.importMode}
                     onChange={(event) => setImportFormState((prev) => ({ ...prev, importMode: event.target.value as OpenHolidaysImportMode }))}
                   >
@@ -396,8 +406,17 @@ export function HolidaySetsPage() {
       <DataSection title="Feiertagssätze">
         {query.isLoading ? <LoadingBlock /> : null}
         {query.error ? <ErrorState message="Feiertagssätze konnten nicht geladen werden." /> : null}
-        {query.data ? <DataGrid columns={columns} data={query.data} searchPlaceholder="Feiertagssätze suchen…" /> : null}
+        {query.data ? <DataGrid columns={columns} data={query.data} searchPlaceholder="Feiertagssätze suchen…" rowId={(row) => row.id} /> : null}
       </DataSection>
+      <ConfirmDialog
+        open={confirmDeleteSet !== null}
+        title="Feiertagssatz löschen"
+        message={confirmDeleteSet ? `Feiertagssatz „${confirmDeleteSet.name}“ löschen?` : ''}
+        confirmLabel="Löschen"
+        variant="danger"
+        onConfirm={() => void handleConfirmDeleteSet()}
+        onCancel={() => setConfirmDeleteSet(null)}
+      />
     </>
   );
 }
