@@ -237,8 +237,18 @@
 
 .year-mini-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 0.22rem;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) auto;
+  gap: 0.2rem;
+  align-items: center;
+}
+
+.year-mini-weekday {
+  text-align: center;
+  font-size: 0.62rem;
+  color: var(--muted);
+  font-weight: 600;
+  line-height: 1;
+  padding-bottom: 0.15rem;
 }
 
 .year-mini-dot {
@@ -301,17 +311,63 @@
 
 .year-mini-dot-actual {
   position: absolute;
+  inset: 0;
+  z-index: 2;
+  font-size: 0.55rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.95);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  pointer-events: none;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+}
+
+.year-mini-dot-balance {
+  position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 2;
-  font-size: 0.5rem;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.9);
-  text-align: center;
-  font-weight: 700;
+  height: 3px;
+  z-index: 3;
   pointer-events: none;
-  text-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+}
+
+.year-mini-balance-pos {
+  background: var(--color-balance-positive);
+}
+
+.year-mini-balance-neg {
+  background: var(--color-balance-negative);
+}
+
+.year-week-balance {
+  font-size: 0.6rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  padding: 0.1rem 0.2rem;
+  border-radius: 2px;
+  text-align: center;
+  line-height: 1;
+  white-space: nowrap;
+  min-width: 2.5rem;
+}
+
+.year-week-balance-pos {
+  color: var(--color-balance-positive);
+  background: rgba(46, 125, 50, 0.08);
+}
+
+.year-week-balance-neg {
+  color: var(--color-balance-negative);
+  background: rgba(179, 38, 30, 0.08);
+}
+
+.year-week-balance-zero {
+  color: var(--muted);
 }
 
 .year-month-meta {

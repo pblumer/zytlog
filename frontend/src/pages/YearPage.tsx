@@ -163,38 +163,74 @@ export function YearPage() {
 
                       <div className="year-mini-grid-wrap">
                         <div className="year-mini-grid">
+                          <span className="year-mini-weekday" aria-hidden="true">M</span>
+                          <span className="year-mini-weekday" aria-hidden="true">D</span>
+                          <span className="year-mini-weekday" aria-hidden="true">M</span>
+                          <span className="year-mini-weekday" aria-hidden="true">D</span>
+                          <span className="year-mini-weekday" aria-hidden="true">F</span>
+                          <span className="year-mini-weekday" aria-hidden="true">S</span>
+                          <span className="year-mini-weekday" aria-hidden="true">S</span>
                           {Array.from({ length: firstWeekday }, (_, index) => (
                             <span key={`placeholder-${month.month}-${index}`} className="year-mini-dot year-mini-dot-placeholder" aria-hidden="true" />
                           ))}
-                          {monthDays.map((day) => {
-                            const dotStatus = getDayDotStatus(day);
-                            const absenceLabel = formatAbsenceLabel(day);
-                            const absenceLayers = getAbsenceLayers(day);
-                            const nonWorkingPeriodLabel = formatNonWorkingPeriodLabel(day);
-                            const hasAbsence = absenceLayers.length > 0;
-                            const showNonWorkingPeriodStyle = !hasAbsence && day.is_in_non_working_period;
-                            const visualStatusClass = showNonWorkingPeriodStyle ? 'year-mini-dot-non-working-period' : `year-mini-dot-${dotStatus}`;
-                            const contextParts = [dotStatus, absenceLabel, nonWorkingPeriodLabel].filter(Boolean);
-                            const contextLabel = contextParts.join(' · ');
-                            const actualLabel = formatMinutesShort(day.actual_minutes);
-                            return (
-                              <span
-                                key={day.date}
-                                role="img"
-                                aria-label={`${day.date}: ${contextLabel}`}
-                                className={`year-mini-dot ${visualStatusClass}`}
-                                title={`${day.date}: ${contextLabel}`}
-                              >
-                                {absenceLayers.map((side) => (
-                                  <span
-                                    key={side}
-                                    className={`year-mini-dot-absence-layer year-mini-dot-absence-${side} year-mini-dot-absence-${day.absence?.type}`}
-                                  />
-                                ))}
-                                {actualLabel && actualLabel.length > 0 && <span className="year-mini-dot-actual">{actualLabel}</span>}
-                              </span>
-                            );
-                          })}
+                          {(() => {
+                            let weekBalance = 0;
+                            let weekDayCount = 0;
+                            const elements: React.ReactNode[] = [];
+                            monthDays.forEach((day, dayIdx) => {
+                              const dotStatus = getDayDotStatus(day);
+                              const absenceLabel = formatAbsenceLabel(day);
+                              const absenceLayers = getAbsenceLayers(day);
+                              const nonWorkingPeriodLabel = formatNonWorkingPeriodLabel(day);
+                              const hasAbsence = absenceLayers.length > 0;
+                              const showNonWorkingPeriodStyle = !hasAbsence && day.is_in_non_working_period;
+                              const visualStatusClass = showNonWorkingPeriodStyle ? 'year-mini-dot-non-working-period' : `year-mini-dot-${dotStatus}`;
+                              const contextParts = [dotStatus, absenceLabel, nonWorkingPeriodLabel].filter(Boolean);
+                              const contextLabel = contextParts.join(' · ');
+                              const actualLabel = formatMinutesShort(day.actual_minutes);
+                              const balanceClass = day.balance_minutes > 0 ? 'year-mini-balance-pos' : day.balance_minutes < 0 ? 'year-mini-balance-neg' : '';
+
+                              // Track weekly balance (Mon-Sun)
+                              weekBalance += day.balance_minutes;
+                              weekDayCount++;
+
+                              elements.push(
+                                <span
+                                  key={day.date}
+                                  role="img"
+                                  aria-label={`${day.date}: ${contextLabel}, Saldo ${formatMinutesShort(day.balance_minutes)}`}
+                                  className={`year-mini-dot ${visualStatusClass}`}
+                                  title={`${day.date}: Ist ${actualLabel}, Saldo ${formatMinutesShort(day.balance_minutes)}`}
+                                >
+                                  {absenceLayers.map((side) => (
+                                    <span
+                                      key={side}
+                                      className={`year-mini-dot-absence-layer year-mini-dot-absence-${side} year-mini-dot-absence-${day.absence?.type}`}
+                                    />
+                                  ))}
+                                  {actualLabel && actualLabel.length > 0 && <span className="year-mini-dot-actual">{actualLabel}</span>}
+                                  {day.balance_minutes !== 0 && <span className={`year-mini-dot-balance ${balanceClass}`} />}
+                                </span>
+                              );
+
+                              // After Sunday (position 6 from week start) or last day, insert weekly balance
+                              const dayOfWeek = (firstWeekday + dayIdx) % 7;
+                              const isEndOfWeek = dayOfWeek === 6;
+                              const isLastDay = dayIdx === monthDays.length - 1;
+                              if (isEndOfWeek || isLastDay) {
+                                const weekBalLabel = formatMinutesShort(weekBalance);
+                                const weekClass = weekBalance > 0 ? 'year-week-balance-pos' : weekBalance < 0 ? 'year-week-balance-neg' : 'year-week-balance-zero';
+                                elements.push(
+                                  <span key={`wb-${month.month}-${dayIdx}`} className={`year-week-balance ${weekClass}`} aria-label={`Wochensaldo: ${weekBalLabel}`} title={`Wochensaldo: ${weekBalLabel}`}>
+                                    {weekBalLabel}
+                                  </span>
+                                );
+                                weekBalance = 0;
+                                weekDayCount = 0;
+                              }
+                            });
+                            return elements;
+                          })()}
                         </div>
                       </div>
 
