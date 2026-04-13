@@ -97,12 +97,13 @@ export function YearPage() {
       {query.data ? (
         <>
           <div className="grid">
-            <SummaryCard title="Soll" value={formatMinutes(query.data.totals.target_minutes)} />
-            <SummaryCard title="Ist" value={formatMinutes(query.data.totals.actual_minutes)} />
+            <SummaryCard title="Soll YTD" value={formatMinutes(query.data.totals.target_minutes)} />
+            <SummaryCard title="Ist YTD" value={formatMinutes(query.data.totals.actual_minutes)} />
             <SummaryCard
-              title="Saldo"
+              title="Saldo YTD"
               value={`${query.data.totals.balance_minutes > 0 ? '+' : ''}${formatMinutes(query.data.totals.balance_minutes)}`}
               className={query.data.totals.balance_minutes > 0 ? 'summary-balance-positive' : query.data.totals.balance_minutes < 0 ? 'summary-balance-negative' : ''}
+              hint={query.data.totals.balance_minutes > 0 ? 'Ueberzeit' : query.data.totals.balance_minutes < 0 ? 'Minuszeit' : 'Ausgeglichen'}
             />
             <SummaryCard title="Tage" value={query.data.totals.days_total} />
           </div>
@@ -170,12 +171,8 @@ export function YearPage() {
                           <span className="year-mini-weekday" aria-hidden="true">F</span>
                           <span className="year-mini-weekday" aria-hidden="true">S</span>
                           <span className="year-mini-weekday" aria-hidden="true">S</span>
-                          {Array.from({ length: firstWeekday }, (_, index) => (
-                            <span key={`placeholder-${month.month}-${index}`} className="year-mini-dot year-mini-dot-placeholder" aria-hidden="true" />
-                          ))}
                           {(() => {
                             let weekBalance = 0;
-                            let weekDayCount = 0;
                             const elements: React.ReactNode[] = [];
                             monthDays.forEach((day, dayIdx) => {
                               const dotStatus = getDayDotStatus(day);
@@ -189,18 +186,17 @@ export function YearPage() {
                               const contextLabel = contextParts.join(' · ');
                               const actualLabel = formatMinutesShort(day.actual_minutes);
                               const balanceClass = day.balance_minutes > 0 ? 'year-mini-balance-pos' : day.balance_minutes < 0 ? 'year-mini-balance-neg' : '';
+                              const isAbsence = hasAbsence || showNonWorkingPeriodStyle;
 
-                              // Track weekly balance (Mon-Sun)
                               weekBalance += day.balance_minutes;
-                              weekDayCount++;
 
                               elements.push(
                                 <span
                                   key={day.date}
                                   role="img"
                                   aria-label={`${day.date}: ${contextLabel}, Saldo ${formatMinutesShort(day.balance_minutes)}`}
-                                  className={`year-mini-dot ${visualStatusClass}`}
-                                  title={`${day.date}: Ist ${actualLabel}, Saldo ${formatMinutesShort(day.balance_minutes)}`}
+                                  className={`year-mini-dot ${visualStatusClass}${isAbsence ? ' year-mini-dot-light' : ''}`}
+                                  title={`${day.date}: Ist ${actualLabel || '0:00'}, Saldo ${formatMinutesShort(day.balance_minutes) || '0:00'}`}
                                 >
                                   {absenceLayers.map((side) => (
                                     <span
@@ -213,20 +209,22 @@ export function YearPage() {
                                 </span>
                               );
 
-                              // After Sunday (position 6 from week start) or last day, insert weekly balance
+                              // After Sunday (position 6 from week start) or last day, insert weekly balance row
                               const dayOfWeek = (firstWeekday + dayIdx) % 7;
                               const isEndOfWeek = dayOfWeek === 6;
                               const isLastDay = dayIdx === monthDays.length - 1;
                               if (isEndOfWeek || isLastDay) {
-                                const weekBalLabel = formatMinutesShort(weekBalance);
+                                const weekBalLabel = formatMinutesShort(Math.abs(weekBalance));
+                                const prefix = weekBalance > 0 ? '+' : weekBalance < 0 ? '-' : '';
                                 const weekClass = weekBalance > 0 ? 'year-week-balance-pos' : weekBalance < 0 ? 'year-week-balance-neg' : 'year-week-balance-zero';
                                 elements.push(
-                                  <span key={`wb-${month.month}-${dayIdx}`} className={`year-week-balance ${weekClass}`} aria-label={`Wochensaldo: ${weekBalLabel}`} title={`Wochensaldo: ${weekBalLabel}`}>
-                                    {weekBalLabel}
+                                  <span key={`wb-${month.month}-${dayIdx}`} className="year-week-balance-row" aria-label={`Wochensaldo: ${prefix}${weekBalLabel}`}>
+                                    <span className={`year-week-balance ${weekClass}`}>
+                                      {prefix}{weekBalLabel}
+                                    </span>
                                   </span>
                                 );
                                 weekBalance = 0;
-                                weekDayCount = 0;
                               }
                             });
                             return elements;

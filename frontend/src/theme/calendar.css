@@ -237,7 +237,7 @@
 
 .year-mini-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr)) auto;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0.2rem;
   align-items: center;
 }
@@ -249,6 +249,13 @@
   font-weight: 600;
   line-height: 1;
   padding-bottom: 0.15rem;
+}
+
+.year-week-balance-row {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.05rem 0;
 }
 
 .year-mini-dot {
@@ -323,6 +330,12 @@
   font-weight: 700;
   pointer-events: none;
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Dark text for light-colored dots (absences, non-working periods) */
+.year-mini-dot-light .year-mini-dot-actual {
+  color: rgba(0, 0, 0, 0.75);
+  text-shadow: none;
 }
 
 .year-mini-dot-balance {

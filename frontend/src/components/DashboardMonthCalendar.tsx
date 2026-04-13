@@ -9,7 +9,7 @@ export function formatMinutesShort(value: number): string {
   if (value <= 0) return '';
   const h = Math.floor(value / 60);
   const m = value % 60;
-  return `${h}:${m.toString()}`;
+  return `${h}:${m.toString().padStart(2, '0')}`;
 }
 
 type DayContextInfo = {
