@@ -97,10 +97,14 @@ export function YearPage() {
       {query.data ? (
         <>
           <div className="grid">
-            <SummaryCard title="Target" value={formatMinutes(query.data.totals.target_minutes)} />
-            <SummaryCard title="Actual" value={formatMinutes(query.data.totals.actual_minutes)} />
-            <SummaryCard title="Balance" value={formatMinutes(query.data.totals.balance_minutes)} />
-            <SummaryCard title="Days" value={query.data.totals.days_total} />
+            <SummaryCard title="Soll" value={formatMinutes(query.data.totals.target_minutes)} />
+            <SummaryCard title="Ist" value={formatMinutes(query.data.totals.actual_minutes)} />
+            <SummaryCard
+              title="Saldo"
+              value={`${query.data.totals.balance_minutes > 0 ? '+' : ''}${formatMinutes(query.data.totals.balance_minutes)}`}
+              className={query.data.totals.balance_minutes > 0 ? 'summary-balance-positive' : query.data.totals.balance_minutes < 0 ? 'summary-balance-negative' : ''}
+            />
+            <SummaryCard title="Tage" value={query.data.totals.days_total} />
           </div>
           <DataSection title="Monthly Summary">
             <TotalsBar
@@ -151,7 +155,9 @@ export function YearPage() {
                         </div>
                         <div>
                           <dt>Saldo</dt>
-                          <dd className={balanceClass}>{formatMinutes(month.balance_minutes)}</dd>
+                          <dd className={balanceClass}>
+                            {month.balance_minutes > 0 ? '+' : ''}{formatMinutes(month.balance_minutes)}
+                          </dd>
                         </div>
                       </dl>
 

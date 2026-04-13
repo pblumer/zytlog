@@ -15,9 +15,9 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
   );
 }
 
-export function SummaryCard({ title, value, hint }: { title: string; value: ReactNode; hint?: ReactNode }) {
+export function SummaryCard({ title, value, hint, className }: { title: string; value: ReactNode; hint?: ReactNode; className?: string }) {
   return (
-    <article className="card">
+    <article className={`card${className ? ` ${className}` : ''}`}>
       <h3>{title}</h3>
       <div className="heading-lg">{value}</div>
       {hint ? <div className="meta">{hint}</div> : null}
