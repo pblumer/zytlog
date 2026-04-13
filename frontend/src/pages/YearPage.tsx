@@ -51,7 +51,7 @@ function formatNonWorkingPeriodLabel(day: CalendarMonthDay): string | null {
 export function YearPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
-  const [year, setYear] = useState(now.getFullYear());
+  const [year, setYear] = useState(new Date().getFullYear());
   const query = useYearReport(year);
   const exporter = useReportExport();
 
