@@ -171,6 +171,9 @@ export function YearPage() {
                           <span className="year-mini-weekday" aria-hidden="true">F</span>
                           <span className="year-mini-weekday" aria-hidden="true">S</span>
                           <span className="year-mini-weekday" aria-hidden="true">S</span>
+                          {Array.from({ length: firstWeekday }, (_, index) => (
+                            <span key={`placeholder-${month.month}-${index}`} className="year-mini-dot year-mini-dot-placeholder" aria-hidden="true" />
+                          ))}
                           {(() => {
                             let weekBalance = 0;
                             const elements: React.ReactNode[] = [];
@@ -185,7 +188,8 @@ export function YearPage() {
                               const contextParts = [dotStatus, absenceLabel, nonWorkingPeriodLabel].filter(Boolean);
                               const contextLabel = contextParts.join(' · ');
                               const actualLabel = formatMinutesShort(day.actual_minutes);
-                              const balanceClass = day.balance_minutes > 0 ? 'year-mini-balance-pos' : day.balance_minutes < 0 ? 'year-mini-balance-neg' : '';
+                              const balanceLabel = day.balance_minutes !== 0 ? `${day.balance_minutes > 0 ? '+' : ''}${formatMinutesShort(day.balance_minutes)}` : '';
+                              const balanceBarClass = day.balance_minutes > 0 ? 'year-mini-balance-pos' : day.balance_minutes < 0 ? 'year-mini-balance-neg' : '';
                               const isAbsence = hasAbsence || showNonWorkingPeriodStyle;
 
                               weekBalance += day.balance_minutes;
@@ -194,9 +198,9 @@ export function YearPage() {
                                 <span
                                   key={day.date}
                                   role="img"
-                                  aria-label={`${day.date}: ${contextLabel}, Saldo ${formatMinutesShort(day.balance_minutes)}`}
+                                  aria-label={`${day.date}: ${contextLabel}, Ist ${actualLabel || '0:00'}, Saldo ${balanceLabel || '0:00'}`}
                                   className={`year-mini-dot ${visualStatusClass}${isAbsence ? ' year-mini-dot-light' : ''}`}
-                                  title={`${day.date}: Ist ${actualLabel || '0:00'}, Saldo ${formatMinutesShort(day.balance_minutes) || '0:00'}`}
+                                  title={`${day.date}: Ist ${actualLabel || '0:00'}, Saldo ${balanceLabel || '0:00'}`}
                                 >
                                   {absenceLayers.map((side) => (
                                     <span
@@ -204,8 +208,9 @@ export function YearPage() {
                                       className={`year-mini-dot-absence-layer year-mini-dot-absence-${side} year-mini-dot-absence-${day.absence?.type}`}
                                     />
                                   ))}
-                                  {actualLabel && actualLabel.length > 0 && <span className="year-mini-dot-actual">{actualLabel}</span>}
-                                  {day.balance_minutes !== 0 && <span className={`year-mini-dot-balance ${balanceClass}`} />}
+                                  <span className="year-mini-dot-actual">{actualLabel || ''}</span>
+                                  {day.balance_minutes !== 0 && <span className={`year-mini-dot-balance ${balanceBarClass}`} />}
+                                  {balanceLabel && <span className={`year-mini-dot-saldo ${balanceBarClass}`}>{balanceLabel}</span>}
                                 </span>
                               );
 

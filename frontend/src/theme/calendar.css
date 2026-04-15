@@ -261,10 +261,14 @@
 .year-mini-dot {
   position: relative;
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 1 / 1.4;
   border-radius: 2px;
   background: #d7dce5;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .year-mini-dot-placeholder {
@@ -317,16 +321,10 @@
 }
 
 .year-mini-dot-actual {
-  position: absolute;
-  inset: 0;
   z-index: 2;
   font-size: 0.55rem;
   line-height: 1;
   color: rgba(255, 255, 255, 0.95);
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-weight: 700;
   pointer-events: none;
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
@@ -335,6 +333,31 @@
 /* Dark text for light-colored dots (absences, non-working periods) */
 .year-mini-dot-light .year-mini-dot-actual {
   color: rgba(0, 0, 0, 0.75);
+  text-shadow: none;
+}
+
+.year-mini-dot-saldo {
+  z-index: 2;
+  font-size: 0.45rem;
+  line-height: 1;
+  font-weight: 700;
+  pointer-events: none;
+  margin-top: 0.5px;
+}
+
+.year-mini-dot-saldo.year-mini-balance-pos {
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+}
+
+.year-mini-dot-saldo.year-mini-balance-neg {
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+}
+
+.year-mini-dot-light .year-mini-dot-saldo.year-mini-balance-pos,
+.year-mini-dot-light .year-mini-dot-saldo.year-mini-balance-neg {
+  color: rgba(0, 0, 0, 0.7);
   text-shadow: none;
 }
 
