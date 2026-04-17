@@ -108,6 +108,10 @@ class ReportingService:
                     days_incomplete=month_totals.days_incomplete,
                     days_invalid=month_totals.days_invalid,
                     days_empty=month_totals.days_empty,
+                    days_target_bearing=month_totals.days_target_bearing,
+                    days_workdays_excluding_non_working_period=month_totals.days_workdays_excluding_non_working_period,
+                    days_non_working=month_totals.days_non_working,
+                    days_in_non_working_period=month_totals.days_in_non_working_period,
                 )
             )
             annual_totals = self._sum_totals(annual_totals, month_totals)
@@ -163,6 +167,15 @@ class ReportingService:
             else:
                 totals.days_empty += 1
 
+            if day.target_minutes > 0:
+                totals.days_target_bearing += 1
+            if day.is_workday and not day.is_in_non_working_period:
+                totals.days_workdays_excluding_non_working_period += 1
+            if not day.is_workday:
+                totals.days_non_working += 1
+            if day.is_in_non_working_period:
+                totals.days_in_non_working_period += 1
+
         return totals
 
     def _sum_totals(self, left: OverviewTotals, right: OverviewTotals) -> OverviewTotals:
@@ -176,4 +189,9 @@ class ReportingService:
             days_incomplete=left.days_incomplete + right.days_incomplete,
             days_invalid=left.days_invalid + right.days_invalid,
             days_empty=left.days_empty + right.days_empty,
+            days_target_bearing=left.days_target_bearing + right.days_target_bearing,
+            days_workdays_excluding_non_working_period=left.days_workdays_excluding_non_working_period
+            + right.days_workdays_excluding_non_working_period,
+            days_non_working=left.days_non_working + right.days_non_working,
+            days_in_non_working_period=left.days_in_non_working_period + right.days_in_non_working_period,
         )

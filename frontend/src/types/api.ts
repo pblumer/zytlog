@@ -66,6 +66,10 @@ export type OverviewTotals = {
   days_incomplete: number;
   days_invalid: number;
   days_empty: number;
+  days_target_bearing: number;
+  days_workdays_excluding_non_working_period: number;
+  days_non_working: number;
+  days_in_non_working_period: number;
 };
 
 export type WeeklyOverview = {
@@ -97,6 +101,10 @@ export type MonthlySummaryRow = {
   days_incomplete: number;
   days_invalid: number;
   days_empty: number;
+  days_target_bearing: number;
+  days_workdays_excluding_non_working_period: number;
+  days_non_working: number;
+  days_in_non_working_period: number;
 };
 
 export type YearlyOverview = {
