@@ -227,7 +227,8 @@ export function YearPage() {
                               const contextLabel = contextParts.join(' · ');
                               const actualLabel = formatMinutesShort(day.actual_minutes);
                               const balanceLabel = day.balance_minutes !== 0 ? `${day.balance_minutes > 0 ? '+' : ''}${formatMinutesShort(day.balance_minutes)}` : '';
-                              const balanceBarClass = day.balance_minutes > 0 ? 'year-mini-balance-pos' : day.balance_minutes < 0 ? 'year-mini-balance-neg' : '';
+                              const balanceBarClass = day.balance_minutes > 0 ? 'year-mini-bar-pos' : day.balance_minutes < 0 ? 'year-mini-bar-neg' : '';
+                              const balanceTextClass = day.balance_minutes > 0 ? 'year-mini-saldo-pos' : day.balance_minutes < 0 ? 'year-mini-saldo-neg' : '';
                               const isAbsence = hasAbsence || showNonWorkingPeriodStyle;
 
                               weekBalance += day.balance_minutes;
@@ -252,7 +253,7 @@ export function YearPage() {
                                   ))}
                                   <span className="year-mini-dot-actual">{actualLabel || ''}</span>
                                   {hasActualHours && day.balance_minutes !== 0 && <span className={`year-mini-dot-balance ${balanceBarClass}`} />}
-                                  {hasActualHours && balanceLabel && <span className={`year-mini-dot-saldo ${balanceBarClass}`}>{balanceLabel}</span>}
+                                  {hasActualHours && balanceLabel && <span className={`year-mini-dot-saldo ${balanceTextClass}`}>{balanceLabel}</span>}
                                 </span>
                               );
 

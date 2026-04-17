@@ -338,29 +338,32 @@
 
 .year-mini-dot-saldo {
   z-index: 2;
-  font-size: 0.45rem;
-  line-height: 1;
+  font-size: 0.5rem;
+  line-height: 1.05;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
   pointer-events: none;
-  margin-top: 0.5px;
+  margin-top: 1px;
+  white-space: nowrap;
 }
 
-.year-mini-dot-saldo.year-mini-balance-pos {
+.year-mini-dot-saldo.year-mini-saldo-pos {
   color: #43a047;
-  text-shadow: 0 0 2px rgba(255, 255, 255, 0.6);
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.35);
 }
 
-.year-mini-dot-saldo.year-mini-balance-neg {
+.year-mini-dot-saldo.year-mini-saldo-neg {
   color: #d32f2f;
-  text-shadow: 0 0 2px rgba(255, 255, 255, 0.6);
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.35);
 }
 
-.year-mini-dot-light .year-mini-dot-saldo.year-mini-balance-pos {
+.year-mini-dot-light .year-mini-dot-saldo.year-mini-saldo-pos {
   color: #2e7d32;
   text-shadow: none;
 }
 
-.year-mini-dot-light .year-mini-dot-saldo.year-mini-balance-neg {
+.year-mini-dot-light .year-mini-dot-saldo.year-mini-saldo-neg {
   color: #b3261e;
   text-shadow: none;
 }
@@ -375,11 +378,11 @@
   pointer-events: none;
 }
 
-.year-mini-balance-pos {
+.year-mini-bar-pos {
   background: var(--color-balance-positive);
 }
 
-.year-mini-balance-neg {
+.year-mini-bar-neg {
   background: var(--color-balance-negative);
 }
 
