@@ -349,8 +349,8 @@
 }
 
 .year-mini-dot-saldo.year-mini-saldo-pos {
-  color: #43a047;
-  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.35);
+  color: #0f3d16;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.4);
 }
 
 .year-mini-dot-saldo.year-mini-saldo-neg {
