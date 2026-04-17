@@ -102,6 +102,10 @@ class OverviewTotals(BaseSchema):
     days_incomplete: int = Field(default=0, ge=0)
     days_invalid: int = Field(default=0, ge=0)
     days_empty: int = Field(default=0, ge=0)
+    days_target_bearing: int = Field(default=0, ge=0)
+    days_workdays_excluding_non_working_period: int = Field(default=0, ge=0)
+    days_non_working: int = Field(default=0, ge=0)
+    days_in_non_working_period: int = Field(default=0, ge=0)
 
 
 class WeeklyOverviewRead(BaseSchema):
@@ -151,6 +155,10 @@ class MonthlySummaryRow(BaseSchema):
     days_incomplete: int = Field(ge=0)
     days_invalid: int = Field(ge=0)
     days_empty: int = Field(ge=0)
+    days_target_bearing: int = Field(ge=0)
+    days_workdays_excluding_non_working_period: int = Field(ge=0)
+    days_non_working: int = Field(ge=0)
+    days_in_non_working_period: int = Field(ge=0)
 
 
 class YearlyOverviewRead(BaseSchema):

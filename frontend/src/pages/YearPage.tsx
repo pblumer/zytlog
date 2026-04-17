@@ -91,6 +91,10 @@ export function YearPage() {
     let daysIncomplete = 0;
     let daysInvalid = 0;
     let daysEmpty = 0;
+    let daysTargetBearing = 0;
+    let daysWorkdaysExcludingNonWorkingPeriod = 0;
+    let daysNonWorking = 0;
+    let daysInNonWorkingPeriod = 0;
     for (const m of query.data.months) {
       if (m.month <= cutoffMonth) {
         target += m.target_minutes;
@@ -101,9 +105,26 @@ export function YearPage() {
         daysIncomplete += m.days_incomplete;
         daysInvalid += m.days_invalid;
         daysEmpty += m.days_empty;
+        daysTargetBearing += m.days_target_bearing;
+        daysWorkdaysExcludingNonWorkingPeriod += m.days_workdays_excluding_non_working_period;
+        daysNonWorking += m.days_non_working;
+        daysInNonWorkingPeriod += m.days_in_non_working_period;
       }
     }
-    return { target_minutes: target, actual_minutes: actual, balance_minutes: balance, days_total: daysTotal, days_complete: daysComplete, days_incomplete: daysIncomplete, days_invalid: daysInvalid, days_empty: daysEmpty };
+    return {
+      target_minutes: target,
+      actual_minutes: actual,
+      balance_minutes: balance,
+      days_total: daysTotal,
+      days_complete: daysComplete,
+      days_incomplete: daysIncomplete,
+      days_invalid: daysInvalid,
+      days_empty: daysEmpty,
+      days_target_bearing: daysTargetBearing,
+      days_workdays_excluding_non_working_period: daysWorkdaysExcludingNonWorkingPeriod,
+      days_non_working: daysNonWorking,
+      days_in_non_working_period: daysInNonWorkingPeriod,
+    };
   }, [query.data, year]);
 
   return (
@@ -143,6 +164,14 @@ export function YearPage() {
                 { label: 'Incomplete', value: query.data.totals.days_incomplete },
                 { label: 'Invalid', value: query.data.totals.days_invalid },
                 { label: 'Empty', value: query.data.totals.days_empty },
+              ]}
+            />
+            <TotalsBar
+              items={[
+                { label: 'Soll-Arbeitstage', value: query.data.totals.days_target_bearing },
+                { label: 'Arbeitstage', value: query.data.totals.days_workdays_excluding_non_working_period },
+                { label: 'Non-working-days', value: query.data.totals.days_non_working },
+                { label: 'Arbeitsfreie Tage', value: query.data.totals.days_in_non_working_period },
               ]}
             />
             {query.data.months.length ? (
