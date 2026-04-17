@@ -226,7 +226,9 @@ export function YearPage() {
                               const contextParts = [dotStatus, absenceLabel, nonWorkingPeriodLabel].filter(Boolean);
                               const contextLabel = contextParts.join(' · ');
                               const actualLabel = formatMinutesShort(day.actual_minutes);
-                              const balanceLabel = day.balance_minutes !== 0 ? `${day.balance_minutes > 0 ? '+' : ''}${formatMinutesShort(day.balance_minutes)}` : '';
+                              const balanceLabel = day.balance_minutes !== 0
+                                ? `${day.balance_minutes > 0 ? '+' : '-'}${formatMinutesShort(Math.abs(day.balance_minutes))}`
+                                : '';
                               const balanceBarClass = day.balance_minutes > 0 ? 'year-mini-bar-pos' : day.balance_minutes < 0 ? 'year-mini-bar-neg' : '';
                               const balanceTextClass = day.balance_minutes > 0 ? 'year-mini-saldo-pos' : day.balance_minutes < 0 ? 'year-mini-saldo-neg' : '';
                               const isAbsence = hasAbsence || showNonWorkingPeriodStyle;
