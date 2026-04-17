@@ -77,6 +77,35 @@ export function YearPage() {
   const isCalendarLoading = calendarQueries.some((calendarQuery) => calendarQuery.isLoading);
   const hasCalendarError = calendarQueries.some((calendarQuery) => calendarQuery.isError);
 
+  // Compute YTD: sum months up to and including the current month (if viewing current year)
+  const ytd = useMemo(() => {
+    if (!query.data) return null;
+    const now = new Date();
+    const isCurrentYear = year === now.getFullYear();
+    const cutoffMonth = isCurrentYear ? now.getMonth() + 1 : year < now.getFullYear() ? 12 : 0;
+    let target = 0;
+    let actual = 0;
+    let balance = 0;
+    let daysTotal = 0;
+    let daysComplete = 0;
+    let daysIncomplete = 0;
+    let daysInvalid = 0;
+    let daysEmpty = 0;
+    for (const m of query.data.months) {
+      if (m.month <= cutoffMonth) {
+        target += m.target_minutes;
+        actual += m.actual_minutes;
+        balance += m.balance_minutes;
+        daysTotal += m.days_total;
+        daysComplete += m.days_complete;
+        daysIncomplete += m.days_incomplete;
+        daysInvalid += m.days_invalid;
+        daysEmpty += m.days_empty;
+      }
+    }
+    return { target_minutes: target, actual_minutes: actual, balance_minutes: balance, days_total: daysTotal, days_complete: daysComplete, days_incomplete: daysIncomplete, days_invalid: daysInvalid, days_empty: daysEmpty };
+  }, [query.data, year]);
+
   return (
     <>
       <PageHeader
@@ -97,15 +126,15 @@ export function YearPage() {
       {query.data ? (
         <>
           <div className="grid">
-            <SummaryCard title="Soll YTD" value={formatMinutes(query.data.totals.target_minutes)} />
-            <SummaryCard title="Ist YTD" value={formatMinutes(query.data.totals.actual_minutes)} />
+            <SummaryCard title="Jahresziel Soll" value={formatMinutes(query.data.totals.target_minutes)} />
+            <SummaryCard title="YTD Soll" value={ytd ? formatMinutes(ytd.target_minutes) : '–'} />
+            <SummaryCard title="YTD Ist" value={ytd ? formatMinutes(ytd.actual_minutes) : '–'} />
             <SummaryCard
-              title="Saldo YTD"
-              value={`${query.data.totals.balance_minutes > 0 ? '+' : ''}${formatMinutes(query.data.totals.balance_minutes)}`}
-              className={query.data.totals.balance_minutes > 0 ? 'summary-balance-positive' : query.data.totals.balance_minutes < 0 ? 'summary-balance-negative' : ''}
-              hint={query.data.totals.balance_minutes > 0 ? 'Ueberzeit' : query.data.totals.balance_minutes < 0 ? 'Minuszeit' : 'Ausgeglichen'}
+              title="YTD Saldo"
+              value={ytd ? `${ytd.balance_minutes > 0 ? '+' : ''}${formatMinutes(ytd.balance_minutes)}` : '–'}
+              className={ytd ? (ytd.balance_minutes > 0 ? 'summary-balance-positive' : ytd.balance_minutes < 0 ? 'summary-balance-negative' : '') : ''}
+              hint={ytd ? (ytd.balance_minutes > 0 ? 'Ueberzeit' : ytd.balance_minutes < 0 ? 'Minuszeit' : 'Ausgeglichen') : undefined}
             />
-            <SummaryCard title="Tage" value={query.data.totals.days_total} />
           </div>
           <DataSection title="Monthly Summary">
             <TotalsBar
@@ -164,19 +193,28 @@ export function YearPage() {
 
                       <div className="year-mini-grid-wrap">
                         <div className="year-mini-grid">
-                          <span className="year-mini-weekday" aria-hidden="true">M</span>
-                          <span className="year-mini-weekday" aria-hidden="true">D</span>
-                          <span className="year-mini-weekday" aria-hidden="true">M</span>
-                          <span className="year-mini-weekday" aria-hidden="true">D</span>
-                          <span className="year-mini-weekday" aria-hidden="true">F</span>
-                          <span className="year-mini-weekday" aria-hidden="true">S</span>
-                          <span className="year-mini-weekday" aria-hidden="true">S</span>
-                          {Array.from({ length: firstWeekday }, (_, index) => (
-                            <span key={`placeholder-${month.month}-${index}`} className="year-mini-dot year-mini-dot-placeholder" aria-hidden="true" />
-                          ))}
                           {(() => {
-                            let weekBalance = 0;
                             const elements: React.ReactNode[] = [];
+                            let weekBalance = 0;
+                            let weekRow = 2; // row 1 = weekday headers
+                            let colIdx = 0; // 0=Mon .. 6=Sun
+
+                            // Weekday header row
+                            const dayLabels = ['M', 'D', 'M', 'D', 'F', 'S', 'S'];
+                            dayLabels.forEach((label, i) => {
+                              elements.push(
+                                <span key={`wh-${i}`} className="year-mini-weekday" aria-hidden="true" style={{ gridColumn: i + 1, gridRow: 1 }}>{label}</span>
+                              );
+                            });
+
+                            // Placeholders for days before the 1st
+                            for (let i = 0; i < firstWeekday; i++) {
+                              elements.push(
+                                <span key={`ph-${i}`} className="year-mini-dot year-mini-dot-placeholder" aria-hidden="true" style={{ gridColumn: i + 1, gridRow: weekRow }} />
+                              );
+                              colIdx = i + 1;
+                            }
+
                             monthDays.forEach((day, dayIdx) => {
                               const dotStatus = getDayDotStatus(day);
                               const absenceLabel = formatAbsenceLabel(day);
@@ -193,6 +231,9 @@ export function YearPage() {
                               const isAbsence = hasAbsence || showNonWorkingPeriodStyle;
 
                               weekBalance += day.balance_minutes;
+                              colIdx += 1;
+
+                              const hasActualHours = day.actual_minutes > 0;
 
                               elements.push(
                                 <span
@@ -201,6 +242,7 @@ export function YearPage() {
                                   aria-label={`${day.date}: ${contextLabel}, Ist ${actualLabel || '0:00'}, Saldo ${balanceLabel || '0:00'}`}
                                   className={`year-mini-dot ${visualStatusClass}${isAbsence ? ' year-mini-dot-light' : ''}`}
                                   title={`${day.date}: Ist ${actualLabel || '0:00'}, Saldo ${balanceLabel || '0:00'}`}
+                                  style={{ gridColumn: colIdx, gridRow: weekRow }}
                                 >
                                   {absenceLayers.map((side) => (
                                     <span
@@ -209,27 +251,31 @@ export function YearPage() {
                                     />
                                   ))}
                                   <span className="year-mini-dot-actual">{actualLabel || ''}</span>
-                                  {day.balance_minutes !== 0 && <span className={`year-mini-dot-balance ${balanceBarClass}`} />}
-                                  {balanceLabel && <span className={`year-mini-dot-saldo ${balanceBarClass}`}>{balanceLabel}</span>}
+                                  {hasActualHours && day.balance_minutes !== 0 && <span className={`year-mini-dot-balance ${balanceBarClass}`} />}
+                                  {hasActualHours && balanceLabel && <span className={`year-mini-dot-saldo ${balanceBarClass}`}>{balanceLabel}</span>}
                                 </span>
                               );
 
-                              // After Sunday (position 6 from week start) or last day, insert weekly balance row
-                              const dayOfWeek = (firstWeekday + dayIdx) % 7;
-                              const isEndOfWeek = dayOfWeek === 6;
+                              // End of week (Sunday) or last day of month
+                              const isEndOfWeek = colIdx === 7;
                               const isLastDay = dayIdx === monthDays.length - 1;
+
                               if (isEndOfWeek || isLastDay) {
+                                // Weekly balance row
                                 const weekBalLabel = formatMinutesShort(Math.abs(weekBalance));
                                 const prefix = weekBalance > 0 ? '+' : weekBalance < 0 ? '-' : '';
                                 const weekClass = weekBalance > 0 ? 'year-week-balance-pos' : weekBalance < 0 ? 'year-week-balance-neg' : 'year-week-balance-zero';
+                                weekRow += 1;
                                 elements.push(
-                                  <span key={`wb-${month.month}-${dayIdx}`} className="year-week-balance-row" aria-label={`Wochensaldo: ${prefix}${weekBalLabel}`}>
+                                  <span key={`wb-${month.month}-${dayIdx}`} className="year-week-balance-row" style={{ gridRow: weekRow }} aria-label={`Wochensaldo: ${prefix}${weekBalLabel}`}>
                                     <span className={`year-week-balance ${weekClass}`}>
                                       {prefix}{weekBalLabel}
                                     </span>
                                   </span>
                                 );
                                 weekBalance = 0;
+                                weekRow += 1;
+                                colIdx = 0;
                               }
                             });
                             return elements;
